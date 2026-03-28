@@ -21,9 +21,10 @@ const initScene = () => {
   scene = new THREE.Scene()
   scene.background = new THREE.Color(0x1a1a2e)
 
-  // 相机
+  // 相机 - 调整视角
   camera = new THREE.PerspectiveCamera(50, width / height, 1, 5000)
-  camera.position.set(800, 800, 600)
+  camera.position.set(1000, 800, 800)
+  camera.up.set(0, 0, 1) // Z轴向上
 
   // 渲染器
   renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -42,8 +43,11 @@ const initScene = () => {
   scene.add(ambientLight)
 
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  directionalLight.position.set(500, 500, 300)
+  directionalLight.position.set(500, 500, 500)
   scene.add(directionalLight)
+
+  // 添加坐标轴
+  addAxes()
 
   // 创建地质层
   createLayers()
@@ -57,12 +61,41 @@ const initScene = () => {
   animate()
 }
 
+// 添加坐标轴
+const addAxes = () => {
+  const axisLength = 400
+  
+  // X 轴 - 红色
+  const xMat = new THREE.LineBasicMaterial({ color: 0xff4444 })
+  const xGeom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(axisLength, 0, 0)
+  ])
+  scene.add(new THREE.Line(xGeom, xMat))
+
+  // Y 轴 - 绿色
+  const yMat = new THREE.LineBasicMaterial({ color: 0x44ff44 })
+  const yGeom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, axisLength, 0)
+  ])
+  scene.add(new THREE.Line(yGeom, yMat))
+
+  // Z 轴（深度） - 蓝色，向下
+  const zMat = new THREE.LineBasicMaterial({ color: 0x4488ff })
+  const zGeom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, -axisLength)
+  ])
+  scene.add(new THREE.Line(zGeom, zMat))
+}
+
 const createLayers = () => {
-  const colors = [0x4CAF50, 0xFFC107, 0xFF9800, 0xF44336]
-  const depths = [0, -100, -500, -1200, -2000]
+  const colors = [0x4CAF50, 0xFFC107, 0xFF9800, 0xE91E63]
+  const depths = [0, 100, 500, 1200, 2000]  // 深度（正数）
   
   for (let i = 0; i < 4; i++) {
-    const thickness = Math.abs(depths[i + 1] - depths[i])
+    const thickness = depths[i + 1] - depths[i]
     const geometry = new THREE.BoxGeometry(800, 800, thickness)
     const material = new THREE.MeshPhongMaterial({
       color: colors[i],
@@ -72,7 +105,8 @@ const createLayers = () => {
     })
     
     const mesh = new THREE.Mesh(geometry, material)
-    mesh.position.set(0, 0, (depths[i] + depths[i + 1]) / 2)
+    // Z 轴向下表示深度
+    mesh.position.set(0, 0, -(depths[i] + depths[i + 1]) / 2)
     
     // 边框
     const edges = new THREE.EdgesGeometry(geometry)
@@ -98,6 +132,7 @@ const createDrillHoles = () => {
     const color = pos.temp > 150 ? 0xF44336 : pos.temp > 100 ? 0xFF9800 : 0x4CAF50
     const material = new THREE.MeshPhongMaterial({ color, transparent: true, opacity: 0.8 })
     const cylinder = new THREE.Mesh(geometry, material)
+    // 位置：Z轴向下
     cylinder.position.set(pos.x, pos.y, -pos.depth / 2)
     scene.add(cylinder)
 
@@ -111,7 +146,7 @@ const createDrillHoles = () => {
 }
 
 const createHeatParticles = () => {
-  const particleCount = 500
+  const particleCount = 300
   const positions = new Float32Array(particleCount * 3)
   const colors = new Float32Array(particleCount * 3)
 
@@ -145,12 +180,12 @@ const createHeatParticles = () => {
 const animate = () => {
   animationId = requestAnimationFrame(animate)
   
-  // 更新粒子位置（上升动画）
+  // 更新粒子位置（向上移动）
   const particles = scene.getObjectByName('particles') as THREE.Points
   if (particles) {
     const positions = particles.geometry.attributes.position.array as Float32Array
     for (let i = 0; i < positions.length; i += 3) {
-      positions[i + 2] += 0.5
+      positions[i + 2] += 2  // Z轴向上
       if (positions[i + 2] > 0) {
         positions[i + 2] = -1500
       }
@@ -193,6 +228,11 @@ onUnmounted(() => {
       <el-icon><DataAnalysis /></el-icon>
       <span>实时 3D 预览</span>
     </div>
+    <div class="axis-hint">
+      <span style="color: #ff4444;">X</span>
+      <span style="color: #44ff44;">Y</span>
+      <span style="color: #4488ff;">Z(深度)</span>
+    </div>
   </div>
 </template>
 
@@ -222,5 +262,18 @@ onUnmounted(() => {
   border-radius: 20px;
   color: white;
   font-size: 14px;
+}
+
+.axis-hint {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 12px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
 }
 </style>

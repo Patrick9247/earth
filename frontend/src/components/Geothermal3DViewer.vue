@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 
 interface Props {
   layers?: any[]
@@ -18,7 +19,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   layers: () => [],
-  drillHoles: () => [],
+  drillHoles: () [],
   extent: () => ({
     xMin: 0,
     xMax: 1000,
@@ -52,6 +53,7 @@ const computedLayerLegend = computed(() => {
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
+let labelRenderer: CSS2DRenderer
 let controls: OrbitControls
 let animationId: number
 
@@ -82,7 +84,9 @@ const initScene = () => {
 
   // 创建相机
   camera = new THREE.PerspectiveCamera(60, width / height, 1, 10000)
-  camera.position.set(1500, 1500, 1000)
+  // 调整相机位置，使 Y 轴（深度）向下
+  camera.position.set(2000, 1500, 1500)
+  camera.up.set(0, -1, 0) // 设置相机向上方向为 Y 轴负方向
 
   // 创建渲染器
   renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -90,6 +94,14 @@ const initScene = () => {
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.shadowMap.enabled = true
   containerRef.value.appendChild(renderer.domElement)
+
+  // 创建 CSS2D 渲染器（用于标签）
+  labelRenderer = new CSS2DRenderer()
+  labelRenderer.setSize(width, height)
+  labelRenderer.domElement.style.position = 'absolute'
+  labelRenderer.domElement.style.top = '0'
+  labelRenderer.domElement.style.pointerEvents = 'none'
+  containerRef.value.appendChild(labelRenderer.domElement)
 
   // 创建控制器
   controls = new OrbitControls(camera, renderer.domElement)
@@ -101,9 +113,8 @@ const initScene = () => {
   // 添加光源
   addLights()
 
-  // 添加坐标轴辅助
-  const axesHelper = new THREE.AxesHelper(500)
-  scene.add(axesHelper)
+  // 添加坐标轴（带标签）
+  addAxesWithLabels()
 
   // 添加网格辅助
   addGrid()
@@ -120,21 +131,102 @@ const addLights = () => {
   scene.add(ambientLight)
 
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  directionalLight.position.set(1000, 1000, 500)
+  directionalLight.position.set(1000, -500, 1000)
   directionalLight.castShadow = true
   directionalLight.name = 'directionalLight1'
   scene.add(directionalLight)
 
   const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4)
-  directionalLight2.position.set(-500, -500, 250)
+  directionalLight2.position.set(-500, 500, -500)
   directionalLight2.name = 'directionalLight2'
   scene.add(directionalLight2)
 }
 
+// 添加带标签的坐标轴
+const addAxesWithLabels = () => {
+  const { xMax, yMax, zMin } = props.extent
+  const axisLength = Math.max(xMax, yMax, Math.abs(zMin)) * 0.6
+  
+  // X 轴 - 红色
+  const xAxisGeom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(axisLength, 0, 0)
+  ])
+  const xAxisMat = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 })
+  const xAxis = new THREE.Line(xAxisGeom, xAxisMat)
+  scene.add(xAxis)
+
+  // Y 轴 - 绿色（平面方向）
+  const yAxisGeom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, axisLength, 0)
+  ])
+  const yAxisMat = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 })
+  const yAxis = new THREE.Line(yAxisGeom, yAxisMat)
+  scene.add(yAxis)
+
+  // Z 轴（深度轴）- 蓝色，向下为正
+  const zAxisGeom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, -axisLength) // Z轴向下
+  ])
+  const zAxisMat = new THREE.LineBasicMaterial({ color: 0x0088ff, linewidth: 2 })
+  const zAxis = new THREE.Line(zAxisGeom, zAxisMat)
+  scene.add(zAxis)
+
+  // 创建坐标轴箭头
+  const arrowSize = 50
+  
+  // X 轴箭头
+  const xArrow = new THREE.ConeGeometry(15, arrowSize, 8)
+  const xArrowMesh = new THREE.Mesh(xArrow, new THREE.MeshBasicMaterial({ color: 0xff0000 }))
+  xArrowMesh.position.set(axisLength, 0, 0)
+  xArrowMesh.rotation.z = -Math.PI / 2
+  scene.add(xArrowMesh)
+
+  // Y 轴箭头
+  const yArrow = new THREE.ConeGeometry(15, arrowSize, 8)
+  const yArrowMesh = new THREE.Mesh(yArrow, new THREE.MeshBasicMaterial({ color: 0x00ff00 }))
+  yArrowMesh.position.set(0, axisLength, 0)
+  yArrowMesh.rotation.x = Math.PI / 2
+  scene.add(yArrowMesh)
+
+  // Z 轴箭头（向下）
+  const zArrow = new THREE.ConeGeometry(15, arrowSize, 8)
+  const zArrowMesh = new THREE.Mesh(zArrow, new THREE.MeshBasicMaterial({ color: 0x0088ff }))
+  zArrowMesh.position.set(0, 0, -axisLength)
+  scene.add(zArrowMesh)
+
+  // 添加坐标轴标签
+  addAxisLabel('X (东)', axisLength + 80, 0, 0, '#ff4444')
+  addAxisLabel('Y (北)', 0, axisLength + 80, 0, '#44ff44')
+  addAxisLabel('Z (深度)', 0, 0, -axisLength - 80, '#4488ff')
+}
+
+// 添加坐标轴标签
+const addAxisLabel = (text: string, x: number, y: number, z: number, color: string) => {
+  const div = document.createElement('div')
+  div.textContent = text
+  div.style.color = color
+  div.style.fontSize = '14px'
+  div.style.fontWeight = 'bold'
+  div.style.padding = '4px 8px'
+  div.style.background = 'rgba(0,0,0,0.6)'
+  div.style.borderRadius = '4px'
+  div.style.whiteSpace = 'nowrap'
+  
+  const label = new CSS2DObject(div)
+  label.position.set(x, y, z)
+  scene.add(label)
+}
+
 // 添加网格
 const addGrid = () => {
-  const gridHelper = new THREE.GridHelper(2000, 20, 0x444444, 0x333333)
-  gridHelper.position.y = props.extent.zMax
+  const { xMax, yMax } = props.extent
+  const gridSize = Math.max(xMax, yMax) * 1.2
+  
+  // 水平网格（在地面位置）
+  const gridHelper = new THREE.GridHelper(gridSize, 20, 0x444444, 0x333333)
   gridHelper.name = 'gridHelper'
   scene.add(gridHelper)
 }
@@ -156,24 +248,25 @@ const createLayers = () => {
   const { xMin, xMax, yMin, yMax } = props.extent
 
   layersToUse.forEach((layer: any, index: number) => {
-    // 处理深度值：如果是正数（深度），转为负数（Z坐标）
+    // 处理深度值
     let topDepth = layer.depth_top ?? layer.depthTop ?? -(index * 500)
     let bottomDepth = layer.depth_bottom ?? layer.depthBottom ?? -((index + 1) * 500)
     
-    // 如果是正数深度值，转换为负的Z坐标
+    // 如果是正数深度值，转换为负的Z坐标（向下）
     if (topDepth > 0) topDepth = -topDepth
     if (bottomDepth > 0) bottomDepth = -bottomDepth
     
+    const layerHeight = Math.abs(bottomDepth - topDepth)
+
     const geometry = new THREE.BoxGeometry(
       xMax - xMin,
       yMax - yMin,
-      Math.abs(bottomDepth - topDepth)
+      layerHeight
     )
 
     // 解析颜色
     let color: number
     if (layer.color && typeof layer.color === 'string') {
-      // 处理 #RRGGBB 格式
       color = parseInt(layer.color.replace('#', ''), 16)
       if (isNaN(color)) {
         color = defaultLayerColors[index % defaultLayerColors.length]
@@ -191,10 +284,11 @@ const createLayers = () => {
     })
 
     const mesh = new THREE.Mesh(geometry, material)
+    // 位置：X、Y 在水平面，Z 轴向下表示深度
     mesh.position.set(
       (xMin + xMax) / 2,
       (yMin + yMax) / 2,
-      (topDepth + bottomDepth) / 2
+      (topDepth + bottomDepth) / 2  // Z轴负方向表示深度
     )
     mesh.receiveShadow = true
     mesh.castShadow = true
@@ -248,6 +342,7 @@ const createDrillHoles = () => {
     })
 
     const cylinder = new THREE.Mesh(geometry, material)
+    // 钻孔位置：X、Y 水平，Z 轴向下
     cylinder.position.set(x, y, -depth / 2)
     cylinder.castShadow = true
     cylinder.name = `drillhole_${hole.name || 'unnamed'}`
@@ -272,7 +367,7 @@ const createDrillHoles = () => {
   })
 }
 
-// 根据温度获取颜色（返回 THREE.Color）
+// 根据温度获取颜色
 const getTemperatureColor = (temp: number): number => {
   if (temp < 100) return 0x4CAF50  // 绿色 - 低温
   if (temp < 150) return 0xFFC107  // 黄色 - 中温
@@ -280,34 +375,21 @@ const getTemperatureColor = (temp: number): number => {
   return 0xF44336                   // 红色 - 超高温
 }
 
-// 创建文字标签（使用精灵）
+// 创建文字标签
 const createLabel = (text: string, x: number, y: number, z: number) => {
-  const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
-  if (!context) return
-
-  canvas.width = 256
-  canvas.height = 64
-
-  context.fillStyle = 'rgba(0, 0, 0, 0.7)'
-  context.fillRect(0, 0, canvas.width, canvas.height)
-
-  context.font = 'bold 32px Arial'
-  context.fillStyle = 'white'
-  context.textAlign = 'center'
-  context.textBaseline = 'middle'
-  context.fillText(text, canvas.width / 2, canvas.height / 2)
-
-  const texture = new THREE.CanvasTexture(canvas)
-  const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
-  const sprite = new THREE.Sprite(spriteMaterial)
+  const div = document.createElement('div')
+  div.textContent = text
+  div.style.color = 'white'
+  div.style.fontSize = '12px'
+  div.style.padding = '2px 6px'
+  div.style.background = 'rgba(0,0,0,0.7)'
+  div.style.borderRadius = '3px'
+  div.style.whiteSpace = 'nowrap'
   
-  sprite.position.set(x, y, z)
-  sprite.scale.set(100, 25, 1)
-  sprite.name = `label_${text}`
-  
-  scene.add(sprite)
-  drillHoleMeshes.push(sprite as any)
+  const label = new CSS2DObject(div)
+  label.position.set(x, y, z)
+  scene.add(label)
+  drillHoleMeshes.push(label as any)
 }
 
 // 创建热流粒子效果
@@ -319,20 +401,19 @@ const createHeatParticles = () => {
   const { xMin, xMax, yMin, yMax, zMin } = props.extent
   
   // 创建热流粒子
-  const particleCount = 500
+  const particleCount = 300
   const positions = new Float32Array(particleCount * 3)
   const colors = new Float32Array(particleCount * 3)
 
   for (let i = 0; i < particleCount; i++) {
     positions[i * 3] = xMin + Math.random() * (xMax - xMin)
     positions[i * 3 + 1] = yMin + Math.random() * (yMax - yMin)
-    positions[i * 3 + 2] = zMin + Math.random() * 200
+    positions[i * 3 + 2] = zMin + Math.random() * 100
 
-    // 颜色从黄色到红色渐变
     const t = Math.random()
-    colors[i * 3] = 1.0          // R
-    colors[i * 3 + 1] = 0.3 + t * 0.5  // G
-    colors[i * 3 + 2] = 0.0      // B
+    colors[i * 3] = 1.0
+    colors[i * 3 + 1] = 0.3 + t * 0.5
+    colors[i * 3 + 2] = 0.0
   }
 
   const geometry = new THREE.BufferGeometry()
@@ -357,12 +438,12 @@ const createHeatParticles = () => {
 const animate = () => {
   animationId = requestAnimationFrame(animate)
   
-  // 更新粒子动画
+  // 更新粒子动画（向上移动，即 Z 轴正方向）
   particleSystems.forEach(particles => {
     const positions = particles.geometry.attributes.position.array as Float32Array
     for (let i = 0; i < positions.length; i += 3) {
-      positions[i + 2] += 2 // 向上移动
-      if (positions[i + 2] > 0) {
+      positions[i + 2] += 3 // Z轴向上
+      if (positions[i + 2] > 50) {
         positions[i + 2] = props.extent.zMin
       }
     }
@@ -371,6 +452,7 @@ const animate = () => {
   
   controls.update()
   renderer.render(scene, camera)
+  labelRenderer.render(scene, camera)
 }
 
 // 处理窗口大小变化
@@ -383,11 +465,13 @@ const handleResize = () => {
   camera.aspect = width / height
   camera.updateProjectionMatrix()
   renderer.setSize(width, height)
+  labelRenderer.setSize(width, height)
 }
 
 // 重置视图
 const resetView = () => {
-  camera.position.set(1500, 1500, 1000)
+  camera.position.set(2000, 1500, 1500)
+  camera.up.set(0, -1, 0)
   controls.reset()
 }
 
@@ -415,34 +499,21 @@ const rebuildScene = () => {
   drillHoleMeshes = []
   particleSystems = []
   
-  // 清除标签精灵
-  const spritesToRemove = scene.children.filter(child => 
-    child instanceof THREE.Sprite && child.name.startsWith('label_')
-  )
-  spritesToRemove.forEach(sprite => scene.remove(sprite))
-  
-  // 清除网格并重新添加
-  const oldGrid = scene.getObjectByName('gridHelper')
-  if (oldGrid) scene.remove(oldGrid)
-  addGrid()
-  
   // 重新创建模型
   createLayers()
   createDrillHoles()
   createHeatParticles()
 }
 
-// 监听数据变化 - 监听 extent 变化
+// 监听数据变化
 watch(() => props.extent, () => {
   rebuildScene()
 }, { deep: true })
 
-// 监听 layers 变化
 watch(() => props.layers, () => {
   createLayers()
 }, { deep: true })
 
-// 监听 drillHoles 变化
 watch(() => props.drillHoles, () => {
   createDrillHoles()
 }, { deep: true })
@@ -495,6 +566,22 @@ defineExpose({
           <el-icon><Refresh /></el-icon>
           重置视图
         </el-button>
+      </div>
+      
+      <div class="control-group">
+        <h4>坐标轴说明</h4>
+        <div class="axis-item">
+          <span class="axis-color" style="background: #ff4444;"></span>
+          <span>X轴 (东向)</span>
+        </div>
+        <div class="axis-item">
+          <span class="axis-color" style="background: #44ff44;"></span>
+          <span>Y轴 (北向)</span>
+        </div>
+        <div class="axis-item">
+          <span class="axis-color" style="background: #4488ff;"></span>
+          <span>Z轴 (深度，向下为正)</span>
+        </div>
       </div>
       
       <div class="control-group">
@@ -596,6 +683,20 @@ defineExpose({
   margin: 4px 0;
   font-size: 12px;
   color: #ccc;
+}
+
+.axis-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 12px;
+}
+
+.axis-color {
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
 }
 
 .legend-item {
