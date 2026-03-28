@@ -1,0 +1,37 @@
+"""
+应用配置
+"""
+import os
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+
+class Settings(BaseSettings):
+    """应用配置类"""
+    
+    # 应用基础配置
+    APP_NAME: str = "地热流体资源建模系统"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = True
+    
+    # 数据库配置
+    MYSQL_HOST: str = os.getenv("MYSQL_HOST", "localhost")
+    MYSQL_PORT: int = int(os.getenv("MYSQL_PORT", "3306"))
+    MYSQL_USER: str = os.getenv("MYSQL_USER", "root")
+    MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "")
+    MYSQL_DATABASE: str = os.getenv("MYSQL_DATABASE", "geothermal_db")
+    
+    # GemPy 配置
+    GRID_RESOLUTION: int = 50  # 网格分辨率
+    
+    @property
+    def DATABASE_URL(self) -> str:
+        """数据库连接URL"""
+        return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+
+settings = Settings()
