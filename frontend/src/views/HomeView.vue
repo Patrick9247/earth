@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { gempyApi } from '@/api'
+import Mini3DViewer from '@/components/Mini3DViewer.vue'
 
 const stats = ref({
   layers: 0,
@@ -129,32 +130,31 @@ onMounted(() => {
     </div>
 
     <!-- 系统介绍 -->
-    <div class="card">
-      <h2 class="card-title">📖 系统功能</h2>
-      <el-row :gutter="20">
-        <el-col :span="8">
+    <el-row :gutter="20">
+      <el-col :span="12">
+        <div class="card" style="margin-bottom: 0;">
+          <h2 class="card-title">📖 系统功能</h2>
           <div class="feature-card">
             <el-icon :size="40" color="#409eff"><DataAnalysis /></el-icon>
             <h3>三维地质建模</h3>
-            <p>基于 GemPy 构建三维地质结构模型，可视化展示地层分布</p>
+            <p>基于 GemPy + Three.js 构建三维地质结构模型，实时交互式可视化展示地层分布</p>
           </div>
-        </el-col>
-        <el-col :span="8">
           <div class="feature-card">
             <el-icon :size="40" color="#67c23a"><Cpu /></el-icon>
             <h3>资源计算</h3>
             <p>精确计算地热储层的热含量、可采资源和发电潜力</p>
           </div>
-        </el-col>
-        <el-col :span="8">
           <div class="feature-card">
             <el-icon :size="40" color="#e6a23c"><TrendCharts /></el-icon>
             <h3>数据管理</h3>
-            <p>管理钻孔数据、地质层信息和计算结果</p>
+            <p>管理钻孔数据、地质层信息和计算结果，支持 CSV/JSON 导出</p>
           </div>
-        </el-col>
-      </el-row>
-    </div>
+        </div>
+      </el-col>
+      <el-col :span="12">
+        <Mini3DViewer />
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -200,25 +200,27 @@ onMounted(() => {
 
 .feature-card {
   text-align: center;
-  padding: 24px;
+  padding: 20px;
   border-radius: 8px;
   background: #f5f7fa;
   transition: all 0.3s;
+  margin-bottom: 16px;
 }
 
 .feature-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .feature-card h3 {
-  margin: 16px 0 8px;
-  font-size: 16px;
+  margin: 12px 0 6px;
+  font-size: 15px;
 }
 
 .feature-card p {
   color: #909399;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
 }
 </style>
