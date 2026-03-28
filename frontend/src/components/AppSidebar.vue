@@ -1,5 +1,17 @@
 <script setup lang="ts">
-// 侧边栏组件（可扩展功能）
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+// 跳转到钻孔管理页面
+const goToAddDrillHole = () => {
+  router.push('/drill-holes')
+}
+
+// 跳转到资源计算页面
+const goToQuickCalc = () => {
+  router.push('/calculation')
+}
 </script>
 
 <template>
@@ -7,11 +19,11 @@
     <div class="sidebar-section">
       <h4 class="section-title">快捷操作</h4>
       <div class="quick-actions">
-        <el-button type="primary" size="small" class="action-btn">
+        <el-button type="primary" size="small" class="action-btn" @click="goToAddDrillHole">
           <el-icon><Plus /></el-icon>
           新建钻孔
         </el-button>
-        <el-button type="success" size="small" class="action-btn">
+        <el-button type="success" size="small" class="action-btn" @click="goToQuickCalc">
           <el-icon><Cpu /></el-icon>
           快速计算
         </el-button>
