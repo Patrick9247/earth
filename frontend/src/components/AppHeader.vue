@@ -5,7 +5,8 @@ const navItems = [
   { path: '/drill-holes', icon: 'Aim', label: '钻孔数据' },
   { path: '/model', icon: 'DataAnalysis', label: '地质建模' },
   { path: '/calculation', icon: 'Cpu', label: '资源计算' },
-  { path: '/results', icon: 'TrendCharts', label: '计算结果' }
+  { path: '/results', icon: 'TrendCharts', label: '计算结果' },
+  { path: '/settings', icon: 'Setting', label: '系统设置' }
 ]
 </script>
 

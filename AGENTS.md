@@ -12,6 +12,7 @@
 - **数据库**: MySQL (通过 PyMySQL 连接)
 - **地质建模**: GemPy (模拟模式支持)
 - **数据验证**: Pydantic 2.5.3
+- **数据处理**: NumPy, Pandas, SciPy
 
 ### 前端
 - **框架**: Vue 3.4
@@ -20,6 +21,7 @@
 - **UI库**: Element Plus 2.5
 - **状态管理**: Pinia
 - **路由**: Vue Router 4
+- **样式**: Tailwind CSS 3.4
 
 ## 项目结构
 
@@ -30,13 +32,16 @@
 │   │   │   ├── geological.py    # 地质层管理
 │   │   │   ├── drill_holes.py   # 钻孔数据
 │   │   │   ├── model_configs.py # 模型配置
-│   │   │   └── gempy.py         # GemPy建模与计算
+│   │   │   ├── gempy.py         # GemPy建模与计算
+│   │   │   └── export.py        # 数据导出
 │   │   ├── config.py        # 应用配置
 │   │   ├── database.py      # 数据库连接
 │   │   ├── models.py        # SQLAlchemy 模型
 │   │   ├── schemas.py       # Pydantic 模型
-│   │   └── gempy_service.py # GemPy 服务
+│   │   ├── gempy_service.py # GemPy 服务
+│   │   └── utils.py         # 工具函数
 │   ├── main.py              # FastAPI 入口
+│   ├── init_db.py           # 数据库初始化
 │   ├── static/              # 前端构建产物
 │   └── requirements.txt     # Python 依赖
 │
@@ -46,6 +51,9 @@
 │   │   ├── components/      # 组件
 │   │   ├── views/           # 页面视图
 │   │   ├── router/          # 路由配置
+│   │   ├── stores/          # Pinia 状态管理
+│   │   ├── types/           # TypeScript 类型
+│   │   ├── utils/           # 工具函数
 │   │   └── assets/          # 静态资源
 │   ├── package.json
 │   └── vite.config.ts
@@ -84,10 +92,22 @@ coze build && coze start
 - `POST /api/drill-holes/` - 创建钻孔
 - `POST /api/drill-holes/batch` - 批量创建
 
+### 模型配置
+- `GET /api/model-configs/` - 获取所有配置
+- `POST /api/model-configs/` - 创建配置
+
 ### GemPy 建模
 - `POST /api/gempy/model/create` - 创建地质模型
 - `POST /api/gempy/calculate` - 计算地热资源
 - `GET /api/gempy/quick-calc` - 快速估算
+- `GET /api/gempy/results` - 获取计算结果
+
+### 数据导出
+- `GET /api/export/layers/csv` - 导出地质层(CSV)
+- `GET /api/export/drill-holes/csv` - 导出钻孔数据(CSV)
+- `GET /api/export/results/csv` - 导出计算结果(CSV)
+- `GET /api/export/all/json` - 导出所有数据(JSON)
+- `GET /api/export/report` - 生成汇总报告
 
 ### 系统接口
 - `GET /api/health` - 健康检查
@@ -102,19 +122,33 @@ coze build && coze start
 ### 2. 钻孔数据管理 (`backend/app/routers/drill_holes.py`)
 - 钻孔位置坐标
 - 温度和地温梯度数据
+- 批量导入支持
 
 ### 3. GemPy 地质建模 (`backend/app/gempy_service.py`)
 - 三维地质结构建模
 - 支持 GemPy 或模拟模式
 - 地热资源计算核心算法
 
-### 4. 前端页面
+### 4. 数据导出 (`backend/app/routers/export.py`)
+- CSV/JSON 格式导出
+- 汇总报告生成
+- 支持模拟数据模式
+
+### 5. 工具函数 (`backend/app/utils.py`)
+- 温度插值计算
+- 热流密度计算
+- 采收率估算
+- 合成数据生成
+- 单位转换
+
+### 6. 前端页面
 - **首页**: 系统概览、快速计算
 - **地质层管理**: CRUD 操作
 - **钻孔数据**: 数据管理和位置可视化
 - **地质建模**: 模型参数配置
 - **资源计算**: 详细参数计算
 - **计算结果**: 历史记录管理
+- **系统设置**: 参数配置、数据导出
 
 ## 数据库配置
 
@@ -134,21 +168,27 @@ MYSQL_DATABASE=geothermal_db
 - 使用 Pydantic 进行数据验证
 - SQLAlchemy ORM 模型
 - FastAPI 路由函数使用 async def
+- 所有新模型字段避免使用 `metadata` (SQLAlchemy保留字)
 
 ### TypeScript/Vue
 - Vue 3 Composition API
 - TypeScript 类型定义
 - Element Plus UI 组件
+- 使用 `computed` 处理 v-model 的复杂表达式
 
 ## 常见问题
 
 ### MySQL 连接失败
 - 应用会在数据库不可用时继续运行（模拟模式）
-- 前端会使用模拟数据
+- 前端和导出API会使用模拟数据
 
 ### GemPy 不可用
 - 服务会自动切换到模拟模式
 - 计算结果仍然有效
+
+### 前端构建错误
+- 检查 TypeScript 类型定义
+- v-model 不能使用复杂表达式，改用 computed
 
 ## 访问地址
 
