@@ -19,7 +19,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   layers: () => [],
-  drillHoles: () [],
+  drillHoles: () => [],
   extent: () => ({
     xMin: 0,
     xMax: 1000,
