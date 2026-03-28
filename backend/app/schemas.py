@@ -132,7 +132,8 @@ class GeothermalCalculationRequest(BaseModel):
     avg_temperature: float = Field(..., gt=0, description="平均温度(°C)")
     reference_temperature: float = Field(25, description="参考温度(°C)")
     porosity: float = Field(0.15, ge=0, le=1, description="有效孔隙度")
-    water_density: float = Field(1000, description="水密度(kg/m³)")
+    pressure: float = Field(0.1, gt=0, description="储层压力(MPa)")
+    water_density: Optional[float] = Field(None, description="水密度(kg/m³)，留空自动计算")
     rock_density: float = Field(2600, description="岩石密度(kg/m³)")
     water_specific_heat: float = Field(4186, description="水比热容(J/kg·K)")
     rock_specific_heat: float = Field(880, description="岩石比热容(J/kg·K)")
@@ -146,6 +147,31 @@ class GeothermalCalculationResponse(BaseModel):
     success: bool
     message: str
     result: Optional[GeothermalResourceResponse] = None
+
+
+# ==================== 网格资源计算请求 Schemas ====================
+class GridDataItem(BaseModel):
+    """单个网格数据"""
+    porosity: float = Field(0.15, ge=0, le=1, description="孔隙度")
+    volume: float = Field(..., gt=0, description="体积(m³)")
+    temperature: float = Field(..., gt=0, description="温度(°C)")
+    pressure: float = Field(0.1, gt=0, description="压力(MPa)")
+
+
+class GridCalculationRequest(BaseModel):
+    """网格资源计算请求 - 基于专利方法"""
+    grids: List[GridDataItem] = Field(..., description="网格数据列表")
+    reference_temperature: float = Field(25, description="参考温度(°C)")
+    recovery_factor: float = Field(0.25, ge=0, le=1, description="采收率")
+    utilization_efficiency: float = Field(0.1, ge=0, le=1, description="利用效率")
+    lifetime_years: int = Field(30, ge=1, description="开采年限(年)")
+
+
+class GridCalculationResponse(BaseModel):
+    """网格资源计算响应"""
+    success: bool
+    message: str
+    data: Optional[Dict[str, Any]] = None
 
 
 # ==================== 通用响应 ====================

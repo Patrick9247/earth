@@ -14,6 +14,8 @@ from ..schemas import (
     GeothermalCalculationRequest,
     GeothermalCalculationResponse,
     GeothermalResourceResponse,
+    GridCalculationRequest,
+    GridCalculationResponse,
     MessageResponse
 )
 from ..gempy_service import gempy_service, geothermal_calculator
@@ -145,7 +147,8 @@ async def calculate_geothermal_resource(
             water_density=request.water_density,
             rock_density=request.rock_density,
             water_specific_heat=request.water_specific_heat,
-            rock_specific_heat=request.rock_specific_heat
+            rock_specific_heat=request.rock_specific_heat,
+            pressure=request.pressure
         )
         
         # 保存结果到数据库
@@ -237,3 +240,117 @@ async def quick_calculation(
                       f"预估发电潜力 {results['power_potential_mw']:.2f} MW"
         }
     }
+
+
+@router.post("/calculate-grid", response_model=GridCalculationResponse)
+async def calculate_grid_resources(
+    request: GridCalculationRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    网格资源计算 - 基于专利方法
+    
+    根据专利《一种不规则热储层多相态地热流体资源量计算方法》实现：
+    1. 相态判定：比较网格温度与沸点温度，划分为气液共存网格集和液态水网格集
+    2. 密度校正：根据温度计算地热流体密度
+    3. 资源量计算：分别计算液态和气液共存资源量
+    """
+    try:
+        # 转换网格数据
+        grid_data = [grid.model_dump() for grid in request.grids]
+        
+        # 执行网格资源计算
+        results = geothermal_calculator.calculate_grid_resources(
+            grid_data=grid_data,
+            reference_temp=request.reference_temperature
+        )
+        
+        # 计算发电潜力
+        power_results = geothermal_calculator.calculate_power_potential(
+            total_heat=results['total_resource_joules'],
+            recovery_factor=request.recovery_factor,
+            utilization_efficiency=request.utilization_efficiency,
+            lifetime_years=request.lifetime_years
+        )
+        
+        # 合并结果
+        final_results = {
+            **results,
+            **power_results,
+            'parameters': {
+                'grid_count': len(request.grids),
+                'reference_temperature': request.reference_temperature,
+                'recovery_factor': request.recovery_factor,
+                'utilization_efficiency': request.utilization_efficiency,
+                'lifetime_years': request.lifetime_years
+            }
+        }
+        
+        # 尝试保存结果到数据库
+        try:
+            db_resource = GeothermalResource(
+                name=f"网格计算_{len(request.grids)}个网格",
+                model_type="grid_calculation",
+                volume=sum(g['volume'] for g in grid_data),
+                temperature_avg=sum(g['temperature'] for g in grid_data) / len(grid_data),
+                temperature_max=max(g['temperature'] for g in grid_data),
+                heat_content=results['total_resource_joules'],
+                extractable_heat=power_results['extractable_heat'],
+                power_potential=power_results['power_potential_mw'],
+                lifetime_years=request.lifetime_years,
+                parameters=final_results['parameters'],
+                result_data=final_results
+            )
+            db.add(db_resource)
+            db.commit()
+        except Exception as db_error:
+            logger.warning(f"Database save failed: {db_error}")
+            # 数据库保存失败不影响返回结果
+        
+        return GridCalculationResponse(
+            success=True,
+            message=f"网格资源计算完成，共{len(request.grids)}个网格",
+            data=final_results
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to calculate grid resources: {str(e)}")
+        return GridCalculationResponse(
+            success=False,
+            message=f"计算出错: {str(e)}"
+        )
+
+
+@router.get("/phase-determination")
+async def determine_phase(
+    temperature: float,
+    pressure: float
+):
+    """
+    相态判定接口
+    
+    根据专利方法，判断给定温度和压力下的相态
+    - 返回沸点温度、相态类型、水密度等信息
+    """
+    try:
+        T_boiling = geothermal_calculator.calculate_boiling_point(pressure)
+        phase = geothermal_calculator.determine_phase(temperature, pressure)
+        density = geothermal_calculator.calculate_water_density(temperature)
+        
+        return {
+            "success": True,
+            "data": {
+                "temperature": temperature,
+                "pressure": pressure,
+                "boiling_point": T_boiling,
+                "phase_type": phase,
+                "phase_description": "液态水" if phase == 'liquid' else "气液共存",
+                "water_density": density,
+                "is_boiling": temperature >= T_boiling
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }

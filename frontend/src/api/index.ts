@@ -51,10 +51,13 @@ export const modelConfigsApi = {
 export const gempyApi = {
   createModel: (data: any) => api.post('/gempy/model/create', data),
   calculate: (data: any) => api.post('/gempy/calculate', data),
+  calculateGrid: (data: any) => api.post('/gempy/calculate-grid', data),
   getResults: () => api.get('/gempy/results'),
   getResult: (id: number) => api.get(`/gempy/results/${id}`),
   deleteResult: (id: number) => api.delete(`/gempy/results/${id}`),
-  quickCalc: (params: any) => api.get('/gempy/quick-calc', { params })
+  quickCalc: (params: any) => api.get('/gempy/quick-calc', { params }),
+  phaseDetermination: (temperature: number, pressure: number) => 
+    api.get('/gempy/phase-determination', { params: { temperature, pressure } })
 }
 
 export default api
