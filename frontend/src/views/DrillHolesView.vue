@@ -163,39 +163,31 @@ onMounted(() => {
     </div>
 
     <!-- 编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="editingItem ? '编辑钻孔' : '新建钻孔'" width="500px">
+    <el-dialog v-model="dialogVisible" :title="editingItem ? '编辑钻孔' : '新建钻孔'" width="550px">
       <el-form :model="form" label-width="120px">
         <el-form-item label="钻孔编号" required>
           <el-input v-model="form.name" placeholder="如 ZK-001" />
         </el-form-item>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="X坐标">
-              <el-input-number v-model="form.location_x" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="Y坐标">
-              <el-input-number v-model="form.location_y" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="地面高程">
-              <el-input-number v-model="form.location_z" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="X坐标">
+          <el-input-number v-model="form.location_x" :min="0" :max="10000" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="Y坐标">
+          <el-input-number v-model="form.location_y" :min="0" :max="10000" controls-position="right" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="地面高程(m)">
+          <el-input-number v-model="form.location_z" :min="0" :max="5000" controls-position="right" style="width: 100%" />
+        </el-form-item>
         <el-form-item label="钻孔深度(m)">
-          <el-input-number v-model="form.depth" :min="0" />
+          <el-input-number v-model="form.depth" :min="0" :max="5000" controls-position="right" style="width: 100%" />
         </el-form-item>
         <el-form-item label="测量温度(°C)">
-          <el-input-number v-model="form.temperature" :min="0" />
+          <el-input-number v-model="form.temperature" :min="0" :max="400" controls-position="right" style="width: 100%" />
         </el-form-item>
         <el-form-item label="地温梯度">
-          <el-input-number v-model="form.gradient" :min="0" :step="0.1" />
+          <el-input-number v-model="form.gradient" :min="0" :max="20" :step="0.1" :precision="1" controls-position="right" style="width: 100%" />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="form.description" type="textarea" />
+          <el-input v-model="form.description" type="textarea" :rows="2" />
         </el-form-item>
       </el-form>
       <template #footer>
