@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { gempyApi } from '@/api'
+import { useGeothermalStore } from '@/stores/geothermal'
 import Mini3DViewer from '@/components/Mini3DViewer.vue'
 
-const stats = ref({
-  layers: 0,
-  drillHoles: 0,
-  calculations: 0,
-  models: 0
-})
+const store = useGeothermalStore()
+
+const stats = computed(() => ({
+  layers: store.layers.length,
+  drillHoles: store.drillHoles.length,
+  calculations: store.calculationResults.length,
+  models: store.modelCreated ? 1 : 0
+}))
 
 const quickCalcForm = ref({
   volume: 1e8,
@@ -35,14 +38,9 @@ const handleQuickCalc = async () => {
   }
 }
 
-onMounted(() => {
-  // 加载统计数据
-  stats.value = {
-    layers: 12,
-    drillHoles: 28,
-    calculations: 8,
-    models: 5
-  }
+onMounted(async () => {
+  // 从 store 初始化数据（会自动同步）
+  await store.initializeData()
 })
 </script>
 
@@ -149,10 +147,25 @@ onMounted(() => {
             <h3>数据管理</h3>
             <p>管理钻孔数据、地质层信息和计算结果，支持 CSV/JSON 导出</p>
           </div>
+          
+          <!-- 同步状态提示 -->
+          <div class="sync-status">
+            <el-tag :type="store.modelCreated ? 'success' : 'info'" size="small">
+              {{ store.modelCreated ? '✓ 已同步建模数据' : '待建模' }}
+            </el-tag>
+            <span class="sync-hint">
+              首页 3D 预览与 <router-link to="/modeling">地质建模</router-link> 页面数据实时同步
+            </span>
+          </div>
         </div>
       </el-col>
       <el-col :span="12">
-        <Mini3DViewer />
+        <!-- 使用 store 数据同步显示 -->
+        <Mini3DViewer 
+          :layers="store.layers"
+          :drill-holes="store.drillHoles"
+          :extent="store.extent"
+        />
       </el-col>
     </el-row>
   </div>
@@ -222,5 +235,29 @@ onMounted(() => {
   font-size: 13px;
   line-height: 1.5;
   margin: 0;
+}
+
+.sync-status {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sync-hint {
+  font-size: 13px;
+  color: #606266;
+}
+
+.sync-hint a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.sync-hint a:hover {
+  text-decoration: underline;
 }
 </style>

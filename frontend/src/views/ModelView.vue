@@ -1,26 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { gempyApi, layersApi, drillHolesApi } from '@/api'
+import { ref, onMounted, computed } from 'vue'
+import { gempyApi } from '@/api'
+import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 import Geothermal3DViewer from '@/components/Geothermal3DViewer.vue'
 
+const store = useGeothermalStore()
+
 const loading = ref(false)
-const modelCreated = ref(false)
 const meshData = ref<any>(null)
 
-// 地质层和钻孔数据
-const layers = ref<any[]>([])
-const drillHoles = ref<any[]>([])
-
-const modelConfig = ref({
-  grid_resolution: 50,
-  extent_x_min: 0,
-  extent_x_max: 1000,
-  extent_y_min: 0,
-  extent_y_max: 1000,
-  extent_z_min: -2000,
-  extent_z_max: 0
-})
+// 使用 store 中的数据
+const layers = computed(() => store.layers)
+const drillHoles = computed(() => store.drillHoles)
+const modelConfig = computed(() => store.modelConfig)
+const modelCreated = computed(() => store.modelCreated)
 
 // 3D 查看器引用
 const viewerRef = ref<InstanceType<typeof Geothermal3DViewer> | null>(null)
@@ -31,30 +25,7 @@ const showDrillHoles = ref(true)
 
 // 加载现有数据
 const loadData = async () => {
-  try {
-    const [layersRes, drillHolesRes] = await Promise.all([
-      layersApi.getAll(),
-      drillHolesApi.getAll()
-    ])
-    layers.value = layersRes.data || []
-    drillHoles.value = drillHolesRes.data || []
-  } catch (error) {
-    console.error('加载数据失败:', error)
-    // 使用模拟数据
-    layers.value = [
-      { id: 1, name: '第四系覆盖层', layer_type: '沉积层', depth_top: 0, depth_bottom: -100, porosity: 0.25, color: '#90EE90' },
-      { id: 2, name: '砂岩储层', layer_type: '储层', depth_top: -100, depth_bottom: -500, porosity: 0.18, color: '#FFD700' },
-      { id: 3, name: '泥岩盖层', layer_type: '盖层', depth_top: -500, depth_bottom: -1200, porosity: 0.08, color: '#87CEEB' },
-      { id: 4, name: '花岗岩基底', layer_type: '基岩', depth_top: -1200, depth_bottom: -2000, porosity: 0.05, color: '#CD5C5C' }
-    ]
-    drillHoles.value = [
-      { id: 1, name: 'ZK-001', location_x: 200, location_y: 300, depth: 800, temperature: 120 },
-      { id: 2, name: 'ZK-002', location_x: 500, location_y: 600, depth: 1200, temperature: 160 },
-      { id: 3, name: 'ZK-003', location_x: 800, location_y: 400, depth: 600, temperature: 95 },
-      { id: 4, name: 'ZK-004', location_x: 350, location_y: 700, depth: 1000, temperature: 140 },
-      { id: 5, name: 'ZK-005', location_x: 650, location_y: 200, depth: 900, temperature: 135 }
-    ]
-  }
+  await store.initializeData()
 }
 
 const createModel = async () => {
@@ -62,15 +33,15 @@ const createModel = async () => {
   try {
     const requestData = {
       config_id: null,
-      layers: layers.value,
-      drill_holes: drillHoles.value,
-      grid_resolution: modelConfig.value.grid_resolution
+      layers: store.layers,
+      drill_holes: store.drillHoles,
+      grid_resolution: store.modelConfig.grid_resolution
     }
 
     const res = await gempyApi.createModel(requestData)
     
     if (res.data.success) {
-      modelCreated.value = true
+      store.setModelCreated(true)
       meshData.value = res.data.mesh_data
       ElMessage.success('地质模型创建成功！')
     } else {
@@ -79,7 +50,7 @@ const createModel = async () => {
   } catch (error: any) {
     console.error('建模失败:', error)
     // 模拟成功
-    modelCreated.value = true
+    store.setModelCreated(true)
     ElMessage.success('地质模型创建成功！')
   } finally {
     loading.value = false
@@ -106,6 +77,11 @@ const handleExportImage = () => {
   ElMessage.info('截图功能开发中...')
 }
 
+// 更新模型配置
+const handleConfigChange = (key: string, value: number) => {
+  store.updateModelConfig({ [key]: value })
+}
+
 onMounted(() => {
   loadData()
 })
@@ -122,43 +98,85 @@ onMounted(() => {
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="网格分辨率">
-              <el-slider v-model="modelConfig.grid_resolution" :min="20" :max="100" show-input />
+              <el-slider 
+                :model-value="modelConfig.grid_resolution" 
+                :min="20" 
+                :max="100" 
+                show-input
+                @update:model-value="v => handleConfigChange('grid_resolution', v)"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="X范围(最小)">
-              <el-input-number v-model="modelConfig.extent_x_min" :min="0" :max="5000" style="width: 100%" />
+              <el-input-number 
+                :model-value="modelConfig.extent_x_min" 
+                :min="0" 
+                :max="5000" 
+                style="width: 100%"
+                @update:model-value="v => handleConfigChange('extent_x_min', v)"
+              />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="X范围(最大)">
-              <el-input-number v-model="modelConfig.extent_x_max" :min="0" :max="5000" style="width: 100%" />
+              <el-input-number 
+                :model-value="modelConfig.extent_x_max" 
+                :min="0" 
+                :max="5000" 
+                style="width: 100%"
+                @update:model-value="v => handleConfigChange('extent_x_max', v)"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="Y范围(最小)">
-              <el-input-number v-model="modelConfig.extent_y_min" :min="0" :max="5000" style="width: 100%" />
+              <el-input-number 
+                :model-value="modelConfig.extent_y_min" 
+                :min="0" 
+                :max="5000" 
+                style="width: 100%"
+                @update:model-value="v => handleConfigChange('extent_y_min', v)"
+              />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Y范围(最大)">
-              <el-input-number v-model="modelConfig.extent_y_max" :min="0" :max="5000" style="width: 100%" />
+              <el-input-number 
+                :model-value="modelConfig.extent_y_max" 
+                :min="0" 
+                :max="5000" 
+                style="width: 100%"
+                @update:model-value="v => handleConfigChange('extent_y_max', v)"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="Z范围(最小)">
-              <el-input-number v-model="modelConfig.extent_z_min" :min="-3000" :max="500" style="width: 100%" />
+              <el-input-number 
+                :model-value="modelConfig.extent_z_min" 
+                :min="-3000" 
+                :max="500" 
+                style="width: 100%"
+                @update:model-value="v => handleConfigChange('extent_z_min', v)"
+              />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="Z范围(最大)">
-              <el-input-number v-model="modelConfig.extent_z_max" :min="-3000" :max="500" style="width: 100%" />
+              <el-input-number 
+                :model-value="modelConfig.extent_z_max" 
+                :min="-3000" 
+                :max="500" 
+                style="width: 100%"
+                @update:model-value="v => handleConfigChange('extent_z_max', v)"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -167,6 +185,9 @@ onMounted(() => {
             <el-icon><DataAnalysis /></el-icon>
             生成地质模型
           </el-button>
+          <el-tag v-if="modelCreated" type="success" style="margin-left: 16px;">
+            ✓ 模型已生成，数据已同步到首页
+          </el-tag>
         </el-form-item>
       </el-form>
     </div>
@@ -194,14 +215,7 @@ onMounted(() => {
           ref="viewerRef"
           :layers="layers"
           :drill-holes="drillHoles"
-          :extent="{
-            xMin: modelConfig.extent_x_min,
-            xMax: modelConfig.extent_x_max,
-            yMin: modelConfig.extent_y_min,
-            yMax: modelConfig.extent_y_max,
-            zMin: modelConfig.extent_z_min,
-            zMax: modelConfig.extent_z_max
-          }"
+          :extent="store.extent"
         />
       </div>
     </div>

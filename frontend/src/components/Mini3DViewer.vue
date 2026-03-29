@@ -1,7 +1,33 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+
+interface Props {
+  layers?: any[]
+  drillHoles?: any[]
+  extent?: {
+    xMin: number
+    xMax: number
+    yMin: number
+    yMax: number
+    zMin: number
+    zMax: number
+  }
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  layers: () => [],
+  drillHoles: () => [],
+  extent: () => ({
+    xMin: 0,
+    xMax: 1000,
+    yMin: 0,
+    yMax: 1000,
+    zMin: -2000,
+    zMax: 0
+  })
+})
 
 const containerRef = ref<HTMLDivElement | null>(null)
 
@@ -10,6 +36,17 @@ let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let controls: OrbitControls
 let animationId: number
+
+// 存储模型对象
+let layerMeshes: THREE.Mesh[] = []
+let drillHoleMeshes: THREE.Object3D[] = []
+let particleSystems: THREE.Points[] = []
+let axesGroup: THREE.Group
+
+// 默认地质层颜色
+const defaultLayerColors = [
+  0x4CAF50, 0xFFC107, 0xFF9800, 0xE91E63, 0x9C27B0
+]
 
 const initScene = () => {
   if (!containerRef.value) return
@@ -24,7 +61,7 @@ const initScene = () => {
   // 相机 - 使用等轴测视角
   camera = new THREE.PerspectiveCamera(50, width / height, 1, 5000)
   camera.position.set(800, 600, 800)
-  camera.lookAt(0, -300, 0)
+  camera.lookAt(500, -400, 500)
 
   // 渲染器
   renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -37,7 +74,7 @@ const initScene = () => {
   controls.enableDamping = true
   controls.autoRotate = true
   controls.autoRotateSpeed = 0.5
-  controls.target.set(0, -300, 0)
+  controls.target.set(500, -400, 500)
 
   // 光源
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
@@ -50,13 +87,9 @@ const initScene = () => {
   // 添加坐标轴
   addAxes()
 
-  // 创建地质层
+  // 创建模型
   createLayers()
-
-  // 创建钻孔
   createDrillHoles()
-
-  // 创建热流粒子
   createHeatParticles()
 
   animate()
@@ -64,7 +97,8 @@ const initScene = () => {
 
 // 添加坐标轴（与 Geothermal3DViewer 一致）
 const addAxes = () => {
-  const axisLength = 300
+  axesGroup = new THREE.Group()
+  const axisLength = 250
   
   // X 轴 - 红色 (东向)
   const xMat = new THREE.LineBasicMaterial({ color: 0xff4444 })
@@ -72,7 +106,16 @@ const addAxes = () => {
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(axisLength, 0, 0)
   ])
-  scene.add(new THREE.Line(xGeom, xMat))
+  axesGroup.add(new THREE.Line(xGeom, xMat))
+
+  // X轴箭头
+  const xArrow = new THREE.Mesh(
+    new THREE.ConeGeometry(8, 30, 8),
+    new THREE.MeshBasicMaterial({ color: 0xff4444 })
+  )
+  xArrow.position.set(axisLength, 0, 0)
+  xArrow.rotation.z = -Math.PI / 2
+  axesGroup.add(xArrow)
 
   // Y 轴 - 蓝色 (深度，向下为正)
   const yMat = new THREE.LineBasicMaterial({ color: 0x4488ff })
@@ -80,7 +123,16 @@ const addAxes = () => {
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(0, -axisLength, 0)
   ])
-  scene.add(new THREE.Line(yGeom, yMat))
+  axesGroup.add(new THREE.Line(yGeom, yMat))
+
+  // Y轴箭头
+  const yArrow = new THREE.Mesh(
+    new THREE.ConeGeometry(8, 30, 8),
+    new THREE.MeshBasicMaterial({ color: 0x4488ff })
+  )
+  yArrow.position.set(0, -axisLength, 0)
+  yArrow.rotation.x = Math.PI
+  axesGroup.add(yArrow)
 
   // Z 轴 - 绿色 (北向)
   const zMat = new THREE.LineBasicMaterial({ color: 0x44ff44 })
@@ -88,75 +140,176 @@ const addAxes = () => {
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(0, 0, axisLength)
   ])
-  scene.add(new THREE.Line(zGeom, zMat))
+  axesGroup.add(new THREE.Line(zGeom, zMat))
+
+  // Z轴箭头
+  const zArrow = new THREE.Mesh(
+    new THREE.ConeGeometry(8, 30, 8),
+    new THREE.MeshBasicMaterial({ color: 0x44ff44 })
+  )
+  zArrow.position.set(0, 0, axisLength)
+  zArrow.rotation.x = Math.PI / 2
+  axesGroup.add(zArrow)
+
+  // 添加标签
+  addTextSprite('X(东)', axisLength + 40, 0, 0, '#ff4444')
+  addTextSprite('Y(深)', 0, -axisLength - 40, 0, '#4488ff')
+  addTextSprite('Z(北)', 0, 0, axisLength + 40, '#44ff44')
+
+  scene.add(axesGroup)
+}
+
+// 添加文字精灵
+const addTextSprite = (text: string, x: number, y: number, z: number, color: string) => {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  canvas.width = 96
+  canvas.height = 48
+
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  ctx.font = 'bold 18px Arial'
+  ctx.fillStyle = color
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  const spriteMat = new THREE.SpriteMaterial({ map: texture })
+  const sprite = new THREE.Sprite(spriteMat)
+  sprite.position.set(x, y, z)
+  sprite.scale.set(80, 40, 1)
+  axesGroup.add(sprite)
 }
 
 const createLayers = () => {
-  const colors = [0x4CAF50, 0xFFC107, 0xFF9800, 0xE91E63]
-  const depths = [0, 100, 500, 1200, 2000]  // 深度（正数向下）
-  
-  for (let i = 0; i < 4; i++) {
-    const thickness = depths[i + 1] - depths[i]
-    const geometry = new THREE.BoxGeometry(600, thickness, 600)  // 宽(X), 高(Y), 深(Z)
+  layerMeshes.forEach(m => scene.remove(m))
+  layerMeshes = []
+
+  const { xMin, xMax, yMin: zMin, yMax: zMax, zMin: yMin } = props.extent
+
+  const layersToUse = props.layers.length > 0 ? props.layers : [
+    { name: '地表', depth_top: 0, depth_bottom: 100, color: '#4CAF50' },
+    { name: '沉积层', depth_top: 100, depth_bottom: 500, color: '#FFC107' },
+    { name: '储层', depth_top: 500, depth_bottom: 1200, color: '#FF9800' },
+    { name: '基底', depth_top: 1200, depth_bottom: 2000, color: '#E91E63' }
+  ]
+
+  layersToUse.forEach((layer: any, index: number) => {
+    // 深度值（正数向下）
+    let topDepth = layer.depth_top ?? layer.depthTop ?? index * 500
+    let bottomDepth = layer.depth_bottom ?? layer.depthBottom ?? (index + 1) * 500
+    
+    // 确保是正数
+    topDepth = Math.abs(topDepth)
+    bottomDepth = Math.abs(bottomDepth)
+    
+    const layerHeight = bottomDepth - topDepth
+
+    // 创建盒子几何体
+    const geometry = new THREE.BoxGeometry(
+      xMax - xMin,        // 宽度 (X方向)
+      layerHeight,        // 高度 (Y方向，即深度)
+      zMax - zMin         // 深度 (Z方向)
+    )
+
+    // 解析颜色
+    let color: number
+    if (layer.color && typeof layer.color === 'string') {
+      color = parseInt(layer.color.replace('#', ''), 16)
+      if (isNaN(color)) color = defaultLayerColors[index % defaultLayerColors.length]
+    } else {
+      color = defaultLayerColors[index % defaultLayerColors.length]
+    }
+
     const material = new THREE.MeshPhongMaterial({
-      color: colors[i],
+      color,
       transparent: true,
       opacity: 0.65,
       side: THREE.DoubleSide
     })
-    
+
     const mesh = new THREE.Mesh(geometry, material)
-    // Y轴向下表示深度
-    mesh.position.set(0, -(depths[i] + depths[i + 1]) / 2, 0)
     
+    // 位置：Y轴向下表示深度
+    mesh.position.set(
+      (xMin + xMax) / 2,
+      -(topDepth + bottomDepth) / 2,  // Y轴负方向 = 深度
+      (zMin + zMax) / 2
+    )
+
     // 边框
     const edges = new THREE.EdgesGeometry(geometry)
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.3, transparent: true })
-    const wireframe = new THREE.LineSegments(edges, lineMaterial)
+    const wireframe = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.4, transparent: true })
+    )
     mesh.add(wireframe)
-    
+
     scene.add(mesh)
-  }
+    layerMeshes.push(mesh)
+  })
 }
 
 const createDrillHoles = () => {
-  const positions = [
-    { x: 150, z: 150, depth: 800, temp: 120 },
-    { x: -100, z: 200, depth: 1200, temp: 160 },
-    { x: 200, z: -150, depth: 600, temp: 95 },
-    { x: -200, z: -100, depth: 1000, temp: 140 }
+  drillHoleMeshes.forEach(m => scene.remove(m))
+  drillHoleMeshes = []
+
+  const holesToUse = props.drillHoles.length > 0 ? props.drillHoles : [
+    { name: 'ZK-001', location_x: 150, location_y: 150, depth: 800, temperature: 120 },
+    { name: 'ZK-002', location_x: -100, location_y: 200, depth: 1200, temperature: 160 },
+    { name: 'ZK-003', location_x: 200, location_y: -150, depth: 600, temperature: 95 },
+    { name: 'ZK-004', location_x: -200, location_y: -100, depth: 1000, temperature: 140 }
   ]
 
-  positions.forEach(pos => {
-    // 钻孔主体
-    const geometry = new THREE.CylinderGeometry(8, 8, pos.depth, 12)
-    const color = pos.temp > 150 ? 0xF44336 : pos.temp > 100 ? 0xFF9800 : 0x4CAF50
+  holesToUse.forEach((hole: any) => {
+    const x = hole.location_x ?? 0
+    const z = hole.location_y ?? 0  // Y坐标映射到Z轴
+    const depth = hole.depth ?? 500
+
+    // 钻孔颜色（根据温度）
+    const temp = hole.temperature ?? 100
+    const color = temp < 100 ? 0x4CAF50 : temp < 150 ? 0xFFC107 : temp < 200 ? 0xFF9800 : 0xF44336
+
+    // 钻孔圆柱体
+    const geometry = new THREE.CylinderGeometry(8, 8, depth, 12)
     const material = new THREE.MeshPhongMaterial({ color, transparent: true, opacity: 0.8 })
     const cylinder = new THREE.Mesh(geometry, material)
+    
     // 位置：Y轴负方向表示深度
-    cylinder.position.set(pos.x, -pos.depth / 2, pos.z)
+    cylinder.position.set(x, -depth / 2, z)
     scene.add(cylinder)
+    drillHoleMeshes.push(cylinder)
 
-    // 顶部标记
-    const markerGeometry = new THREE.SphereGeometry(12, 12, 12)
-    const markerMaterial = new THREE.MeshPhongMaterial({ color, shininess: 100 })
-    const marker = new THREE.Mesh(markerGeometry, markerMaterial)
-    marker.position.set(pos.x, 0, pos.z)
+    // 顶部标记球
+    const marker = new THREE.Mesh(
+      new THREE.SphereGeometry(12, 12, 12),
+      new THREE.MeshPhongMaterial({ color, shininess: 100 })
+    )
+    marker.position.set(x, 0, z)
     scene.add(marker)
+    drillHoleMeshes.push(marker)
   })
 }
 
 const createHeatParticles = () => {
-  const particleCount = 200
-  const positions = new Float32Array(particleCount * 3)
-  const colors = new Float32Array(particleCount * 3)
+  particleSystems.forEach(p => scene.remove(p))
+  particleSystems = []
 
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * 500
-    positions[i * 3 + 1] = -Math.random() * 1500 - 200  // Y轴负方向（深度）
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 500
+  const { xMin, xMax, yMin: zMin, yMax: zMax, zMin: yMin } = props.extent
+  
+  const count = 150
+  const positions = new Float32Array(count * 3)
+  const colors = new Float32Array(count * 3)
 
-    // 橙红色渐变
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = xMin + Math.random() * (xMax - xMin)
+    positions[i * 3 + 1] = yMin + Math.random() * 200  // Y轴（深度方向）
+    positions[i * 3 + 2] = zMin + Math.random() * (zMax - zMin)
+
     colors[i * 3] = 1.0
     colors[i * 3 + 1] = 0.3 + Math.random() * 0.4
     colors[i * 3 + 2] = 0.1
@@ -176,6 +329,7 @@ const createHeatParticles = () => {
   const particles = new THREE.Points(geometry, material)
   particles.name = 'particles'
   scene.add(particles)
+  particleSystems.push(particles)
 }
 
 const animate = () => {
@@ -188,7 +342,7 @@ const animate = () => {
     for (let i = 0; i < positions.length; i += 3) {
       positions[i + 1] += 2  // Y轴向上
       if (positions[i + 1] > 50) {
-        positions[i + 1] = -1500
+        positions[i + 1] = props.extent.zMin
       }
     }
     particles.geometry.attributes.position.needsUpdate = true
@@ -208,6 +362,16 @@ const handleResize = () => {
   camera.updateProjectionMatrix()
   renderer.setSize(width, height)
 }
+
+// 监听数据变化，更新模型
+watch(() => props.extent, () => {
+  createLayers()
+  createDrillHoles()
+  createHeatParticles()
+}, { deep: true })
+
+watch(() => props.layers, () => createLayers(), { deep: true })
+watch(() => props.drillHoles, () => createDrillHoles(), { deep: true })
 
 onMounted(() => {
   initScene()
