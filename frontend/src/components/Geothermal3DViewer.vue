@@ -14,6 +14,7 @@ interface Props {
     zMin: number
     zMax: number
   }
+  gridResolution?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -26,11 +27,60 @@ const props = withDefaults(defineProps<Props>(), {
     yMax: 1000,
     zMin: -2000,
     zMax: 0
-  })
+  }),
+  gridResolution: 10
 })
 
 const containerRef = ref<HTMLDivElement | null>(null)
 const loading = ref(true)
+
+// 网格控制
+const showGrid = ref(false)
+const showGridInfo = ref(true)
+
+// 计算网格信息
+const gridInfo = computed(() => {
+  const { xMin, xMax, yMin, yMax, zMin, zMax } = props.extent
+  const res = props.gridResolution
+  
+  // 计算每个方向的网格数量
+  const nx = res
+  const ny = res
+  const nz = Math.max(1, Math.round(res * Math.abs(zMin - zMax) / Math.max(xMax - xMin, yMax - yMin)))
+  
+  // 计算每个网格单元的尺寸
+  const dx = (xMax - xMin) / nx
+  const dy = (yMax - yMin) / ny
+  const dz = (zMin - zMax) / nz  // zMin是负数，zMax是0或正数
+  
+  // 每个网格单元的体积（立方米）
+  const cellVolume = dx * dy * Math.abs(dz)
+  
+  // 总网格数量
+  const totalCells = nx * ny * nz
+  
+  // 总体积
+  const totalVolume = (xMax - xMin) * (yMax - yMin) * Math.abs(zMin - zMax)
+  
+  return {
+    nx, ny, nz,
+    dx, dy, dz,
+    cellVolume,
+    totalCells,
+    totalVolume,
+    xMin, xMax,
+    yMin, yMax,
+    zMin, zMax
+  }
+})
+
+// 格式化数字
+const formatNumber = (num: number, decimals: number = 2): string => {
+  if (num >= 1e9) return (num / 1e9).toFixed(decimals) + ' × 10⁹'
+  if (num >= 1e6) return (num / 1e6).toFixed(decimals) + ' × 10⁶'
+  if (num >= 1e3) return (num / 1e3).toFixed(decimals) + ' × 10³'
+  return num.toFixed(decimals)
+}
 
 // 计算地质层图例
 const computedLayerLegend = computed(() => {
@@ -60,6 +110,7 @@ let layerMeshes: THREE.Mesh[] = []
 let drillHoleMeshes: THREE.Object3D[] = []
 let particleSystems: THREE.Points[] = []
 let axesGroup: THREE.Group
+let gridGroup: THREE.Group  // 三维网格组
 
 // 默认地质层颜色
 const defaultLayerColors = [
@@ -209,6 +260,92 @@ const addGrid = () => {
   const grid = new THREE.GridHelper(size, 10, 0x666666, 0x444444)
   grid.position.set((xMax) / 2, 0, (zMax) / 2)
   scene.add(grid)
+}
+
+// 创建三维网格
+const create3DGrid = () => {
+  // 移除旧网格
+  if (gridGroup) {
+    scene.remove(gridGroup)
+    gridGroup.traverse((child) => {
+      if (child instanceof THREE.Line) {
+        child.geometry.dispose()
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => m.dispose())
+        } else {
+          child.material.dispose()
+        }
+      }
+    })
+  }
+  
+  if (!showGrid.value) return
+  
+  gridGroup = new THREE.Group()
+  
+  const { nx, ny, nz, dx, dy, dz } = gridInfo.value
+  
+  // 网格线材质
+  const lineMaterial = new THREE.LineBasicMaterial({ 
+    color: 0x409eff, 
+    transparent: true, 
+    opacity: 0.4 
+  })
+  
+  // X 方向网格线（沿Y-Z平面）
+  for (let i = 0; i <= nx; i++) {
+    for (let k = 0; k <= nz; k++) {
+      const points = [
+        new THREE.Vector3(i * dx, 0, k * dz),
+        new THREE.Vector3(i * dx, ny * dy, k * dz)
+      ]
+      const geometry = new THREE.BufferGeometry().setFromPoints(points)
+      const line = new THREE.Line(geometry, lineMaterial)
+      gridGroup.add(line)
+    }
+  }
+  
+  // Y 方向网格线（沿X-Z平面）
+  for (let j = 0; j <= ny; j++) {
+    for (let k = 0; k <= nz; k++) {
+      const points = [
+        new THREE.Vector3(0, j * dy, k * dz),
+        new THREE.Vector3(nx * dx, j * dy, k * dz)
+      ]
+      const geometry = new THREE.BufferGeometry().setFromPoints(points)
+      const line = new THREE.Line(geometry, lineMaterial)
+      gridGroup.add(line)
+    }
+  }
+  
+  // Z 方向网格线（沿X-Y平面）
+  for (let i = 0; i <= nx; i++) {
+    for (let j = 0; j <= ny; j++) {
+      const points = [
+        new THREE.Vector3(i * dx, j * dy, 0),
+        new THREE.Vector3(i * dx, j * dy, nz * dz)
+      ]
+      const geometry = new THREE.BufferGeometry().setFromPoints(points)
+      const line = new THREE.Line(geometry, lineMaterial)
+      gridGroup.add(line)
+    }
+  }
+  
+  // 外边界框
+  const boxGeometry = new THREE.BoxGeometry(nx * dx, ny * dy, nz * Math.abs(dz))
+  const edges = new THREE.EdgesGeometry(boxGeometry)
+  const edgeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 })
+  const edgeLine = new THREE.LineSegments(edges, edgeMaterial)
+  edgeLine.position.set(nx * dx / 2, ny * dy / 2, nz * dz / 2)
+  gridGroup.add(edgeLine)
+  
+  scene.add(gridGroup)
+}
+
+// 切换三维网格显示
+const toggleGrid = (visible: boolean) => {
+  showGrid.value = visible
+  create3DGrid()
 }
 
 // 创建地质层
@@ -480,7 +617,7 @@ onUnmounted(() => {
   controls?.dispose()
 })
 
-defineExpose({ resetView, toggleLayers, toggleDrillHoles })
+defineExpose({ resetView, toggleLayers, toggleDrillHoles, toggleGrid })
 </script>
 
 <template>
@@ -499,6 +636,33 @@ defineExpose({ resetView, toggleLayers, toggleDrillHoles })
         <el-button size="small" @click="resetView">
           <el-icon><Refresh /></el-icon> 重置视图
         </el-button>
+      </div>
+      
+      <div class="control-group">
+        <h4>三维网格</h4>
+        <el-switch v-model="showGrid" active-text="显示" inactive-text="隐藏" @change="toggleGrid" />
+        <div v-if="showGrid && showGridInfo" class="grid-info">
+          <div class="info-row">
+            <span class="info-label">分辨率:</span>
+            <span class="info-value">{{ gridInfo.nx }}×{{ gridInfo.ny }}×{{ gridInfo.nz }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">单元尺寸:</span>
+            <span class="info-value small">{{ gridInfo.dx.toFixed(0) }}×{{ gridInfo.dy.toFixed(0) }}×{{ Math.abs(gridInfo.dz).toFixed(0) }}m</span>
+          </div>
+          <div class="info-row highlight">
+            <span class="info-label">每格体积:</span>
+            <span class="info-value">{{ formatNumber(gridInfo.cellVolume) }} m³</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">总格数:</span>
+            <span class="info-value">{{ formatNumber(gridInfo.totalCells, 0) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">总体积:</span>
+            <span class="info-value">{{ formatNumber(gridInfo.totalVolume) }} m³</span>
+          </div>
+        </div>
       </div>
       
       <div class="control-group">
@@ -582,6 +746,47 @@ defineExpose({ resetView, toggleLayers, toggleDrillHoles })
   padding-bottom: 4px;
 }
 .control-group p { margin: 4px 0; font-size: 12px; color: #ccc; }
+
+.grid-info {
+  margin-top: 10px;
+  padding: 8px;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(64, 158, 255, 0.3);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+.info-row.highlight {
+  background: rgba(64, 158, 255, 0.2);
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin: 6px 0;
+}
+
+.info-row.highlight .info-value {
+  color: #409eff;
+  font-weight: 600;
+}
+
+.info-label {
+  color: #909399;
+}
+
+.info-value {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.info-value.small {
+  font-size: 11px;
+}
 
 .axis-item, .legend-item {
   display: flex;

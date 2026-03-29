@@ -228,6 +228,7 @@ onMounted(() => {
               :layers="layers"
               :drill-holes="drillHoles"
               :extent="store.extent"
+              :grid-resolution="modelConfig.grid_resolution"
             />
           </div>
         </el-tab-pane>
