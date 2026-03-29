@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 
@@ -11,6 +12,11 @@ const goToAddDrillHole = () => {
 // 跳转到资源计算页面
 const goToQuickCalc = () => {
   router.push('/calculation')
+}
+
+// 打开使用指南
+const openGuide = () => {
+  router.push('/settings')
 }
 </script>
 
@@ -44,7 +50,7 @@ const goToQuickCalc = () => {
 
     <div class="sidebar-section">
       <h4 class="section-title">帮助文档</h4>
-      <el-link type="primary" :underline="false">
+      <el-link type="primary" :underline="false" class="guide-link" @click="openGuide">
         <el-icon><Document /></el-icon>
         使用指南
       </el-link>
@@ -95,5 +101,14 @@ const goToQuickCalc = () => {
 .status-label {
   color: #606266;
   font-size: 14px;
+}
+
+.guide-link {
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.guide-link:hover {
+  color: #409eff;
 }
 </style>
