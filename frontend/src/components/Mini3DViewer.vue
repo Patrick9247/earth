@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
@@ -189,7 +189,7 @@ const createLayers = () => {
   layerMeshes.forEach(m => scene.remove(m))
   layerMeshes = []
 
-  const { xMin, xMax, yMin: zMin, yMax: zMax, zMin: yMin } = props.extent
+  const { xMin, xMax, yMin: zMin, yMax: zMax } = props.extent
 
   const layersToUse = props.layers.length > 0 ? props.layers : [
     { name: '地表', depth_top: 0, depth_bottom: 100, color: '#4CAF50' },
