@@ -4,6 +4,7 @@ import { gempyApi } from '@/api'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 import Geothermal3DViewer from '@/components/Geothermal3DViewer.vue'
+import Geothermal2DViewer from '@/components/Geothermal2DViewer.vue'
 
 const store = useGeothermalStore()
 
@@ -16,8 +17,12 @@ const drillHoles = computed(() => store.drillHoles)
 const modelConfig = computed(() => store.modelConfig)
 const modelCreated = computed(() => store.modelCreated)
 
+// 当前视图标签
+const activeTab = ref('3d')
+
 // 3D 查看器引用
-const viewerRef = ref<InstanceType<typeof Geothermal3DViewer> | null>(null)
+const viewer3DRef = ref<InstanceType<typeof Geothermal3DViewer> | null>(null)
+const viewer2DRef = ref<InstanceType<typeof Geothermal2DViewer> | null>(null)
 
 // 显示控制
 const showLayers = ref(true)
@@ -59,22 +64,26 @@ const createModel = async () => {
 
 // 重置视图
 const handleResetView = () => {
-  viewerRef.value?.resetView()
+  viewer3DRef.value?.resetView()
 }
 
 // 切换地质层显示
 const handleToggleLayers = (val: boolean) => {
-  viewerRef.value?.toggleLayers(val)
+  viewer3DRef.value?.toggleLayers(val)
 }
 
 // 切换钻孔显示
 const handleToggleDrillHoles = (val: boolean) => {
-  viewerRef.value?.toggleDrillHoles(val)
+  viewer3DRef.value?.toggleDrillHoles(val)
 }
 
 // 导出截图
 const handleExportImage = () => {
-  ElMessage.info('截图功能开发中...')
+  if (activeTab.value === '3d') {
+    ElMessage.info('3D截图功能开发中...')
+  } else {
+    viewer2DRef.value?.exportImage()
+  }
 }
 
 // 更新模型配置
@@ -192,32 +201,46 @@ onMounted(() => {
       </el-form>
     </div>
 
-    <!-- 3D 模型可视化 -->
+    <!-- 模型可视化（3D/2D 标签页） -->
     <div class="card">
       <div class="viewer-header">
-        <h3 class="card-title">📊 三维模型可视化</h3>
-        <div class="viewer-controls">
+        <h3 class="card-title">📊 地质模型可视化</h3>
+        <div class="viewer-controls" v-if="activeTab === '3d'">
           <el-switch v-model="showLayers" active-text="地质层" @change="handleToggleLayers" />
           <el-switch v-model="showDrillHoles" active-text="钻孔" @change="handleToggleDrillHoles" />
           <el-button size="small" @click="handleResetView">
             <el-icon><Refresh /></el-icon>
             重置视图
           </el-button>
-          <el-button size="small" @click="handleExportImage">
-            <el-icon><Download /></el-icon>
-            截图
-          </el-button>
         </div>
+        <el-button v-if="activeTab === '2d'" size="small" type="primary" @click="handleExportImage">
+          <el-icon><Download /></el-icon>
+          导出图片
+        </el-button>
       </div>
       
-      <div class="model-viewer">
-        <Geothermal3DViewer
-          ref="viewerRef"
-          :layers="layers"
-          :drill-holes="drillHoles"
-          :extent="store.extent"
-        />
-      </div>
+      <!-- 标签页切换 -->
+      <el-tabs v-model="activeTab" class="viewer-tabs">
+        <el-tab-pane label="3D 视图" name="3d">
+          <div class="model-viewer">
+            <Geothermal3DViewer
+              ref="viewer3DRef"
+              :layers="layers"
+              :drill-holes="drillHoles"
+              :extent="store.extent"
+            />
+          </div>
+        </el-tab-pane>
+        
+        <el-tab-pane label="2D 剖面" name="2d">
+          <Geothermal2DViewer
+            ref="viewer2DRef"
+            :layers="layers"
+            :drill-holes="drillHoles"
+            :extent="store.extent"
+          />
+        </el-tab-pane>
+      </el-tabs>
     </div>
 
     <!-- 地质层图例 -->
@@ -262,7 +285,7 @@ onMounted(() => {
         <el-step title="数据准备" description="配置地质层和钻孔数据" />
         <el-step title="参数设置" description="设置网格分辨率和建模范围" />
         <el-step title="模型生成" description="GemPy 计算地质界面" />
-        <el-step title="3D可视化" description="Three.js 渲染三维模型" />
+        <el-step title="可视化分析" description="3D/2D 多视角查看" />
       </el-steps>
     </div>
   </div>
@@ -288,6 +311,14 @@ onMounted(() => {
   display: flex;
   gap: 16px;
   align-items: center;
+}
+
+.viewer-tabs {
+  margin-top: -10px;
+}
+
+.viewer-tabs :deep(.el-tabs__header) {
+  margin-bottom: 16px;
 }
 
 .model-viewer {
