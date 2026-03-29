@@ -301,6 +301,11 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    
+    <!-- 图例说明 -->
+    <div class="legend-section">
+      <img src="/temperature-legend.png" alt="温度分类图例" class="legend-image" />
+    </div>
   </div>
 </template>
 
@@ -444,5 +449,19 @@ onMounted(() => {
   justify-content: space-between;
   font-size: 12px;
   color: #909399;
+}
+
+.legend-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #ebeef5;
+  text-align: center;
+}
+
+.legend-image {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
