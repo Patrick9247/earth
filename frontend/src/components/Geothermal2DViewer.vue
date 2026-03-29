@@ -71,7 +71,7 @@ const draw = () => {
   const width = canvas.width - padding.left - padding.right
   const height = canvas.height - padding.top - padding.bottom
   
-  const { xMin, xMax, yMin, yMax, zMin, zMax } = props.extent
+  const { xMin, xMax, yMin, yMax, zMin } = props.extent
   const maxDepth = Math.abs(zMin)
   
   // 坐标转换函数
