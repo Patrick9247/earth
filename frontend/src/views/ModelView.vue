@@ -103,7 +103,7 @@ onMounted(() => {
                 :min="20" 
                 :max="100" 
                 show-input
-                @update:model-value="v => handleConfigChange('grid_resolution', v)"
+                @update:model-value="(v: number) => handleConfigChange('grid_resolution', v)"
               />
             </el-form-item>
           </el-col>
@@ -114,7 +114,7 @@ onMounted(() => {
                 :min="0" 
                 :max="5000" 
                 style="width: 100%"
-                @update:model-value="v => handleConfigChange('extent_x_min', v)"
+                @update:model-value="(v: number) => handleConfigChange('extent_x_min', v)"
               />
             </el-form-item>
           </el-col>
@@ -127,7 +127,7 @@ onMounted(() => {
                 :min="0" 
                 :max="5000" 
                 style="width: 100%"
-                @update:model-value="v => handleConfigChange('extent_x_max', v)"
+                @update:model-value="(v: number) => handleConfigChange('extent_x_max', v)"
               />
             </el-form-item>
           </el-col>
@@ -138,7 +138,7 @@ onMounted(() => {
                 :min="0" 
                 :max="5000" 
                 style="width: 100%"
-                @update:model-value="v => handleConfigChange('extent_y_min', v)"
+                @update:model-value="(v: number) => handleConfigChange('extent_y_min', v)"
               />
             </el-form-item>
           </el-col>
@@ -151,7 +151,7 @@ onMounted(() => {
                 :min="0" 
                 :max="5000" 
                 style="width: 100%"
-                @update:model-value="v => handleConfigChange('extent_y_max', v)"
+                @update:model-value="(v: number) => handleConfigChange('extent_y_max', v)"
               />
             </el-form-item>
           </el-col>
@@ -162,7 +162,7 @@ onMounted(() => {
                 :min="-3000" 
                 :max="500" 
                 style="width: 100%"
-                @update:model-value="v => handleConfigChange('extent_z_min', v)"
+                @update:model-value="(v: number) => handleConfigChange('extent_z_min', v)"
               />
             </el-form-item>
           </el-col>
@@ -175,7 +175,7 @@ onMounted(() => {
                 :min="-3000" 
                 :max="500" 
                 style="width: 100%"
-                @update:model-value="v => handleConfigChange('extent_z_max', v)"
+                @update:model-value="(v: number) => handleConfigChange('extent_z_max', v)"
               />
             </el-form-item>
           </el-col>
