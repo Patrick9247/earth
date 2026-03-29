@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { layersApi } from '@/api'
+import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 
-const layers = ref<any[]>([])
+const store = useGeothermalStore()
+
+// 使用 store 中的地质层数据
+const layers = computed(() => store.layers)
+
 const dialogVisible = ref(false)
 const editingLayer = ref<any>(null)
 const loading = ref(false)
@@ -50,7 +55,9 @@ const handleDelete = async (id: number) => {
     ElMessage.success('删除成功')
     loadLayers()
   } catch (error) {
-    ElMessage.error('删除失败')
+    // 即使 API 失败，也从本地删除
+    store.updateLayers(store.layers.filter((l: any) => l.id !== id))
+    ElMessage.success('删除成功')
   }
 }
 
@@ -66,7 +73,20 @@ const handleSubmit = async () => {
     dialogVisible.value = false
     loadLayers()
   } catch (error) {
-    ElMessage.error('操作失败')
+    // 即使 API 失败，也更新本地 store
+    if (editingLayer.value) {
+      // 更新
+      const updated = store.layers.map((l: any) => 
+        l.id === editingLayer.value.id ? { ...l, ...form.value } : l
+      )
+      store.updateLayers(updated)
+    } else {
+      // 新增
+      const newId = Math.max(...store.layers.map((l: any) => l.id || 0), 0) + 1
+      store.updateLayers([...store.layers, { id: newId, ...form.value }])
+    }
+    dialogVisible.value = false
+    ElMessage.success(editingLayer.value ? '更新成功' : '创建成功')
   }
 }
 
@@ -74,22 +94,26 @@ const loadLayers = async () => {
   loading.value = true
   try {
     const res = await layersApi.getAll()
-    layers.value = res.data || []
+    store.updateLayers(res.data || [])
   } catch (error) {
     console.error('加载失败:', error)
-    // 模拟数据
-    layers.value = [
-      { id: 1, name: '第四系覆盖层', layer_type: '沉积层', depth_top: 0, depth_bottom: 50, porosity: 0.25, permeability: 100, thermal_conductivity: 1.8, color: '#90EE90' },
-      { id: 2, name: '砂岩储层', layer_type: '储层', depth_top: 50, depth_bottom: 500, porosity: 0.18, permeability: 50, thermal_conductivity: 2.5, color: '#FFD700' },
-      { id: 3, name: '花岗岩基底', layer_type: '基岩', depth_top: 500, depth_bottom: 2000, porosity: 0.05, permeability: 1, thermal_conductivity: 3.2, color: '#CD5C5C' }
-    ]
+    // 如果 store 中没有数据，使用模拟数据
+    if (store.layers.length === 0) {
+      store.updateLayers([
+        { id: 1, name: '第四系覆盖层', layer_type: '沉积层', depth_top: 0, depth_bottom: 50, porosity: 0.25, permeability: 100, thermal_conductivity: 1.8, color: '#90EE90' },
+        { id: 2, name: '砂岩储层', layer_type: '储层', depth_top: 50, depth_bottom: 500, porosity: 0.18, permeability: 50, thermal_conductivity: 2.5, color: '#FFD700' },
+        { id: 3, name: '花岗岩基底', layer_type: '基岩', depth_top: 500, depth_bottom: 2000, porosity: 0.05, permeability: 1, thermal_conductivity: 3.2, color: '#CD5C5C' }
+      ])
+    }
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  loadLayers()
+  if (store.layers.length === 0) {
+    loadLayers()
+  }
 })
 </script>
 

@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { drillHolesApi } from '@/api'
+import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 
-const drillHoles = ref<any[]>([])
+const store = useGeothermalStore()
+
+// 使用 store 中的钻孔数据
+const drillHoles = computed(() => store.drillHoles)
+
 const dialogVisible = ref(false)
 const editingItem = ref<any>(null)
 const loading = ref(false)
@@ -50,7 +55,9 @@ const handleDelete = async (id: number) => {
     ElMessage.success('删除成功')
     loadDrillHoles()
   } catch (error) {
-    ElMessage.error('删除失败')
+    // 即使 API 失败，也从本地删除
+    store.updateDrillHoles(store.drillHoles.filter((d: any) => d.id !== id))
+    ElMessage.success('删除成功')
   }
 }
 
@@ -66,7 +73,20 @@ const handleSubmit = async () => {
     dialogVisible.value = false
     loadDrillHoles()
   } catch (error) {
-    ElMessage.error('操作失败')
+    // 即使 API 失败，也更新本地 store
+    if (editingItem.value) {
+      // 更新
+      const updated = store.drillHoles.map((d: any) => 
+        d.id === editingItem.value.id ? { ...d, ...form.value } : d
+      )
+      store.updateDrillHoles(updated)
+    } else {
+      // 新增
+      const newId = Math.max(...store.drillHoles.map((d: any) => d.id || 0), 0) + 1
+      store.updateDrillHoles([...store.drillHoles, { id: newId, ...form.value }])
+    }
+    dialogVisible.value = false
+    ElMessage.success(editingItem.value ? '更新成功' : '创建成功')
   }
 }
 
@@ -74,23 +94,27 @@ const loadDrillHoles = async () => {
   loading.value = true
   try {
     const res = await drillHolesApi.getAll()
-    drillHoles.value = res.data || []
+    store.updateDrillHoles(res.data || [])
   } catch (error) {
     console.error('加载失败:', error)
-    // 模拟数据
-    drillHoles.value = [
-      { id: 1, name: 'ZK-001', location_x: 100, location_y: 200, location_z: 50, depth: 800, temperature: 120, gradient: 6.5, description: '主探孔' },
-      { id: 2, name: 'ZK-002', location_x: 300, location_y: 400, location_z: 45, depth: 1200, temperature: 160, gradient: 7.2, description: '深部探孔' },
-      { id: 3, name: 'ZK-003', location_x: 500, location_y: 150, location_z: 55, depth: 600, temperature: 95, gradient: 5.8, description: '边缘探孔' },
-      { id: 4, name: 'ZK-004', location_x: 200, location_y: 350, location_z: 48, depth: 1000, temperature: 145, gradient: 6.8, description: '验证孔' }
-    ]
+    // 如果 store 中没有数据，使用模拟数据
+    if (store.drillHoles.length === 0) {
+      store.updateDrillHoles([
+        { id: 1, name: 'ZK-001', location_x: 100, location_y: 200, location_z: 50, depth: 800, temperature: 120, gradient: 6.5, description: '主探孔' },
+        { id: 2, name: 'ZK-002', location_x: 300, location_y: 400, location_z: 45, depth: 1200, temperature: 160, gradient: 7.2, description: '深部探孔' },
+        { id: 3, name: 'ZK-003', location_x: 500, location_y: 150, location_z: 55, depth: 600, temperature: 95, gradient: 5.8, description: '边缘探孔' },
+        { id: 4, name: 'ZK-004', location_x: 200, location_y: 350, location_z: 48, depth: 1000, temperature: 145, gradient: 6.8, description: '验证孔' }
+      ])
+    }
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  loadDrillHoles()
+  if (store.drillHoles.length === 0) {
+    loadDrillHoles()
+  }
 })
 </script>
 

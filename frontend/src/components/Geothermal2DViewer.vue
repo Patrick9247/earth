@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 
 interface Props {
   layers?: any[]
@@ -329,7 +329,10 @@ const exportImage = () => {
 
 // 初始化
 onMounted(() => {
-  draw()
+  // 使用 nextTick 确保 DOM 已渲染
+  nextTick(() => {
+    draw()
+  })
   window.addEventListener('resize', draw)
 })
 
