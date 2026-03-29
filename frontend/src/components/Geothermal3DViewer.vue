@@ -203,11 +203,11 @@ const addTextSprite = (text: string, x: number, y: number, z: number, color: str
 // 添加网格
 const addGrid = () => {
   const { xMax, zMax } = props.extent
-  const size = Math.max(xMax, zMax) * 1.2
+  const size = Math.max(xMax, zMax) * 2
   
   // 水平网格 (XZ平面，在 y=0 处)
-  const grid = new THREE.GridHelper(size, 20, 0x555555, 0x333333)
-  grid.rotation.x = 0  // 默认就是水平的
+  const grid = new THREE.GridHelper(size, 10, 0x666666, 0x444444)
+  grid.position.set((xMax) / 2, 0, (zMax) / 2)
   scene.add(grid)
 }
 
