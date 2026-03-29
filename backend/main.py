@@ -4,6 +4,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import logging
 import os
@@ -126,6 +127,22 @@ async def get_app_info():
             "geothermal_calculation"
         ]
     }
+
+
+# SPA fallback - 所有非 API 路由返回 index.html
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    """SPA 路由回退 - 返回前端页面"""
+    # 如果是 API 路由但没匹配到，返回 404
+    if full_path.startswith("api/"):
+        return {"detail": "Not Found"}
+    
+    # 返回前端 index.html
+    index_file = os.path.join(frontend_dist, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    
+    return {"detail": "Frontend not found"}
 
 
 if __name__ == "__main__":
