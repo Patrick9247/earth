@@ -283,7 +283,7 @@ const create3DGrid = () => {
   
   gridGroup = new THREE.Group()
   
-  const { nx, ny, nz, dx, dy, dz } = gridInfo.value
+  const { nx, ny, nz, dx, dy, xMin, yMin, zMin, zMax, xMax, yMax } = gridInfo.value
   
   // 网格线材质
   const lineMaterial = new THREE.LineBasicMaterial({ 
@@ -292,12 +292,18 @@ const create3DGrid = () => {
     opacity: 0.4 
   })
   
-  // X 方向网格线（沿Y-Z平面）
+  // 计算深度范围（Y轴，向下为负）
+  const depthMin = zMin  // 例如 -2000
+  const depthMax = zMax  // 例如 0
+  const depthRange = Math.abs(depthMin - depthMax)
+  const depthStep = depthRange / nz
+  
+  // X 方向网格线（沿Y-Z平面，即沿深度和Z轴方向）
   for (let i = 0; i <= nx; i++) {
     for (let k = 0; k <= nz; k++) {
       const points = [
-        new THREE.Vector3(i * dx, 0, k * dz),
-        new THREE.Vector3(i * dx, ny * dy, k * dz)
+        new THREE.Vector3(xMin + i * dx, depthMax, yMin + k * dy),
+        new THREE.Vector3(xMin + i * dx, depthMin, yMin + k * dy)
       ]
       const geometry = new THREE.BufferGeometry().setFromPoints(points)
       const line = new THREE.Line(geometry, lineMaterial)
@@ -305,12 +311,13 @@ const create3DGrid = () => {
     }
   }
   
-  // Y 方向网格线（沿X-Z平面）
-  for (let j = 0; j <= ny; j++) {
-    for (let k = 0; k <= nz; k++) {
+  // Y 方向网格线（沿X-Z平面，即沿X轴和Z轴方向）- 深度方向
+  for (let j = 0; j <= nz; j++) {
+    for (let k = 0; k <= ny; k++) {
+      const depthY = depthMax - j * depthStep  // 从 0 向下到 zMin
       const points = [
-        new THREE.Vector3(0, j * dy, k * dz),
-        new THREE.Vector3(nx * dx, j * dy, k * dz)
+        new THREE.Vector3(xMin, depthY, yMin + k * dy),
+        new THREE.Vector3(xMax, depthY, yMin + k * dy)
       ]
       const geometry = new THREE.BufferGeometry().setFromPoints(points)
       const line = new THREE.Line(geometry, lineMaterial)
@@ -318,12 +325,13 @@ const create3DGrid = () => {
     }
   }
   
-  // Z 方向网格线（沿X-Y平面）
-  for (let i = 0; i <= nx; i++) {
-    for (let j = 0; j <= ny; j++) {
+  // Z 方向网格线（沿X-Y平面，即沿X轴和深度方向）
+  for (let j = 0; j <= nz; j++) {
+    for (let i = 0; i <= nx; i++) {
+      const depthY = depthMax - j * depthStep
       const points = [
-        new THREE.Vector3(i * dx, j * dy, 0),
-        new THREE.Vector3(i * dx, j * dy, nz * dz)
+        new THREE.Vector3(xMin + i * dx, depthY, yMin),
+        new THREE.Vector3(xMin + i * dx, depthY, yMax)
       ]
       const geometry = new THREE.BufferGeometry().setFromPoints(points)
       const line = new THREE.Line(geometry, lineMaterial)
@@ -332,11 +340,11 @@ const create3DGrid = () => {
   }
   
   // 外边界框
-  const boxGeometry = new THREE.BoxGeometry(nx * dx, ny * dy, nz * Math.abs(dz))
+  const boxGeometry = new THREE.BoxGeometry(xMax - xMin, depthRange, yMax - yMin)
   const edges = new THREE.EdgesGeometry(boxGeometry)
   const edgeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 })
   const edgeLine = new THREE.LineSegments(edges, edgeMaterial)
-  edgeLine.position.set(nx * dx / 2, ny * dy / 2, nz * dz / 2)
+  edgeLine.position.set((xMin + xMax) / 2, (depthMin + depthMax) / 2, (yMin + yMax) / 2)
   gridGroup.add(edgeLine)
   
   scene.add(gridGroup)
