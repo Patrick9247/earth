@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const ctx = ref<CanvasRenderingContext2D | null>(null)
+const containerRef = ref<HTMLDivElement | null>(null)
 
 // 剖面位置控制
 const sectionType = ref<'x' | 'y'>('x')  // X剖面 或 Y剖面
@@ -59,165 +59,244 @@ const computedDrillHoles = computed(() => {
 
 // 绘制剖面图
 const draw = () => {
-  if (!canvasRef.value || !ctx.value) return
+  if (!canvasRef.value || !containerRef.value) return
   
   const canvas = canvasRef.value
-  const context = ctx.value
+  const container = containerRef.value
+  
+  // 高分辨率支持
+  const dpr = window.devicePixelRatio || 1
+  const displayWidth = container.clientWidth
+  const displayHeight = 600
+  
+  // 设置 canvas 实际大小（高分辨率）
+  canvas.width = displayWidth * dpr
+  canvas.height = displayHeight * dpr
+  canvas.style.width = displayWidth + 'px'
+  canvas.style.height = displayHeight + 'px'
+  
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  
+  // 缩放上下文以匹配高分辨率
+  ctx.scale(dpr, dpr)
   
   // 清空画布
-  context.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.clearRect(0, 0, displayWidth, displayHeight)
   
-  const padding = { top: 60, right: 60, bottom: 80, left: 80 }
-  const width = canvas.width - padding.left - padding.right
-  const height = canvas.height - padding.top - padding.bottom
+  const padding = { top: 60, right: 60, bottom: 80, left: 100 }
+  const width = displayWidth - padding.left - padding.right
+  const height = displayHeight - padding.top - padding.bottom
   
   const { xMin, xMax, yMin, yMax, zMin } = props.extent
   const maxDepth = Math.abs(zMin)
   
+  // 剖面方向的范围
+  const horizontalMin = sectionType.value === 'x' ? yMin : xMin
+  const horizontalMax = sectionType.value === 'x' ? yMax : xMax
+  
   // 坐标转换函数
-  const toX = (val: number) => padding.left + ((val - (sectionType.value === 'x' ? xMin : yMin)) / (sectionType.value === 'x' ? (xMax - xMin) : (yMax - yMin))) * width
+  const toX = (val: number) => padding.left + ((val - horizontalMin) / (horizontalMax - horizontalMin)) * width
   const toY = (depth: number) => padding.top + (depth / maxDepth) * height
   
   // 绘制背景
-  context.fillStyle = '#1a1a2e'
-  context.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillStyle = '#1a1a2e'
+  ctx.fillRect(0, 0, displayWidth, displayHeight)
   
   // 绘制地层
-  computedLayers.value.forEach((layer: any) => {
-    const topDepth = Math.abs(layer.depth_top ?? 0)
-    const bottomDepth = Math.abs(layer.depth_bottom ?? 500)
+  computedLayers.value.forEach((layer: any, index: number) => {
+    const topDepth = Math.abs(layer.depth_top ?? index * 500)
+    const bottomDepth = Math.abs(layer.depth_bottom ?? (index + 1) * 500)
+    
+    const y1 = toY(topDepth)
+    const y2 = toY(bottomDepth)
     
     // 地层矩形
-    context.fillStyle = layer.color || '#409eff'
-    context.globalAlpha = 0.7
-    context.fillRect(padding.left, toY(topDepth), width, toY(bottomDepth) - toY(topDepth))
-    context.globalAlpha = 1
+    ctx.fillStyle = layer.color || '#409eff'
+    ctx.globalAlpha = 0.75
+    ctx.fillRect(padding.left, y1, width, y2 - y1)
+    ctx.globalAlpha = 1
     
     // 地层边界
-    context.strokeStyle = '#ffffff'
-    context.lineWidth = 1
-    context.strokeRect(padding.left, toY(topDepth), width, toY(bottomDepth) - toY(topDepth))
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(padding.left, y1, width, y2 - y1)
     
     // 地层名称标签
-    context.fillStyle = '#ffffff'
-    context.font = 'bold 14px Arial'
-    context.textAlign = 'center'
-    const labelY = (toY(topDepth) + toY(bottomDepth)) / 2
-    context.fillText(layer.name, padding.left + width / 2, labelY + 5)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 16px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    const labelY = (y1 + y2) / 2
+    ctx.fillText(layer.name, padding.left + width / 2, labelY)
+    
+    // 深度标签
+    ctx.font = '12px Arial'
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.textAlign = 'right'
+    ctx.fillText(`${topDepth}m`, padding.left - 10, y1 + 4)
   })
   
-  // 绘制钻孔（如果开启且在剖面线上）
+  // 绘制钻孔
   if (showDrillHoles.value) {
     computedDrillHoles.value.forEach((hole: any) => {
-      const pos = sectionType.value === 'x' ? hole.location_x : hole.location_y
-      const otherPos = sectionType.value === 'x' ? hole.location_y : hole.location_x
+      // 钻孔在剖面方向的位置
+      const sectionPos = sectionType.value === 'x' ? hole.location_x : hole.location_y
+      // 钻孔在剖面横向的位置（显示在图上的位置）
+      const horizontalPos = sectionType.value === 'x' ? hole.location_y : hole.location_x
       
-      // 检查钻孔是否在剖面附近（±50m）
-      if (Math.abs(pos - sectionPosition.value) < 100) {
-        const x = toX(otherPos)
-        const depth = hole.depth || 500
+      const x = toX(horizontalPos)
+      const depth = hole.depth || 500
+      
+      // 判断钻孔是否在剖面线上（距离小于150m）
+      const distanceToSection = Math.abs(sectionPos - sectionPosition.value)
+      const isOnSection = distanceToSection < 150
+      
+      // 钻孔线
+      ctx.strokeStyle = isOnSection ? '#ffffff' : 'rgba(255, 255, 255, 0.3)'
+      ctx.lineWidth = isOnSection ? 3 : 1
+      ctx.beginPath()
+      ctx.moveTo(x, toY(0))
+      ctx.lineTo(x, toY(depth))
+      ctx.stroke()
+      
+      // 钻孔顶部标记
+      ctx.fillStyle = getTemperatureColor(hole.temperature)
+      ctx.globalAlpha = isOnSection ? 1 : 0.5
+      ctx.beginPath()
+      ctx.arc(x, toY(0), isOnSection ? 10 : 6, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.globalAlpha = 1
+      
+      // 只显示在剖面线上的钻孔标签
+      if (isOnSection) {
+        // 钻孔标签背景
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+        ctx.fillRect(x - 35, toY(0) - 45, 70, 30)
         
-        // 钻孔线
-        context.strokeStyle = '#ffffff'
-        context.lineWidth = 3
-        context.beginPath()
-        context.moveTo(x, toY(0))
-        context.lineTo(x, toY(depth))
-        context.stroke()
+        // 钻孔名称
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 12px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText(hole.name, x, toY(0) - 30)
         
-        // 钻孔顶部标记
-        context.fillStyle = getTemperatureColor(hole.temperature)
-        context.beginPath()
-        context.arc(x, toY(0), 8, 0, Math.PI * 2)
-        context.fill()
-        
-        // 钻孔标签
-        context.fillStyle = '#ffffff'
-        context.font = '12px Arial'
-        context.textAlign = 'center'
-        context.fillText(hole.name, x, toY(0) - 15)
-        context.fillText(`${hole.temperature}°C`, x, toY(depth) + 15)
+        // 温度标签
+        ctx.fillStyle = getTemperatureColor(hole.temperature)
+        ctx.font = '11px Arial'
+        ctx.fillText(`${hole.temperature}°C`, x, toY(depth) + 18)
       }
     })
   }
   
   // 绘制坐标轴
-  drawAxes(context, padding, width, height, maxDepth)
+  drawAxes(ctx, padding, width, height, maxDepth, horizontalMin, horizontalMax)
   
-  // 绘制剖面线指示
-  context.fillStyle = '#ffffff'
-  context.font = 'bold 16px Arial'
-  context.textAlign = 'center'
-  context.fillText(
-    `${sectionType.value === 'x' ? 'X' : 'Y'} = ${sectionPosition.value}m 剖面`,
-    canvas.width / 2,
-    30
+  // 绘制剖面标题
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 18px Arial'
+  ctx.textAlign = 'center'
+  ctx.fillText(
+    `${sectionType.value === 'x' ? 'X' : 'Y'} = ${sectionPosition.value}m 地质剖面图`,
+    displayWidth / 2,
+    35
   )
 }
 
 // 绘制坐标轴
-const drawAxes = (context: CanvasRenderingContext2D, padding: any, width: number, height: number, maxDepth: number) => {
-  const { xMin, xMax, yMin, yMax } = props.extent
-  
-  context.strokeStyle = '#666666'
-  context.lineWidth = 1
-  context.fillStyle = '#aaaaaa'
-  context.font = '12px Arial'
+const drawAxes = (
+  ctx: CanvasRenderingContext2D, 
+  padding: any, 
+  width: number, 
+  height: number, 
+  maxDepth: number,
+  horizontalMin: number,
+  horizontalMax: number
+) => {
+  // 坐标轴样式
+  ctx.strokeStyle = '#888888'
+  ctx.lineWidth = 1
+  ctx.fillStyle = '#aaaaaa'
+  ctx.font = '12px Arial'
   
   // Y轴（深度）
-  context.beginPath()
-  context.moveTo(padding.left, padding.top)
-  context.lineTo(padding.left, padding.top + height)
-  context.stroke()
+  ctx.beginPath()
+  ctx.moveTo(padding.left, padding.top)
+  ctx.lineTo(padding.left, padding.top + height)
+  ctx.stroke()
   
-  // Y轴刻度
+  // Y轴刻度和网格线
   for (let d = 0; d <= maxDepth; d += 200) {
     const y = padding.top + (d / maxDepth) * height
-    context.beginPath()
-    context.moveTo(padding.left - 5, y)
-    context.lineTo(padding.left, y)
-    context.stroke()
-    context.textAlign = 'right'
-    context.fillText(`${d}m`, padding.left - 10, y + 4)
+    
+    // 网格线
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+    ctx.beginPath()
+    ctx.moveTo(padding.left, y)
+    ctx.lineTo(padding.left + width, y)
+    ctx.stroke()
+    
+    // 刻度线
+    ctx.strokeStyle = '#666666'
+    ctx.beginPath()
+    ctx.moveTo(padding.left - 8, y)
+    ctx.lineTo(padding.left, y)
+    ctx.stroke()
+    
+    // 刻度值
+    ctx.fillStyle = '#aaaaaa'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`${d}`, padding.left - 12, y)
   }
   
   // X轴
-  const xRange = sectionType.value === 'x' ? (yMax - yMin) : (xMax - xMin)
-  const xStart = sectionType.value === 'x' ? yMin : xMin
-  
-  context.beginPath()
-  context.moveTo(padding.left, padding.top + height)
-  context.lineTo(padding.left + width, padding.top + height)
-  context.stroke()
+  ctx.beginPath()
+  ctx.moveTo(padding.left, padding.top + height)
+  ctx.lineTo(padding.left + width, padding.top + height)
+  ctx.stroke()
   
   // X轴刻度
+  const xRange = horizontalMax - horizontalMin
   for (let i = 0; i <= 5; i++) {
-    const val = xStart + (xRange * i / 5)
+    const val = horizontalMin + (xRange * i / 5)
     const x = padding.left + (width * i / 5)
-    context.beginPath()
-    context.moveTo(x, padding.top + height)
-    context.lineTo(x, padding.top + height + 5)
-    context.stroke()
-    context.textAlign = 'center'
-    context.fillText(`${Math.round(val)}m`, x, padding.top + height + 20)
+    
+    // 网格线
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+    ctx.beginPath()
+    ctx.moveTo(x, padding.top)
+    ctx.lineTo(x, padding.top + height)
+    ctx.stroke()
+    
+    // 刻度线
+    ctx.strokeStyle = '#666666'
+    ctx.beginPath()
+    ctx.moveTo(x, padding.top + height)
+    ctx.lineTo(x, padding.top + height + 8)
+    ctx.stroke()
+    
+    // 刻度值
+    ctx.fillStyle = '#aaaaaa'
+    ctx.textAlign = 'center'
+    ctx.fillText(`${Math.round(val)}`, x, padding.top + height + 22)
   }
   
   // 轴标签
-  context.fillStyle = '#ffffff'
-  context.font = 'bold 14px Arial'
-  context.textAlign = 'center'
-  context.fillText(
-    sectionType.value === 'x' ? 'Y方向 (m)' : 'X方向 (m)',
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 14px Arial'
+  ctx.textAlign = 'center'
+  ctx.fillText(
+    sectionType.value === 'x' ? 'Y 方向 (m)' : 'X 方向 (m)',
     padding.left + width / 2,
-    padding.top + height + 50
+    padding.top + height + 55
   )
   
   // Y轴标签（深度）
-  context.save()
-  context.translate(25, padding.top + height / 2)
-  context.rotate(-Math.PI / 2)
-  context.fillText('深度 (m)', 0, 0)
-  context.restore()
+  ctx.save()
+  ctx.translate(30, padding.top + height / 2)
+  ctx.rotate(-Math.PI / 2)
+  ctx.fillText('深度 (m)', 0, 0)
+  ctx.restore()
 }
 
 // 获取温度颜色
@@ -234,7 +313,7 @@ const positionMax = computed(() => sectionType.value === 'x' ? props.extent.xMax
 
 // 切换剖面类型
 const handleSectionTypeChange = () => {
-  sectionPosition.value = (positionMin.value + positionMax.value) / 2
+  sectionPosition.value = Math.round((positionMin.value + positionMax.value) / 2)
   draw()
 }
 
@@ -243,27 +322,20 @@ const exportImage = () => {
   if (!canvasRef.value) return
   const link = document.createElement('a')
   link.download = `地质剖面_${sectionType.value}=${sectionPosition.value}.png`
-  link.href = canvasRef.value.toDataURL('image/png')
+  link.href = canvasRef.value.toDataURL('image/png', 1.0)
   link.click()
 }
 
 // 初始化
 onMounted(() => {
-  if (canvasRef.value) {
-    const canvas = canvasRef.value
-    // 设置画布大小
-    canvas.width = canvas.parentElement?.clientWidth || 800
-    canvas.height = 500
-    ctx.value = canvas.getContext('2d')
-    draw()
-  }
-  
-  window.addEventListener('resize', () => {
-    if (canvasRef.value) {
-      canvasRef.value.width = canvasRef.value.parentElement?.clientWidth || 800
-      draw()
-    }
-  })
+  draw()
+  window.addEventListener('resize', draw)
+})
+
+// 清理
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  window.removeEventListener('resize', draw)
 })
 
 // 监听数据变化
@@ -309,7 +381,7 @@ defineExpose({ exportImage })
     </div>
     
     <!-- 画布容器 -->
-    <div class="canvas-container">
+    <div class="canvas-container" ref="containerRef">
       <canvas ref="canvasRef"></canvas>
     </div>
     
@@ -363,7 +435,7 @@ defineExpose({ exportImage })
 
 .canvas-container {
   width: 100%;
-  min-height: 500px;
+  min-height: 600px;
 }
 
 .canvas-container canvas {
