@@ -248,8 +248,11 @@ onMounted(() => {
     <h3 class="panel-title">🌡️ 地温网格监控</h3>
     
     <div class="monitor-content">
-      <!-- 饼图区域 -->
-      <div class="chart-container" ref="chartRef"></div>
+      <!-- 饼图区域 + 图例 -->
+      <div class="chart-wrapper">
+        <div class="chart-container" ref="chartRef"></div>
+        <img src="/temperature-legend.png" alt="温度分类图例" class="legend-image" />
+      </div>
       
       <!-- 统计信息 -->
       <div class="stats-container">
@@ -301,11 +304,6 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    
-    <!-- 图例说明 -->
-    <div class="legend-section">
-      <img src="/temperature-legend.png" alt="温度分类图例" class="legend-image" />
-    </div>
   </div>
 </template>
 
@@ -331,10 +329,24 @@ onMounted(() => {
   gap: 24px;
 }
 
+.chart-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .chart-container {
   width: 350px;
   height: 300px;
-  flex-shrink: 0;
+}
+
+.legend-image {
+  width: 320px;
+  max-width: 100%;
+  margin-top: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .stats-container {
@@ -449,19 +461,5 @@ onMounted(() => {
   justify-content: space-between;
   font-size: 12px;
   color: #909399;
-}
-
-.legend-section {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #ebeef5;
-  text-align: center;
-}
-
-.legend-image {
-  max-width: 100%;
-  max-height: 200px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
