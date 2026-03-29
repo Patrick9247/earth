@@ -7,12 +7,12 @@ from sqlalchemy.orm import sessionmaker
 from .config import settings
 
 # 创建数据库引擎
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-    echo=settings.DEBUG
-)
+# SQLite 需要特殊的 connect_args
+engine_args = {"pool_pre_ping": True, "pool_recycle": 3600, "echo": settings.DEBUG}
+if settings.DATABASE_URL.startswith("sqlite"):
+    engine_args = {"echo": settings.DEBUG, "connect_args": {"check_same_thread": False}}
+
+engine = create_engine(settings.DATABASE_URL, **engine_args)
 
 # 创建会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

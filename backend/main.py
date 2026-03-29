@@ -11,7 +11,7 @@ import os
 
 from app.config import settings
 from app.database import init_db
-from app.routers import geological, drill_holes, model_configs, gempy, export, download, resource
+from app.routers import geological, drill_holes, model_configs, gempy, export, download, resource, import_csv
 
 # 配置日志
 logging.basicConfig(
@@ -84,6 +84,7 @@ app.include_router(model_configs.router)
 app.include_router(gempy.router)
 app.include_router(export.router)
 app.include_router(resource.router)
+app.include_router(import_csv.router)
 
 
 @app.get("/")

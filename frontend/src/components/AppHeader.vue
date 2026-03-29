@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const navItems = [
   { path: '/', icon: 'HomeFilled', label: '系统首页' },
+  { path: '/import', icon: 'Upload', label: '数据导入' },
   { path: '/layers', icon: 'Document', label: '地质层管理' },
   { path: '/drill-holes', icon: 'Aim', label: '钻孔数据' },
   { path: '/model', icon: 'DataAnalysis', label: '地质建模' },

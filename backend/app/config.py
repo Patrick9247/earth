@@ -21,12 +21,18 @@ class Settings(BaseSettings):
     MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "")
     MYSQL_DATABASE: str = os.getenv("MYSQL_DATABASE", "geothermal_db")
     
+    # SQLite 作为备选数据库
+    USE_SQLITE: bool = os.getenv("USE_SQLITE", "true").lower() == "true"
+    SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", "/tmp/geothermal.db")
+    
     # GemPy 配置
     GRID_RESOLUTION: int = 50  # 网格分辨率
     
     @property
     def DATABASE_URL(self) -> str:
         """数据库连接URL"""
+        if self.USE_SQLITE:
+            return f"sqlite:///{self.SQLITE_DB_PATH}"
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
     
     class Config:

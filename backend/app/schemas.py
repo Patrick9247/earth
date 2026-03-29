@@ -32,16 +32,21 @@ class GeologicalLayerResponse(GeologicalLayerBase):
         from_attributes = True
 
 
-# ==================== 钻孔数据 Schemas ====================
+# ==================== 钻孔基本信息 Schemas ====================
 class DrillHoleBase(BaseModel):
-    name: str = Field(..., description="钻孔名称")
-    location_x: float = Field(..., description="X坐标")
-    location_y: float = Field(..., description="Y坐标")
-    location_z: Optional[float] = Field(0, description="地面高程(m)")
-    depth: float = Field(..., ge=0, description="钻孔深度(m)")
-    temperature: Optional[float] = Field(None, description="测量温度(°C)")
-    gradient: Optional[float] = Field(None, description="地温梯度(°C/100m)")
-    description: Optional[str] = Field(None, description="描述")
+    hole_id: str = Field(..., description="钻孔编号")
+    hole_name: Optional[str] = Field(None, description="钻孔名称")
+    location_x: float = Field(..., description="X坐标(m)")
+    location_y: float = Field(..., description="Y坐标(m)")
+    elevation: Optional[float] = Field(0, description="地面高程(m)")
+    total_depth: Optional[float] = Field(None, description="钻孔总深度(m)")
+    final_depth: Optional[float] = Field(None, description="终孔深度(m)")
+    diameter: Optional[float] = Field(None, description="孔径(mm)")
+    drill_company: Optional[str] = Field(None, description="施工单位")
+    drill_start_date: Optional[str] = Field(None, description="开孔日期")
+    drill_end_date: Optional[str] = Field(None, description="终孔日期")
+    status: Optional[str] = Field("完成", description="钻孔状态")
+    description: Optional[str] = Field(None, description="备注说明")
 
 
 class DrillHoleCreate(DrillHoleBase):
@@ -55,6 +60,153 @@ class DrillHoleResponse(DrillHoleBase):
     
     class Config:
         from_attributes = True
+
+
+# ==================== 热储层分层 Schemas ====================
+class DrillLayerBase(BaseModel):
+    drill_hole_id: int = Field(..., description="钻孔ID")
+    layer_no: Optional[int] = Field(None, description="层序号")
+    layer_name: Optional[str] = Field(None, description="地层名称")
+    layer_type: Optional[str] = Field(None, description="地层类型")
+    depth_top: Optional[float] = Field(None, description="层顶深度(m)")
+    depth_bottom: Optional[float] = Field(None, description="层底深度(m)")
+    thickness: Optional[float] = Field(None, description="层厚度(m)")
+    lithology: Optional[str] = Field(None, description="岩性描述")
+    rock_type: Optional[str] = Field(None, description="岩石类型")
+    color: Optional[str] = Field(None, description="岩石颜色")
+    porosity: Optional[float] = Field(None, description="孔隙度")
+    permeability: Optional[float] = Field(None, description="渗透率(mD)")
+    density: Optional[float] = Field(None, description="岩石密度(g/cm³)")
+    thermal_conductivity: Optional[float] = Field(None, description="热导率(W/m·K)")
+    aquifer_type: Optional[str] = Field(None, description="含水层类型")
+    water_bearing: Optional[str] = Field(None, description="富水性")
+    description: Optional[str] = Field(None, description="备注说明")
+
+
+class DrillLayerCreate(DrillLayerBase):
+    pass
+
+
+class DrillLayerResponse(DrillLayerBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== 测温曲线 Schemas ====================
+class DrillTemperatureCurveBase(BaseModel):
+    drill_hole_id: int = Field(..., description="钻孔ID")
+    measure_no: Optional[int] = Field(None, description="测点序号")
+    measure_date: Optional[str] = Field(None, description="测量日期")
+    measure_type: Optional[str] = Field("稳态测温", description="测量类型")
+    depth: float = Field(..., description="测量深度(m)")
+    temperature: float = Field(..., description="测量温度(°C)")
+    corrected_temp: Optional[float] = Field(None, description="校正后温度(°C)")
+    correction_method: Optional[str] = Field(None, description="校正方法")
+    gradient: Optional[float] = Field(None, description="地温梯度(°C/100m)")
+    instrument: Optional[str] = Field(None, description="测量仪器")
+    accuracy: Optional[float] = Field(None, description="测量精度(°C)")
+    description: Optional[str] = Field(None, description="备注")
+
+
+class DrillTemperatureCurveCreate(DrillTemperatureCurveBase):
+    pass
+
+
+class DrillTemperatureCurveResponse(DrillTemperatureCurveBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== 孔口压力 Schemas ====================
+class DrillPressureDataBase(BaseModel):
+    drill_hole_id: int = Field(..., description="钻孔ID")
+    measure_no: Optional[int] = Field(None, description="测点序号")
+    measure_date: Optional[str] = Field(None, description="测量日期")
+    measure_time: Optional[str] = Field(None, description="测量时间")
+    wellhead_pressure: Optional[float] = Field(None, description="井口压力(MPa)")
+    reservoir_pressure: Optional[float] = Field(None, description="储层压力(MPa)")
+    flowing_pressure: Optional[float] = Field(None, description="流动压力(MPa)")
+    shut_in_pressure: Optional[float] = Field(None, description="关井压力(MPa)")
+    pressure_gradient: Optional[float] = Field(None, description="压力梯度(MPa/100m)")
+    measure_depth: Optional[float] = Field(None, description="测量深度(m)")
+    flow_rate: Optional[float] = Field(None, description="流量(m³/h)")
+    water_level: Optional[float] = Field(None, description="动水位(m)")
+    instrument: Optional[str] = Field(None, description="测量仪器")
+    description: Optional[str] = Field(None, description="备注")
+
+
+class DrillPressureDataCreate(DrillPressureDataBase):
+    pass
+
+
+class DrillPressureDataResponse(DrillPressureDataBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== 孔隙度数据 Schemas ====================
+class DrillPorosityDataBase(BaseModel):
+    drill_hole_id: int = Field(..., description="钻孔ID")
+    sample_no: Optional[str] = Field(None, description="样品编号")
+    sample_date: Optional[str] = Field(None, description="采样日期")
+    depth_top: Optional[float] = Field(None, description="样品顶深(m)")
+    depth_bottom: Optional[float] = Field(None, description="样品底深(m)")
+    depth: Optional[float] = Field(None, description="取样深度(m)")
+    lithology: Optional[str] = Field(None, description="岩性描述")
+    rock_type: Optional[str] = Field(None, description="岩石类型")
+    porosity_total: Optional[float] = Field(None, description="总孔隙度(%)")
+    porosity_effective: Optional[float] = Field(None, description="有效孔隙度(%)")
+    permeability: Optional[float] = Field(None, description="渗透率(mD)")
+    permeability_horizontal: Optional[float] = Field(None, description="水平渗透率(mD)")
+    permeability_vertical: Optional[float] = Field(None, description="垂直渗透率(mD)")
+    density_bulk: Optional[float] = Field(None, description="体密度(g/cm³)")
+    density_grain: Optional[float] = Field(None, description="颗粒密度(g/cm³)")
+    water_saturation: Optional[float] = Field(None, description="含水饱和度(%)")
+    test_method: Optional[str] = Field(None, description="测试方法")
+    laboratory: Optional[str] = Field(None, description="测试单位")
+    description: Optional[str] = Field(None, description="备注")
+
+
+class DrillPorosityDataCreate(DrillPorosityDataBase):
+    pass
+
+
+class DrillPorosityDataResponse(DrillPorosityDataBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== CSV导入 Schemas ====================
+class CsvImportResult(BaseModel):
+    """CSV导入结果"""
+    success: bool
+    message: str
+    total_rows: int = 0
+    success_rows: int = 0
+    failed_rows: int = 0
+    errors: Optional[List[Dict[str, Any]]] = None
+    record_id: Optional[int] = None
+
+
+class CsvPreviewResponse(BaseModel):
+    """CSV预览响应"""
+    success: bool
+    columns: List[str]
+    rows: List[Dict[str, Any]]
+    total_rows: int
+    message: Optional[str] = None
 
 
 # ==================== 地热资源 Schemas ====================

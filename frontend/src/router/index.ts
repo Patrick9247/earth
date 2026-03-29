@@ -21,6 +21,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '钻孔数据' }
   },
   {
+    path: '/import',
+    name: 'import',
+    component: () => import('@/views/ImportView.vue'),
+    meta: { title: '数据导入' }
+  },
+  {
     path: '/model',
     name: 'model',
     component: () => import('@/views/ModelView.vue'),
