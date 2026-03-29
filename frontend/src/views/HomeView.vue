@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { gempyApi } from '@/api'
 import { useGeothermalStore } from '@/stores/geothermal'
 import Mini3DViewer from '@/components/Mini3DViewer.vue'
+import TemperatureMonitor from '@/components/TemperatureMonitor.vue'
 
 const router = useRouter()
 const store = useGeothermalStore()
@@ -78,6 +79,9 @@ onMounted(async () => {
         <div class="stat-label">地质模型</div>
       </div>
     </div>
+
+    <!-- 地温网格监控 -->
+    <TemperatureMonitor />
 
     <!-- 快速计算 -->
     <div class="card">
@@ -187,6 +191,10 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+  margin-bottom: 24px;
+}
+
+.monitor-panel {
   margin-bottom: 24px;
 }
 
