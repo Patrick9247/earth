@@ -15,7 +15,7 @@ const goToQuickCalc = () => {
 
 // 打开使用指南
 const openGuide = () => {
-  router.push('/settings')
+  router.push('/guide')
 }
 </script>
 
