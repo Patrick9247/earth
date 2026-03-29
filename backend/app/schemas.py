@@ -55,6 +55,7 @@ class DrillHoleCreate(DrillHoleBase):
 
 class DrillHoleResponse(DrillHoleBase):
     id: int
+    temperature: Optional[float] = Field(None, description="平均温度(°C)")
     created_at: datetime
     updated_at: datetime
     

@@ -229,7 +229,9 @@ watch(() => [store.extent, store.modelConfig.grid_resolution, store.drillHoles],
   updateChart()
 }, { deep: true })
 
-onMounted(() => {
+onMounted(async () => {
+  // 确保数据已加载
+  await store.initializeData()
   initChart()
   window.addEventListener('resize', handleResize)
 })

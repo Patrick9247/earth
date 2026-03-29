@@ -24,7 +24,48 @@ async def get_drill_holes(
 ):
     """获取所有钻孔数据"""
     drill_holes = db.query(DrillHole).offset(skip).limit(limit).all()
-    return drill_holes
+    
+    # 为每个钻孔添加平均温度
+    result = []
+    for dh in drill_holes:
+        dh_dict = {
+            "id": dh.id,
+            "hole_id": dh.hole_id,
+            "hole_name": dh.hole_name,
+            "location_x": dh.location_x,
+            "location_y": dh.location_y,
+            "elevation": dh.elevation,
+            "total_depth": dh.total_depth,
+            "final_depth": dh.final_depth,
+            "diameter": dh.diameter,
+            "drill_company": dh.drill_company,
+            "drill_start_date": dh.drill_start_date,
+            "drill_end_date": dh.drill_end_date,
+            "status": dh.status,
+            "description": dh.description,
+            "created_at": dh.created_at,
+            "updated_at": dh.updated_at,
+        }
+        
+        # 获取温度数据并计算平均温度
+        temp_data = db.query(DrillTemperatureCurve).filter(
+            DrillTemperatureCurve.drill_hole_id == dh.id
+        ).all()
+        
+        if temp_data:
+            temps = [t.corrected_temp or t.temperature for t in temp_data if t.corrected_temp or t.temperature]
+            if temps:
+                dh_dict["temperature"] = sum(temps) / len(temps)
+            else:
+                # 根据深度估算温度 (假设地温梯度 30°C/km，地表温度 15°C)
+                dh_dict["temperature"] = 15 + (dh.total_depth or 500) * 0.03
+        else:
+            # 没有温度数据时，根据深度估算
+            dh_dict["temperature"] = 15 + (dh.total_depth or 500) * 0.03
+        
+        result.append(dh_dict)
+    
+    return result
 
 
 @router.get("/{drill_hole_id}", response_model=DrillHoleResponse)

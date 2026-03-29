@@ -104,9 +104,8 @@ export const useGeothermalStore = defineStore('geothermal', () => {
 
   // 初始化数据（用于首页和建模页面）
   async function initializeData() {
-    if (layers.value.length === 0 || drillHoles.value.length === 0) {
-      await Promise.all([fetchLayers(), fetchDrillHoles()])
-    }
+    // 每次都从 API 获取最新数据，确保数据同步
+    await Promise.all([fetchLayers(), fetchDrillHoles()])
   }
 
   // 更新模型配置
