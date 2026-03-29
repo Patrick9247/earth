@@ -170,24 +170,15 @@ const updateChart = () => {
         `
       }
     },
-    legend: {
-      orient: 'vertical',
-      right: '5%',
-      top: 'center',
-      textStyle: {
-        color: '#606266',
-        fontSize: 13
-      }
-    },
     series: [
       {
         name: '地温分布',
         type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['35%', '50%'],
+        radius: ['35%', '65%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: {
-          borderRadius: 8,
+          borderRadius: 6,
           borderColor: '#fff',
           borderWidth: 2
         },
@@ -195,18 +186,19 @@ const updateChart = () => {
           show: true,
           position: 'outside',
           formatter: '{b}\n{c}格',
-          fontSize: 12,
-          color: '#606266'
+          fontSize: 11,
+          color: '#606266',
+          lineHeight: 16
         },
         labelLine: {
           show: true,
-          length: 15,
-          length2: 10
+          length: 10,
+          length2: 8
         },
         emphasis: {
           label: {
             show: true,
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 'bold'
           },
           itemStyle: {
