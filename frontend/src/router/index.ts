@@ -33,6 +33,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '资源计算' }
   },
   {
+    path: '/resource',
+    name: 'resource',
+    component: () => import('@/views/ResourceView.vue'),
+    meta: { title: '网格资源计算' }
+  },
+  {
     path: '/results',
     name: 'results',
     component: () => import('@/views/ResultsView.vue'),

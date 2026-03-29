@@ -60,4 +60,12 @@ export const gempyApi = {
     api.get('/gempy/phase-determination', { params: { temperature, pressure } })
 }
 
+// ==================== 资源计算 API ====================
+export const resourceApi = {
+  calculate: (data: any) => api.post('/resource/calculate', data),
+  getBoilingPoint: (pressure: number) => api.get(`/resource/boiling-point/${pressure}`),
+  getDensity: (temperature: number, pressure: number, phase?: string) => 
+    api.get('/resource/density', { params: { temperature, pressure, phase } })
+}
+
 export default api
