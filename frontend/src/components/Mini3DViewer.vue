@@ -292,7 +292,45 @@ const createDrillHoles = () => {
     marker.position.set(x, 0, z)
     scene.add(marker)
     drillHoleMeshes.push(marker)
+
+    // 标签（显示名称和坐标）
+    const labelSprite = createDrillHoleLabel(hole.name ?? 'ZK', x, z)
+    labelSprite.position.set(x, 40, z)
+    scene.add(labelSprite)
+    drillHoleMeshes.push(labelSprite)
   })
+}
+
+// 创建钻孔标签精灵
+const createDrillHoleLabel = (name: string, x: number, z: number): THREE.Sprite => {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.Sprite()
+
+  canvas.width = 140
+  canvas.height = 64
+
+  // 背景
+  ctx.fillStyle = 'rgba(0,0,0,0.85)'
+  ctx.roundRect(0, 0, canvas.width, canvas.height, 6)
+  ctx.fill()
+
+  // 名称
+  ctx.font = 'bold 18px Arial'
+  ctx.fillStyle = '#ffffff'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(name, canvas.width / 2, 18)
+
+  // 坐标
+  ctx.font = '14px Arial'
+  ctx.fillStyle = '#88ccff'
+  ctx.fillText(`X:${x} Z:${z}`, canvas.width / 2, 44)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }))
+  sprite.scale.set(100, 46, 1)
+  return sprite
 }
 
 const createHeatParticles = () => {

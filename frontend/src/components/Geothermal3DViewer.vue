@@ -326,12 +326,50 @@ const createDrillHoles = () => {
     scene.add(marker)
     drillHoleMeshes.push(marker)
 
-    // 标签
-    const labelSprite = createLabelSprite(hole.name ?? 'ZK')
-    labelSprite.position.set(x, 40, z)
+    // 标签（显示名称和坐标）
+    const labelSprite = createDrillHoleLabel(hole.name ?? 'ZK', x, z)
+    labelSprite.position.set(x, 50, z)
     scene.add(labelSprite)
     drillHoleMeshes.push(labelSprite)
   })
+}
+
+// 创建钻孔标签精灵（显示名称和坐标）
+const createDrillHoleLabel = (name: string, x: number, z: number): THREE.Sprite => {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.Sprite()
+
+  canvas.width = 160
+  canvas.height = 72
+
+  // 背景
+  ctx.fillStyle = 'rgba(0,0,0,0.85)'
+  ctx.roundRect(0, 0, canvas.width, canvas.height, 8)
+  ctx.fill()
+
+  // 边框
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+  ctx.lineWidth = 2
+  ctx.roundRect(0, 0, canvas.width, canvas.height, 8)
+  ctx.stroke()
+
+  // 名称
+  ctx.font = 'bold 22px Arial'
+  ctx.fillStyle = '#ffffff'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(name, canvas.width / 2, 22)
+
+  // 坐标
+  ctx.font = '16px Arial'
+  ctx.fillStyle = '#88ccff'
+  ctx.fillText(`X:${x}  Z:${z}`, canvas.width / 2, 50)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }))
+  sprite.scale.set(120, 54, 1)
+  return sprite
 }
 
 // 创建标签精灵
