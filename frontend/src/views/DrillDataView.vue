@@ -95,9 +95,11 @@ const loadDrillHoles = async () => {
     console.error('加载失败:', error)
     // 使用模拟数据
     drillHoles.value = [
-      { id: 1, hole_id: 'ZK-001', hole_name: '主探孔', location_x: 100, location_y: 200, elevation: 50, total_depth: 800, status: '完成' },
-      { id: 2, hole_id: 'ZK-002', hole_name: '深部探孔', location_x: 300, location_y: 400, elevation: 45, total_depth: 1200, status: '完成' },
-      { id: 3, hole_id: 'ZK-003', hole_name: '边缘探孔', location_x: 500, location_y: 150, elevation: 55, total_depth: 600, status: '完成' }
+      { id: 1, hole_id: 'ZK-001', hole_name: '钻孔001', location_x: 374.5, location_y: 20.6, elevation: 42.4, total_depth: 1150.7, final_depth: 1150.7, diameter: 150, drill_company: '地质勘探一队', drill_start_date: '2023-03-01', drill_end_date: '2023-06-15', status: '完成', description: '合成钻孔数据 #1' },
+      { id: 2, hole_id: 'ZK-002', hole_name: '钻孔002', location_x: 950.7, location_y: 969.9, elevation: 49.9, total_depth: 725.5, final_depth: 725.5, diameter: 150, drill_company: '地质勘探一队', drill_start_date: '2023-04-01', drill_end_date: '2023-07-01', status: '完成', description: '合成钻孔数据 #2' },
+      { id: 3, hole_id: 'ZK-003', hole_name: '钻孔003', location_x: 732.0, location_y: 832.4, elevation: 40.7, total_depth: 862.9, final_depth: 862.9, diameter: 150, drill_company: '地质勘探二队', drill_start_date: '2023-05-01', drill_end_date: '2023-08-15', status: '完成', description: '合成钻孔数据 #3' },
+      { id: 4, hole_id: 'ZK-004', hole_name: '钻孔004', location_x: 598.7, location_y: 212.3, elevation: 58.2, total_depth: 929.7, final_depth: 929.7, diameter: 150, drill_company: '地质勘探二队', drill_start_date: '2023-06-01', drill_end_date: '2023-09-01', status: '完成', description: '合成钻孔数据 #4' },
+      { id: 5, hole_id: 'ZK-005', hole_name: '钻孔005', location_x: 156.0, location_y: 181.8, elevation: 45.2, total_depth: 1010.5, final_depth: 1010.5, diameter: 150, drill_company: '地质勘探三队', drill_start_date: '2023-07-01', drill_end_date: '2023-10-15', status: '完成', description: '合成钻孔数据 #5' }
     ]
     store.updateDrillHoles(drillHoles.value.map((d: any) => ({
       id: d.id,
@@ -416,18 +418,29 @@ onMounted(() => {
             </div>
 
             <el-table :data="drillHoles" v-loading="loading" stripe @row-click="selectDrillHole">
-              <el-table-column prop="hole_id" label="钻孔编号" width="120" />
-              <el-table-column prop="hole_name" label="钻孔名称" width="150" />
-              <el-table-column prop="location_x" label="X坐标(m)" width="120" />
-              <el-table-column prop="location_y" label="Y坐标(m)" width="120" />
-              <el-table-column prop="elevation" label="高程(m)" width="100" />
-              <el-table-column prop="total_depth" label="深度(m)" width="100" />
-              <el-table-column prop="status" label="状态" width="100">
+              <el-table-column prop="hole_id" label="钻孔编号" width="100" fixed />
+              <el-table-column prop="hole_name" label="钻孔名称" width="120" />
+              <el-table-column label="空间坐标" align="center">
+                <el-table-column prop="location_x" label="X(m)" width="90" />
+                <el-table-column prop="location_y" label="Y(m)" width="90" />
+                <el-table-column prop="elevation" label="高程(m)" width="90" />
+              </el-table-column>
+              <el-table-column label="深度信息" align="center">
+                <el-table-column prop="total_depth" label="总深(m)" width="90" />
+                <el-table-column prop="final_depth" label="终孔深(m)" width="95" />
+                <el-table-column prop="diameter" label="孔径(mm)" width="90" />
+              </el-table-column>
+              <el-table-column label="施工信息" align="center">
+                <el-table-column prop="drill_company" label="施工单位" width="130" show-overflow-tooltip />
+                <el-table-column prop="drill_start_date" label="开孔日期" width="100" />
+                <el-table-column prop="drill_end_date" label="终孔日期" width="100" />
+              </el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
                 <template #default="{ row }">
                   <el-tag :type="row.status === '完成' ? 'success' : 'warning'">{{ row.status }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" fixed="right" width="200">
+              <el-table-column label="操作" fixed="right" width="150">
                 <template #default="{ row }">
                   <el-button type="primary" link @click.stop="selectDrillHole(row)">详情</el-button>
                   <el-button type="primary" link @click.stop="handleEdit(row)">编辑</el-button>
@@ -549,11 +562,16 @@ onMounted(() => {
           <el-descriptions-item label="X坐标">{{ selectedDrillHole.location_x }} m</el-descriptions-item>
           <el-descriptions-item label="Y坐标">{{ selectedDrillHole.location_y }} m</el-descriptions-item>
           <el-descriptions-item label="地面高程">{{ selectedDrillHole.elevation }} m</el-descriptions-item>
-          <el-descriptions-item label="钻孔深度">{{ selectedDrillHole.total_depth }} m</el-descriptions-item>
+          <el-descriptions-item label="钻孔总深">{{ selectedDrillHole.total_depth }} m</el-descriptions-item>
+          <el-descriptions-item label="终孔深度">{{ selectedDrillHole.final_depth || '-' }} m</el-descriptions-item>
           <el-descriptions-item label="孔径">{{ selectedDrillHole.diameter || '-' }} mm</el-descriptions-item>
+          <el-descriptions-item label="施工单位">{{ selectedDrillHole.drill_company || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="开孔日期">{{ selectedDrillHole.drill_start_date || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="终孔日期">{{ selectedDrillHole.drill_end_date || '-' }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="selectedDrillHole.status === '完成' ? 'success' : 'warning'">{{ selectedDrillHole.status }}</el-tag>
           </el-descriptions-item>
+          <el-descriptions-item label="备注" :span="4">{{ selectedDrillHole.description || '-' }}</el-descriptions-item>
         </el-descriptions>
 
         <!-- 子数据表 -->
@@ -636,7 +654,7 @@ onMounted(() => {
     </template>
 
     <!-- 新建/编辑钻孔对话框 -->
-    <el-dialog v-model="dialogVisible" :title="editingItem ? '编辑钻孔' : '新建钻孔'" width="600px">
+    <el-dialog v-model="dialogVisible" :title="editingItem ? '编辑钻孔' : '新建钻孔'" width="700px">
       <el-form :model="form" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -650,34 +668,47 @@ onMounted(() => {
             </el-form-item>
           </el-col>
         </el-row>
+        <el-divider content-position="left">空间坐标信息</el-divider>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="X坐标(m)" required>
               <el-input-number v-model="form.location_x" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="Y坐标(m)" required>
               <el-input-number v-model="form.location_y" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="地面高程(m)">
               <el-input-number v-model="form.elevation" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="钻孔深度(m)">
+        </el-row>
+        <el-divider content-position="left">钻孔深度信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="总深度(m)">
               <el-input-number v-model="form.total_depth" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="8">
+            <el-form-item label="终孔深度(m)">
+              <el-input-number v-model="form.final_depth" :min="0" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
             <el-form-item label="孔径(mm)">
               <el-input-number v-model="form.diameter" :min="0" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-divider content-position="left">施工信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="施工单位">
+              <el-input v-model="form.drill_company" placeholder="如 地质勘探一队" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -690,9 +721,18 @@ onMounted(() => {
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="施工单位">
-          <el-input v-model="form.drill_company" />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="开孔日期">
+              <el-date-picker v-model="form.drill_start_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="终孔日期">
+              <el-date-picker v-model="form.drill_end_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="备注">
           <el-input v-model="form.description" type="textarea" :rows="2" />
         </el-form-item>
