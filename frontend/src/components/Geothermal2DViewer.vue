@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, watch, computed, nextTick, onUnmounted } from 'vue'
 
 interface Props {
   layers?: any[]
@@ -328,17 +328,38 @@ const exportImage = () => {
 }
 
 // 初始化
+let resizeObserver: ResizeObserver | null = null
+
 onMounted(() => {
-  // 使用 nextTick 确保 DOM 已渲染
-  nextTick(() => {
-    draw()
-  })
+  // 使用 ResizeObserver 确保容器有尺寸时才绘制
+  if (containerRef.value) {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          draw()
+          break
+        }
+      }
+    })
+    resizeObserver.observe(containerRef.value)
+  }
+  
+  // 同时也监听窗口大小变化
   window.addEventListener('resize', draw)
+  
+  // 立即尝试绘制（如果容器已有尺寸）
+  nextTick(() => {
+    if (containerRef.value && containerRef.value.clientWidth > 0) {
+      draw()
+    }
+  })
 })
 
 // 清理
-import { onUnmounted } from 'vue'
 onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+  }
   window.removeEventListener('resize', draw)
 })
 
