@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { gempyApi } from '@/api'
 import { useGeothermalStore } from '@/stores/geothermal'
 import Mini3DViewer from '@/components/Mini3DViewer.vue'
 
+const router = useRouter()
 const store = useGeothermalStore()
 
 const stats = computed(() => ({
@@ -36,6 +38,11 @@ const handleQuickCalc = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 导航到对应页面
+const navigateTo = (path: string) => {
+  router.push(path)
 }
 
 onMounted(async () => {
@@ -132,17 +139,17 @@ onMounted(async () => {
       <el-col :span="12">
         <div class="card" style="margin-bottom: 0;">
           <h2 class="card-title">📖 系统功能</h2>
-          <div class="feature-card">
+          <div class="feature-card clickable" @click="navigateTo('/modeling')">
             <el-icon :size="40" color="#409eff"><DataAnalysis /></el-icon>
             <h3>三维地质建模</h3>
             <p>基于 GemPy + Three.js 构建三维地质结构模型，实时交互式可视化展示地层分布</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card clickable" @click="navigateTo('/calculation')">
             <el-icon :size="40" color="#67c23a"><Cpu /></el-icon>
             <h3>资源计算</h3>
             <p>精确计算地热储层的热含量、可采资源和发电潜力</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card clickable" @click="navigateTo('/layers')">
             <el-icon :size="40" color="#e6a23c"><TrendCharts /></el-icon>
             <h3>数据管理</h3>
             <p>管理钻孔数据、地质层信息和计算结果，支持 CSV/JSON 导出</p>
@@ -218,6 +225,15 @@ onMounted(async () => {
   background: #f5f7fa;
   transition: all 0.3s;
   margin-bottom: 16px;
+}
+
+.feature-card.clickable {
+  cursor: pointer;
+}
+
+.feature-card.clickable:hover {
+  background: #e8f4ff;
+  border: 1px solid #409eff;
 }
 
 .feature-card:hover {
