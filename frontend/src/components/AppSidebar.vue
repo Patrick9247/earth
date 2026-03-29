@@ -3,9 +3,9 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 跳转到钻孔管理页面
+// 跳转到钻孔数据页面
 const goToAddDrillHole = () => {
-  router.push('/drill-holes')
+  router.push('/drill-data')
 }
 
 // 跳转到资源计算页面

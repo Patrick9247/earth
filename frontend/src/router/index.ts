@@ -15,16 +15,10 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '地质层管理' }
   },
   {
-    path: '/drill-holes',
-    name: 'drill-holes',
-    component: () => import('@/views/DrillHolesView.vue'),
+    path: '/drill-data',
+    name: 'drill-data',
+    component: () => import('@/views/DrillDataView.vue'),
     meta: { title: '钻孔数据' }
-  },
-  {
-    path: '/import',
-    name: 'import',
-    component: () => import('@/views/ImportView.vue'),
-    meta: { title: '数据导入' }
   },
   {
     path: '/model',
@@ -42,7 +36,7 @@ const routes: RouteRecordRaw[] = [
     path: '/resource',
     name: 'resource',
     component: () => import('@/views/ResourceView.vue'),
-    meta: { title: '网格资源计算' }
+    meta: { title: '网格计算' }
   },
   {
     path: '/results',

@@ -175,13 +175,13 @@ def generate_synthetic_drill_data(
         bottom_temp = interpolate_temperature(depth, gradient, surface_temp)
         
         drill_holes.append({
-            'name': f'ZK-{str(i+1).zfill(3)}',
+            'hole_id': f'ZK-{str(i+1).zfill(3)}',
+            'hole_name': f'钻孔{str(i+1).zfill(3)}',
             'location_x': float(x_coords[i]),
             'location_y': float(y_coords[i]),
-            'location_z': float(np.random.uniform(40, 60)),
-            'depth': float(depth),
-            'temperature': float((surface_temp + bottom_temp) / 2),
-            'gradient': float(gradient),
+            'elevation': float(np.random.uniform(40, 60)),
+            'total_depth': float(depth),
+            'status': '完成',
             'description': f'合成钻孔数据 #{i+1}'
         })
     
