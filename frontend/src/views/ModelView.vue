@@ -4,7 +4,7 @@ import { gempyApi } from '@/api'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 import Geothermal3DViewer from '@/components/Geothermal3DViewer.vue'
-import Geothermal2DViewer from '@/components/Geothermal2DViewer.vue'
+import Geothermal3DGridView from '@/components/Geothermal3DGridView.vue'
 
 const store = useGeothermalStore()
 
@@ -22,7 +22,7 @@ const activeTab = ref('3d')
 
 // 3D 查看器引用
 const viewer3DRef = ref<InstanceType<typeof Geothermal3DViewer> | null>(null)
-const viewer2DRef = ref<InstanceType<typeof Geothermal2DViewer> | null>(null)
+const gridViewRef = ref<InstanceType<typeof Geothermal3DGridView> | null>(null)
 
 // 显示控制
 const showLayers = ref(true)
@@ -64,7 +64,11 @@ const createModel = async () => {
 
 // 重置视图
 const handleResetView = () => {
-  viewer3DRef.value?.resetView()
+  if (activeTab.value === '3d') {
+    viewer3DRef.value?.resetView()
+  } else {
+    gridViewRef.value?.resetView()
+  }
 }
 
 // 切换地质层显示
@@ -75,15 +79,6 @@ const handleToggleLayers = (val: boolean) => {
 // 切换钻孔显示
 const handleToggleDrillHoles = (val: boolean) => {
   viewer3DRef.value?.toggleDrillHoles(val)
-}
-
-// 导出截图
-const handleExportImage = () => {
-  if (activeTab.value === '3d') {
-    ElMessage.info('3D截图功能开发中...')
-  } else {
-    viewer2DRef.value?.exportImage()
-  }
 }
 
 // 更新模型配置
@@ -109,8 +104,8 @@ onMounted(() => {
             <el-form-item label="网格分辨率">
               <el-slider 
                 :model-value="modelConfig.grid_resolution" 
-                :min="20" 
-                :max="100" 
+                :min="10" 
+                :max="50" 
                 show-input
                 @update:model-value="(v: number) => handleConfigChange('grid_resolution', v)"
               />
@@ -201,7 +196,7 @@ onMounted(() => {
       </el-form>
     </div>
 
-    <!-- 模型可视化（3D/2D 标签页） -->
+    <!-- 模型可视化（3D/三维网格 标签页） -->
     <div class="card">
       <div class="viewer-header">
         <h3 class="card-title">📊 地质模型可视化</h3>
@@ -213,9 +208,9 @@ onMounted(() => {
             重置视图
           </el-button>
         </div>
-        <el-button v-if="activeTab === '2d'" size="small" type="primary" @click="handleExportImage">
-          <el-icon><Download /></el-icon>
-          导出图片
+        <el-button v-if="activeTab === 'grid'" size="small" @click="handleResetView">
+          <el-icon><Refresh /></el-icon>
+          重置视图
         </el-button>
       </div>
       
@@ -232,12 +227,13 @@ onMounted(() => {
           </div>
         </el-tab-pane>
         
-        <el-tab-pane label="2D 剖面" name="2d">
-          <Geothermal2DViewer
-            ref="viewer2DRef"
+        <el-tab-pane label="三维网格" name="grid">
+          <Geothermal3DGridView
+            ref="gridViewRef"
             :layers="layers"
             :drill-holes="drillHoles"
             :extent="store.extent"
+            :grid-resolution="modelConfig.grid_resolution"
           />
         </el-tab-pane>
       </el-tabs>
@@ -264,17 +260,11 @@ onMounted(() => {
     <div class="card" v-if="drillHoles.length > 0">
       <h3 class="card-title">🎯 钻孔数据</h3>
       <el-table :data="drillHoles" size="small" max-height="300">
-        <el-table-column prop="name" label="钻孔编号" width="120" />
+        <el-table-column prop="hole_id" label="钻孔编号" width="120" />
+        <el-table-column prop="hole_name" label="钻孔名称" width="120" />
         <el-table-column prop="location_x" label="X坐标" width="100" />
         <el-table-column prop="location_y" label="Y坐标" width="100" />
-        <el-table-column prop="depth" label="深度(m)" width="100" />
-        <el-table-column prop="temperature" label="温度(°C)" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.temperature > 150 ? 'danger' : row.temperature > 100 ? 'warning' : 'success'">
-              {{ row.temperature }}
-            </el-tag>
-          </template>
-        </el-table-column>
+        <el-table-column prop="total_depth" label="深度(m)" width="100" />
       </el-table>
     </div>
 
@@ -285,7 +275,7 @@ onMounted(() => {
         <el-step title="数据准备" description="配置地质层和钻孔数据" />
         <el-step title="参数设置" description="设置网格分辨率和建模范围" />
         <el-step title="模型生成" description="GemPy 计算地质界面" />
-        <el-step title="可视化分析" description="3D/2D 多视角查看" />
+        <el-step title="可视化分析" description="3D/三维网格多视角查看" />
       </el-steps>
     </div>
   </div>
