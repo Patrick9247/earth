@@ -218,7 +218,7 @@ const addAxes = () => {
   axesGroup.add(zArrow)
 
   // 添加坐标轴标签（使用 Sprite）
-  addTextSprite('X(东)', axisLength + 50, 0, 0, '#ff4444')
+  addTextSprite('X(西)', axisLength + 50, 0, 0, '#ff4444')
   addTextSprite('Y(深度)', 0, -axisLength - 50, 0, '#4488ff')
   addTextSprite('Z(北)', 0, 0, axisLength + 50, '#44ff44')
 
@@ -675,7 +675,7 @@ defineExpose({ resetView, toggleLayers, toggleDrillHoles, toggleGrid })
       
       <div class="control-group">
         <h4>坐标轴</h4>
-        <div class="axis-item"><span class="axis-color" style="background:#ff4444"></span>X轴(东)</div>
+        <div class="axis-item"><span class="axis-color" style="background:#ff4444"></span>X轴(西)</div>
         <div class="axis-item"><span class="axis-color" style="background:#4488ff"></span>Y轴(深度↓)</div>
         <div class="axis-item"><span class="axis-color" style="background:#44ff44"></span>Z轴(北)</div>
       </div>
