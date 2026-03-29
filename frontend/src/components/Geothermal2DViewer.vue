@@ -84,7 +84,7 @@ const draw = () => {
   // 清空画布
   ctx.clearRect(0, 0, displayWidth, displayHeight)
   
-  const padding = { top: 60, right: 60, bottom: 80, left: 100 }
+  const padding = { top: 60, right: 100, bottom: 80, left: 60 }
   const width = displayWidth - padding.left - padding.right
   const height = displayHeight - padding.top - padding.bottom
   
@@ -130,11 +130,12 @@ const draw = () => {
     const labelY = (y1 + y2) / 2
     ctx.fillText(layer.name, padding.left + width / 2, labelY)
     
-    // 深度标签
+    // 深度标签（右侧）
     ctx.font = '12px Arial'
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
-    ctx.textAlign = 'right'
-    ctx.fillText(`${topDepth}m`, padding.left - 10, y1 + 4)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`${topDepth}m`, padding.left + width + 12, y1)
   })
   
   // 绘制钻孔
@@ -218,10 +219,10 @@ const drawAxes = (
   ctx.fillStyle = '#aaaaaa'
   ctx.font = '12px Arial'
   
-  // Y轴（深度）
+  // Y轴（深度）- 右侧
   ctx.beginPath()
-  ctx.moveTo(padding.left, padding.top)
-  ctx.lineTo(padding.left, padding.top + height)
+  ctx.moveTo(padding.left + width, padding.top)
+  ctx.lineTo(padding.left + width, padding.top + height)
   ctx.stroke()
   
   // Y轴刻度和网格线
@@ -238,15 +239,15 @@ const drawAxes = (
     // 刻度线
     ctx.strokeStyle = '#666666'
     ctx.beginPath()
-    ctx.moveTo(padding.left - 8, y)
-    ctx.lineTo(padding.left, y)
+    ctx.moveTo(padding.left + width, y)
+    ctx.lineTo(padding.left + width + 8, y)
     ctx.stroke()
     
-    // 刻度值
+    // 刻度值（右侧）
     ctx.fillStyle = '#aaaaaa'
-    ctx.textAlign = 'right'
+    ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
-    ctx.fillText(`${d}`, padding.left - 12, y)
+    ctx.fillText(`${d}`, padding.left + width + 12, y)
   }
   
   // X轴
@@ -291,9 +292,9 @@ const drawAxes = (
     padding.top + height + 55
   )
   
-  // Y轴标签（深度）
+  // Y轴标签（深度）- 右侧
   ctx.save()
-  ctx.translate(30, padding.top + height / 2)
+  ctx.translate(padding.left + width + 70, padding.top + height / 2)
   ctx.rotate(-Math.PI / 2)
   ctx.fillText('深度 (m)', 0, 0)
   ctx.restore()
