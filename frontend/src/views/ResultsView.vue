@@ -43,6 +43,51 @@ const viewDetail = (row: any) => {
   selectedResult.value = row
 }
 
+// 导出为 CSV
+const exportToCSV = () => {
+  if (results.value.length === 0) {
+    ElMessage.warning('没有数据可导出')
+    return
+  }
+
+  // CSV 表头
+  const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(EJ)', '可采热量(EJ)', '发电潜力(MW)', '开采年限(年)', '创建时间']
+  
+  // CSV 数据行
+  const rows = results.value.map(row => [
+    row.name,
+    (row.volume / 1e6).toFixed(2) + 'e6',
+    row.temperature_avg,
+    (row.heat_content / 1e18).toFixed(4),
+    (row.extractable_heat / 1e18).toFixed(4),
+    row.power_potential?.toFixed(2) || '0.00',
+    row.lifetime_years,
+    row.created_at
+  ])
+
+  // 组合 CSV 内容
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n')
+
+  // 添加 BOM 以支持中文
+  const BOM = '\uFEFF'
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+  
+  // 创建下载链接
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
+  link.setAttribute('download', `计算结果_${new Date().toISOString().slice(0, 10)}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  
+  ElMessage.success('导出成功')
+}
+
 onMounted(() => {
   loadResults()
 })
@@ -57,6 +102,10 @@ onMounted(() => {
         <el-button @click="loadResults">
           <el-icon><Refresh /></el-icon>
           刷新
+        </el-button>
+        <el-button type="success" @click="exportToCSV">
+          <el-icon><Download /></el-icon>
+          导出 CSV
         </el-button>
       </div>
 
@@ -143,5 +192,11 @@ onMounted(() => {
   border-radius: 8px;
   color: #fff;
   margin-top: 20px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 </style>
