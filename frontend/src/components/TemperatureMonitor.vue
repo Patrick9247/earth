@@ -243,7 +243,17 @@ onMounted(() => {
       <!-- 饼图区域 + 图例 -->
       <div class="chart-wrapper">
         <div class="chart-container" ref="chartRef"></div>
-        <img src="/temperature-legend.png" alt="温度分类图例" class="legend-image" />
+        <!-- 自定义图例 -->
+        <div class="custom-legend">
+          <div 
+            v-for="(item, index) in gridData.temperatureDistribution" 
+            :key="index"
+            class="legend-item"
+          >
+            <span class="legend-color" :style="{ background: item.color }"></span>
+            <span class="legend-text">{{ item.name }}</span>
+          </div>
+        </div>
       </div>
       
       <!-- 统计信息 -->
@@ -333,12 +343,35 @@ onMounted(() => {
   height: 300px;
 }
 
-.legend-image {
-  width: 320px;
-  max-width: 100%;
-  margin-top: 12px;
+.custom-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 20px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #f5f7fa;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 320px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  font-size: 12px;
+  color: #606266;
+  white-space: nowrap;
 }
 
 .stats-container {
