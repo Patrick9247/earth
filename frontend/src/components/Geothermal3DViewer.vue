@@ -372,28 +372,6 @@ const createDrillHoleLabel = (name: string, x: number, z: number): THREE.Sprite 
   return sprite
 }
 
-// 创建标签精灵
-const createLabelSprite = (text: string): THREE.Sprite => {
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return new THREE.Sprite()
-
-  canvas.width = 128
-  canvas.height = 48
-
-  ctx.fillStyle = 'rgba(0,0,0,0.8)'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  ctx.font = 'bold 20px Arial'
-  ctx.fillStyle = 'white'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2)
-
-  const texture = new THREE.CanvasTexture(canvas)
-  return new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }))
-}
-
 // 创建热流粒子
 const createHeatParticles = () => {
   particleSystems.forEach(p => scene.remove(p))
