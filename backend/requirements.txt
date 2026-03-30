@@ -1,7 +1,8 @@
 # FastAPI 核心
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
 python-multipart==0.0.6
+starlette>=0.38.0
 
 # 数据库
 sqlalchemy==2.0.25
@@ -18,7 +19,7 @@ matplotlib==3.8.2
 plotly==5.18.0
 
 # 数据验证
-pydantic==2.5.3
+pydantic>=2.8.0
 pydantic-settings==2.1.0
 
 # 工具

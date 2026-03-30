@@ -446,7 +446,7 @@ const createDrillHoles = () => {
   holesToUse.forEach((hole: any) => {
     const x = hole.location_x ?? 0
     const z = hole.location_y ?? 0  // Y坐标映射到Z轴
-    const depth = hole.depth ?? 500
+    const depth = hole.total_depth || hole.depth || 500
 
     // 钻孔颜色（根据温度）
     const temp = hole.temperature ?? 100
@@ -472,7 +472,7 @@ const createDrillHoles = () => {
     drillHoleMeshes.push(marker)
 
     // 标签（显示名称和坐标）
-    const labelSprite = createDrillHoleLabel(hole.name ?? 'ZK', x, z)
+    const labelSprite = createDrillHoleLabel(hole.hole_name || hole.hole_id || 'ZK', x, z)
     labelSprite.position.set(x, 50, z)
     scene.add(labelSprite)
     drillHoleMeshes.push(labelSprite)

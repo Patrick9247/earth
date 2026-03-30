@@ -147,7 +147,7 @@ const draw = () => {
       const horizontalPos = sectionType.value === 'x' ? hole.location_y : hole.location_x
       
       const x = toX(horizontalPos)
-      const depth = hole.depth || 500
+      const depth = hole.total_depth || hole.depth || 500
       
       // 判断钻孔是否在剖面线上（距离小于150m）
       const distanceToSection = Math.abs(sectionPos - sectionPosition.value)
@@ -179,7 +179,7 @@ const draw = () => {
         ctx.fillStyle = '#ffffff'
         ctx.font = 'bold 12px Arial'
         ctx.textAlign = 'center'
-        ctx.fillText(hole.name, x, toY(0) - 30)
+        ctx.fillText(hole.hole_name || hole.hole_id || 'ZK', x, toY(0) - 30)
         
         // 温度标签
         ctx.fillStyle = getTemperatureColor(hole.temperature)

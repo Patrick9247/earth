@@ -50,11 +50,11 @@ export const useGeothermalStore = defineStore('geothermal', () => {
   ]
 
   const defaultDrillHoles = [
-    { id: 1, name: 'ZK-001', location_x: 200, location_y: 300, depth: 800, temperature: 120 },
-    { id: 2, name: 'ZK-002', location_x: 500, location_y: 600, depth: 1200, temperature: 160 },
-    { id: 3, name: 'ZK-003', location_x: 800, location_y: 400, depth: 600, temperature: 95 },
-    { id: 4, name: 'ZK-004', location_x: 350, location_y: 700, depth: 1000, temperature: 140 },
-    { id: 5, name: 'ZK-005', location_x: 650, location_y: 200, depth: 900, temperature: 135 }
+    { id: 1, hole_id: 'ZK-001', hole_name: '钻孔001', location_x: 200, location_y: 300, total_depth: 800, temperature: 120 },
+    { id: 2, hole_id: 'ZK-002', hole_name: '钻孔002', location_x: 500, location_y: 600, total_depth: 1200, temperature: 160 },
+    { id: 3, hole_id: 'ZK-003', hole_name: '钻孔003', location_x: 800, location_y: 400, total_depth: 600, temperature: 95 },
+    { id: 4, hole_id: 'ZK-004', hole_name: '钻孔004', location_x: 350, location_y: 700, total_depth: 1000, temperature: 140 },
+    { id: 5, hole_id: 'ZK-005', hole_name: '钻孔005', location_x: 650, location_y: 200, total_depth: 900, temperature: 135 }
   ]
 
   // Actions
