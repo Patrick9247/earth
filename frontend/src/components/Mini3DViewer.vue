@@ -100,7 +100,7 @@ const addAxes = () => {
   axesGroup = new THREE.Group()
   const axisLength = 250
   
-  // X 轴 - 红色 (东向)
+  // X 轴 - 红色 (西向)
   const xMat = new THREE.LineBasicMaterial({ color: 0xff4444 })
   const xGeom = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, 0, 0),
@@ -152,7 +152,7 @@ const addAxes = () => {
   axesGroup.add(zArrow)
 
   // 添加标签
-  addTextSprite('X(东)', axisLength + 40, 0, 0, '#ff4444')
+  addTextSprite('X(西)', axisLength + 40, 0, 0, '#ff4444')
   addTextSprite('Y(深)', 0, -axisLength - 40, 0, '#4488ff')
   addTextSprite('Z(北)', 0, 0, axisLength + 40, '#44ff44')
 

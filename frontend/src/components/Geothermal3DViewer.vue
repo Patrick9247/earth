@@ -175,7 +175,7 @@ const addAxes = () => {
   const axisLength = 300
   const arrowSize = 40
 
-  // X轴 - 红色 (东向)
+  // X轴 - 红色 (西向)
   const xMat = new THREE.LineBasicMaterial({ color: 0xff4444, linewidth: 2 })
   const xPoints = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(axisLength, 0, 0)]
   const xLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(xPoints), xMat)

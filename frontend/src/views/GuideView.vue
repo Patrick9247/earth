@@ -199,7 +199,7 @@
               <div class="viz-card">
                 <h4>📊 坐标系统</h4>
                 <ul>
-                  <li><span style="color:#ff4444">●</span> <strong>X轴（红色）</strong>：东向</li>
+                  <li><span style="color:#ff4444">●</span> <strong>X轴（红色）</strong>：西向</li>
                   <li><span style="color:#4488ff">●</span> <strong>Y轴（蓝色）</strong>：深度（向下为正）</li>
                   <li><span style="color:#44ff44">●</span> <strong>Z轴（绿色）</strong>：北向</li>
                 </ul>
