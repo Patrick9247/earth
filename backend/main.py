@@ -10,7 +10,8 @@ import logging
 import os
 
 from app.config import settings
-from app.database import init_db
+from app.database import init_db, SessionLocal
+from app.models import GeologicalLayer, DrillHole, ModelConfig
 from app.routers import geological, drill_holes, model_configs, gempy, export, download, resource, import_csv
 
 # 配置日志
@@ -29,6 +30,39 @@ async def lifespan(app: FastAPI):
     try:
         init_db()
         logger.info("Database initialized successfully")
+        
+        # 检查是否有数据，没有则插入示例数据
+        db = SessionLocal()
+        try:
+            if db.query(GeologicalLayer).count() == 0:
+                logger.info("No data found, inserting sample data...")
+                from app.utils import generate_synthetic_drill_data
+                
+                # 插入地质层数据
+                layers = [
+                    GeologicalLayer(name="第四系覆盖层", layer_type="沉积层", depth_top=0, depth_bottom=50, porosity=0.25, permeability=100, thermal_conductivity=1.8, color="#90EE90"),
+                    GeologicalLayer(name="砂岩储层", layer_type="储层", depth_top=50, depth_bottom=500, porosity=0.18, permeability=50, thermal_conductivity=2.5, color="#FFD700"),
+                    GeologicalLayer(name="泥岩盖层", layer_type="盖层", depth_top=500, depth_bottom=800, porosity=0.08, permeability=1, thermal_conductivity=2.0, color="#87CEEB"),
+                    GeologicalLayer(name="花岗岩基底", layer_type="基岩", depth_top=800, depth_bottom=2000, porosity=0.05, permeability=0.5, thermal_conductivity=3.2, color="#CD5C5C"),
+                ]
+                db.add_all(layers)
+                
+                # 插入钻孔数据
+                drill_holes_data = generate_synthetic_drill_data(num_holes=10, extent=(0, 0, 1000, 1000), depth_range=(600, 1500), gradient_range=(5.5, 7.5))
+                drill_holes = [DrillHole(**dh) for dh in drill_holes_data]
+                db.add_all(drill_holes)
+                
+                # 插入模型配置
+                config = ModelConfig(name="默认配置", grid_resolution=50, extent_x_min=0, extent_x_max=1000, extent_y_min=0, extent_y_max=1000, extent_z_min=-2000, extent_z_max=100)
+                db.add(config)
+                
+                db.commit()
+                logger.info("Sample data inserted successfully!")
+        except Exception as e:
+            logger.warning(f"Failed to insert sample data: {e}")
+        finally:
+            db.close()
+            
     except Exception as e:
         logger.warning(f"Database initialization failed: {e}. Running without database.")
     
