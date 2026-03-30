@@ -1,10 +1,17 @@
 """
 数据库连接和会话管理
 """
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from .config import settings
+
+# 确保数据库目录存在
+if settings.USE_SQLITE:
+    db_dir = os.path.dirname(settings.SQLITE_DB_PATH)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
 
 # 创建数据库引擎
 # SQLite 需要特殊的 connect_args
@@ -32,4 +39,10 @@ def get_db():
 
 def init_db():
     """初始化数据库表"""
+    # 确保目录存在
+    if settings.USE_SQLITE:
+        db_dir = os.path.dirname(settings.SQLITE_DB_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+    
     Base.metadata.create_all(bind=engine)

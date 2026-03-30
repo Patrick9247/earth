@@ -5,6 +5,8 @@ import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
+# 工作目录
+WORKSPACE_PATH = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
 
 class Settings(BaseSettings):
     """应用配置类"""
@@ -23,7 +25,9 @@ class Settings(BaseSettings):
     
     # SQLite 作为备选数据库
     USE_SQLITE: bool = os.getenv("USE_SQLITE", "true").lower() == "true"
-    SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", "/tmp/geothermal.db")
+    # 开发环境使用项目目录，生产环境使用 /tmp
+    SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", 
+        f"{WORKSPACE_PATH}/data/geothermal.db" if os.getenv("COZE_PROJECT_ENV") == "DEV" else "/tmp/geothermal.db")
     
     # GemPy 配置
     GRID_RESOLUTION: int = 50  # 网格分辨率

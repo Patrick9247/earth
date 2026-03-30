@@ -8,6 +8,7 @@ import os
 # 添加父目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.models import GeologicalLayer, DrillHole, ModelConfig
 from app.utils import generate_synthetic_drill_data
@@ -15,6 +16,13 @@ from app.utils import generate_synthetic_drill_data
 
 def create_tables():
     """创建所有表"""
+    # 确保数据库目录存在
+    if settings.USE_SQLITE:
+        db_dir = os.path.dirname(settings.SQLITE_DB_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+            print(f"Created database directory: {db_dir}")
+    
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
     print("Tables created successfully!")
