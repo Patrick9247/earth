@@ -2,14 +2,19 @@
 应用配置
 """
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
-# 工作目录
-WORKSPACE_PATH = os.getenv("COZE_WORKSPACE_PATH", "/workspace/projects")
 
 class Settings(BaseSettings):
     """应用配置类"""
+    
+    # pydantic-settings 配置（兼容新旧版本）
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # 忽略未定义的环境变量
+    )
     
     # 应用基础配置
     APP_NAME: str = "地热流体资源建模系统"
@@ -17,20 +22,32 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # 数据库配置
-    MYSQL_HOST: str = os.getenv("MYSQL_HOST", "localhost")
-    MYSQL_PORT: int = int(os.getenv("MYSQL_PORT", "3306"))
-    MYSQL_USER: str = os.getenv("MYSQL_USER", "root")
-    MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "")
-    MYSQL_DATABASE: str = os.getenv("MYSQL_DATABASE", "geothermal_db")
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = ""
+    MYSQL_DATABASE: str = "geothermal_db"
     
     # SQLite 作为备选数据库
-    USE_SQLITE: bool = os.getenv("USE_SQLITE", "true").lower() == "true"
-    # 开发环境使用项目目录，生产环境使用 /tmp
-    SQLITE_DB_PATH: str = os.getenv("SQLITE_DB_PATH", 
-        f"{WORKSPACE_PATH}/data/geothermal.db" if os.getenv("COZE_PROJECT_ENV") == "DEV" else "/tmp/geothermal.db")
+    USE_SQLITE: bool = True
+    SQLITE_DB_PATH: str = ""
     
     # GemPy 配置
     GRID_RESOLUTION: int = 50  # 网格分辨率
+    
+    # 环境变量（显式定义避免验证错误）
+    COZE_WORKSPACE_PATH: str = ""
+    COZE_PROJECT_ENV: str = "DEV"
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # 动态设置 SQLite 数据库路径
+        if not self.SQLITE_DB_PATH:
+            workspace = self.COZE_WORKSPACE_PATH or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            if self.COZE_PROJECT_ENV == "DEV":
+                self.SQLITE_DB_PATH = f"{workspace}/data/geothermal.db"
+            else:
+                self.SQLITE_DB_PATH = "/tmp/geothermal.db"
     
     @property
     def DATABASE_URL(self) -> str:
@@ -38,11 +55,6 @@ class Settings(BaseSettings):
         if self.USE_SQLITE:
             return f"sqlite:///{self.SQLITE_DB_PATH}"
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        extra = "ignore"  # 忽略额外的环境变量
 
 
 settings = Settings()
