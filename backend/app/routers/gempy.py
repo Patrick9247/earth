@@ -51,7 +51,7 @@ async def create_geological_model(
             drill_holes = request.drill_holes
             x_coords = [dh.location_x for dh in drill_holes]
             y_coords = [dh.location_y for dh in drill_holes]
-            depths = [dh.depth for dh in drill_holes]
+            depths = [dh.total_depth for dh in drill_holes if dh.total_depth]
             
             # 添加边界缓冲
             x_range = max(x_coords) - min(x_coords) if x_coords else 1000
