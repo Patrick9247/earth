@@ -87,10 +87,12 @@ async def create_geological_model(
             for dh in request.drill_holes:
                 if layer.depth_top is not None and layer.depth_bottom is not None:
                     mid_depth = (layer.depth_top + layer.depth_bottom) / 2
+                    # 使用 elevation 字段（地面高程），默认为 0
+                    elevation = dh.elevation if dh.elevation else 0
                     points.append({
                         'x': dh.location_x,
                         'y': dh.location_y,
-                        'z': dh.location_z - mid_depth if dh.location_z else -mid_depth
+                        'z': elevation - mid_depth
                     })
             
             if points:
