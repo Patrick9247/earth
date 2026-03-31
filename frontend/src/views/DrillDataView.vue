@@ -672,17 +672,17 @@ onMounted(() => {
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="X坐标(m)" required>
-              <el-input-number v-model="form.location_x" :min="0" style="width: 100%" />
+              <el-input-number v-model="form.location_x" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="Y坐标(m)" required>
-              <el-input-number v-model="form.location_y" :min="0" style="width: 100%" />
+              <el-input-number v-model="form.location_y" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="地面高程(m)">
-              <el-input-number v-model="form.elevation" style="width: 100%" />
+              <el-input-number v-model="form.elevation" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -690,17 +690,17 @@ onMounted(() => {
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="总深度(m)">
-              <el-input-number v-model="form.total_depth" :min="0" style="width: 100%" />
+              <el-input-number v-model="form.total_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="终孔深度(m)">
-              <el-input-number v-model="form.final_depth" :min="0" style="width: 100%" />
+              <el-input-number v-model="form.final_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="孔径(mm)">
-              <el-input-number v-model="form.diameter" :min="0" style="width: 100%" />
+              <el-input-number v-model="form.diameter" :min="0" :controls="false" :precision="1" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -747,13 +747,13 @@ onMounted(() => {
     <el-dialog v-model="tempDialogVisible" title="添加测温数据" width="450px">
       <el-form :model="tempForm" label-width="100px">
         <el-form-item label="深度(m)">
-          <el-input-number v-model="tempForm.depth" :min="0" style="width: 100%" />
+          <el-input-number v-model="tempForm.depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
         </el-form-item>
         <el-form-item label="温度(°C)">
-          <el-input-number v-model="tempForm.temperature" :min="0" :max="400" style="width: 100%" />
+          <el-input-number v-model="tempForm.temperature" :min="0" :max="400" :controls="false" :precision="2" size="large" style="width: 100%" />
         </el-form-item>
         <el-form-item label="地温梯度">
-          <el-input-number v-model="tempForm.gradient" :min="0" :max="20" :precision="1" style="width: 100%" />
+          <el-input-number v-model="tempForm.gradient" :min="0" :max="20" :precision="1" :controls="false" size="large" style="width: 100%" />
         </el-form-item>
         <el-form-item label="测量类型">
           <el-select v-model="tempForm.measure_type" style="width: 100%">
@@ -772,7 +772,7 @@ onMounted(() => {
     <el-dialog v-model="layerDialogVisible" title="添加地层分层" width="500px">
       <el-form :model="layerForm" label-width="100px">
         <el-form-item label="层序号">
-          <el-input-number v-model="layerForm.layer_no" :min="1" style="width: 100%" />
+          <el-input-number v-model="layerForm.layer_no" :min="1" :controls="false" size="large" style="width: 100%" />
         </el-form-item>
         <el-form-item label="地层名称">
           <el-input v-model="layerForm.layer_name" placeholder="如 第四系覆盖层" />
@@ -788,12 +788,12 @@ onMounted(() => {
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="顶深(m)">
-              <el-input-number v-model="layerForm.depth_top" :min="0" style="width: 100%" />
+              <el-input-number v-model="layerForm.depth_top" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="底深(m)">
-              <el-input-number v-model="layerForm.depth_bottom" :min="0" style="width: 100%" />
+              <el-input-number v-model="layerForm.depth_bottom" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -803,12 +803,12 @@ onMounted(() => {
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="孔隙度(%)">
-              <el-input-number v-model="layerForm.porosity" :min="0" :max="50" style="width: 100%" />
+              <el-input-number v-model="layerForm.porosity" :min="0" :max="50" :controls="false" :precision="1" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="渗透率(mD)">
-              <el-input-number v-model="layerForm.permeability" :min="0" style="width: 100%" />
+              <el-input-number v-model="layerForm.permeability" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -953,5 +953,25 @@ onMounted(() => {
 
 .sub-toolbar {
   margin-bottom: 12px;
+}
+
+/* 数字输入框样式优化 */
+:deep(.el-input-number) {
+  font-size: 16px;
+}
+
+:deep(.el-input-number .el-input__inner) {
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+}
+
+:deep(.el-input-number--large .el-input__inner) {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
 }
 </style>
