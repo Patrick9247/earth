@@ -14,6 +14,11 @@ const drillHoles = ref<any[]>([])
 const selectedDrillHole = ref<any>(null)
 const detailData = ref<any>(null)
 
+// 分页状态
+const currentPage = ref(1)
+const pageSize = ref(10)
+const pageSizes = [5, 10, 20, 50]
+
 // ==================== 导入相关 ====================
 const importType = ref('drill_info')
 const uploading = ref(false)
@@ -390,6 +395,22 @@ const goBack = () => {
   detailData.value = null
 }
 
+// ==================== 分页计算 ====================
+const paginatedDrillHoles = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return drillHoles.value.slice(start, end)
+})
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+}
+
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+}
+
 // ==================== 初始化 ====================
 onMounted(() => {
   loadDrillHoles()
@@ -417,7 +438,7 @@ onMounted(() => {
               </el-button>
             </div>
 
-            <el-table :data="drillHoles" v-loading="loading" stripe @row-click="selectDrillHole">
+            <el-table :data="paginatedDrillHoles" v-loading="loading" stripe @row-click="selectDrillHole">
               <el-table-column prop="hole_id" label="钻孔编号" width="100" fixed />
               <el-table-column prop="hole_name" label="钻孔名称" width="120" />
               <el-table-column label="空间坐标" align="center">
@@ -452,6 +473,19 @@ onMounted(() => {
                 </template>
               </el-table-column>
             </el-table>
+
+            <!-- 分页组件 -->
+            <div class="pagination-container">
+              <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="pageSizes"
+                :total="drillHoles.length"
+                layout="total, sizes, prev, pager, next, jumper"
+                @current-change="handlePageChange"
+                @size-change="handleSizeChange"
+              />
+            </div>
 
             <!-- 钻孔位置图 -->
             <div class="map-section">
@@ -953,6 +987,14 @@ onMounted(() => {
 
 .sub-toolbar {
   margin-bottom: 12px;
+}
+
+/* 分页样式 */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 20px 0;
 }
 
 /* 数字输入框样式优化 */
