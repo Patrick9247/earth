@@ -63,6 +63,7 @@ const form = ref({
 // 测温数据手动输入
 const tempDialogVisible = ref(false)
 const tempForm = ref({
+  id: null as number | null,
   drill_hole_id: 0,
   depth: 0,
   temperature: 0,
@@ -74,6 +75,7 @@ const tempForm = ref({
 // 分层数据手动输入
 const layerDialogVisible = ref(false)
 const layerForm = ref({
+  id: null as number | null,
   drill_hole_id: 0,
   layer_no: 1,
   layer_name: '',
@@ -83,6 +85,50 @@ const layerForm = ref({
   lithology: '',
   porosity: null as number | null,
   permeability: null as number | null
+})
+
+// 压力数据手动输入
+const pressureDialogVisible = ref(false)
+const pressureForm = ref({
+  id: null as number | null,
+  drill_hole_id: 0,
+  measure_date: '',
+  measure_time: '',
+  wellhead_pressure: null as number | null,
+  reservoir_pressure: null as number | null,
+  flowing_pressure: null as number | null,
+  shut_in_pressure: null as number | null,
+  pressure_gradient: null as number | null,
+  measure_depth: null as number | null,
+  flow_rate: null as number | null,
+  water_level: null as number | null,
+  instrument: '',
+  description: ''
+})
+
+// 孔隙度数据手动输入
+const porosityDialogVisible = ref(false)
+const porosityForm = ref({
+  id: null as number | null,
+  drill_hole_id: 0,
+  sample_no: '',
+  sample_date: '',
+  depth_top: null as number | null,
+  depth_bottom: null as number | null,
+  depth: null as number | null,
+  lithology: '',
+  rock_type: '',
+  porosity_total: null as number | null,
+  porosity_effective: null as number | null,
+  permeability: null as number | null,
+  permeability_horizontal: null as number | null,
+  permeability_vertical: null as number | null,
+  density_bulk: null as number | null,
+  density_grain: null as number | null,
+  water_saturation: null as number | null,
+  test_method: '',
+  laboratory: '',
+  description: ''
 })
 
 // ==================== 数据加载 ====================
@@ -340,6 +386,7 @@ const handleSubmit = async () => {
 // 添加测温数据
 const handleAddTemperature = (drillHoleId: number) => {
   tempForm.value = {
+    id: null,
     drill_hole_id: drillHoleId,
     depth: 0,
     temperature: 0,
@@ -353,26 +400,47 @@ const handleAddTemperature = (drillHoleId: number) => {
 const handleSubmitTemperature = async () => {
   // 简化处理：直接更新本地数据
   if (detailData.value) {
-    const newTemp = {
-      id: Date.now(),
-      ...tempForm.value,
-      created_at: new Date().toISOString()
+    const index = detailData.value.temperature_curves.findIndex((t: any) => t.id === tempForm.value.id)
+    if (index >= 0) {
+      // 编辑模式：更新现有数据
+      detailData.value.temperature_curves[index] = {
+        id: tempForm.value.id,
+        drill_hole_id: tempForm.value.drill_hole_id,
+        depth: tempForm.value.depth,
+        temperature: tempForm.value.temperature,
+        gradient: tempForm.value.gradient || 0,
+        measure_type: tempForm.value.measure_type,
+        measure_date: tempForm.value.measure_date
+      }
+    } else {
+      // 新增模式
+      const newTemp = {
+        id: Date.now(),
+        drill_hole_id: tempForm.value.drill_hole_id,
+        depth: tempForm.value.depth,
+        temperature: tempForm.value.temperature,
+        gradient: tempForm.value.gradient || 0,
+        measure_type: tempForm.value.measure_type,
+        measure_date: tempForm.value.measure_date,
+        created_at: new Date().toISOString()
+      }
+      detailData.value.temperature_curves.push(newTemp)
     }
-    detailData.value.temperature_curves.push(newTemp)
-    
+
     // 更新store中的温度数据
     const avgTemp = detailData.value.temperature_curves.reduce((sum: number, t: any) => sum + t.temperature, 0) / detailData.value.temperature_curves.length
-    store.updateDrillHoles(store.drillHoles.map((d: any) => 
+    store.updateDrillHoles(store.drillHoles.map((d: any) =>
       d.id === tempForm.value.drill_hole_id ? { ...d, temperature: avgTemp } : d
     ))
   }
   tempDialogVisible.value = false
-  ElMessage.success('添加成功')
+  ElMessage.success('保存成功')
 }
 
 // 添加分层数据
 const handleAddLayer = (drillHoleId: number) => {
   layerForm.value = {
+    id: null,
     drill_hole_id: drillHoleId,
     layer_no: (detailData.value?.layers?.length || 0) + 1,
     layer_name: '',
@@ -388,34 +456,286 @@ const handleAddLayer = (drillHoleId: number) => {
 
 const handleSubmitLayer = async () => {
   if (detailData.value) {
-    const newLayer = {
-      id: Date.now(),
-      ...layerForm.value,
-      thickness: layerForm.value.depth_bottom - layerForm.value.depth_top,
-      created_at: new Date().toISOString()
-    }
-    detailData.value.layers.push(newLayer)
-    
-    // 同步到地质层store
-    if (layerForm.value.porosity) {
-      const existingLayer = store.layers.find((l: any) => l.name === layerForm.value.layer_name)
-      if (!existingLayer) {
-        store.updateLayers([...store.layers, {
-          id: Date.now(),
-          name: layerForm.value.layer_name,
-          layer_type: layerForm.value.layer_type,
-          depth_top: layerForm.value.depth_top,
-          depth_bottom: layerForm.value.depth_bottom,
-          porosity: layerForm.value.porosity / 100,
-          permeability: layerForm.value.permeability || 0,
-          thermal_conductivity: 2.5,
-          color: '#FFD700'
-        }])
+    const index = detailData.value.layers.findIndex((l: any) => l.id === layerForm.value.id)
+    if (index >= 0) {
+      // 编辑模式：更新现有数据
+      detailData.value.layers[index] = {
+        id: layerForm.value.id,
+        drill_hole_id: layerForm.value.drill_hole_id,
+        layer_no: layerForm.value.layer_no,
+        layer_name: layerForm.value.layer_name,
+        layer_type: layerForm.value.layer_type,
+        depth_top: layerForm.value.depth_top,
+        depth_bottom: layerForm.value.depth_bottom,
+        lithology: layerForm.value.lithology,
+        porosity: layerForm.value.porosity,
+        permeability: layerForm.value.permeability,
+        thickness: layerForm.value.depth_bottom - layerForm.value.depth_top
+      }
+    } else {
+      // 新增模式
+      const newLayer = {
+        id: Date.now(),
+        drill_hole_id: layerForm.value.drill_hole_id,
+        layer_no: layerForm.value.layer_no,
+        layer_name: layerForm.value.layer_name,
+        layer_type: layerForm.value.layer_type,
+        depth_top: layerForm.value.depth_top,
+        depth_bottom: layerForm.value.depth_bottom,
+        lithology: layerForm.value.lithology,
+        porosity: layerForm.value.porosity,
+        permeability: layerForm.value.permeability,
+        thickness: layerForm.value.depth_bottom - layerForm.value.depth_top,
+        created_at: new Date().toISOString()
+      }
+      detailData.value.layers.push(newLayer)
+
+      // 同步到地质层store
+      if (layerForm.value.porosity) {
+        const existingLayer = store.layers.find((l: any) => l.name === layerForm.value.layer_name)
+        if (!existingLayer) {
+          store.updateLayers([...store.layers, {
+            id: Date.now(),
+            name: layerForm.value.layer_name,
+            layer_type: layerForm.value.layer_type,
+            depth_top: layerForm.value.depth_top,
+            depth_bottom: layerForm.value.depth_bottom,
+            porosity: layerForm.value.porosity / 100,
+            permeability: layerForm.value.permeability || 0,
+            thermal_conductivity: 2.5,
+            color: '#FFD700'
+          }])
+        }
       }
     }
   }
   layerDialogVisible.value = false
-  ElMessage.success('添加成功')
+  ElMessage.success('保存成功')
+}
+
+// 编辑分层数据
+const handleEditLayer = (row: any) => {
+  layerForm.value = { ...row }
+  layerDialogVisible.value = true
+}
+
+// 删除分层数据
+const handleDeleteLayer = (id: number) => {
+  if (detailData.value) {
+    const index = detailData.value.layers.findIndex((l: any) => l.id === id)
+    if (index >= 0) {
+      detailData.value.layers.splice(index, 1)
+      // 重新排序层号
+      detailData.value.layers.forEach((layer: any, idx: number) => {
+        layer.layer_no = idx + 1
+      })
+      ElMessage.success('删除成功')
+    }
+  }
+}
+
+// 添加压力数据
+const handleAddPressure = (drillHoleId: number) => {
+  pressureForm.value = {
+    id: null,
+    drill_hole_id: drillHoleId,
+    measure_date: '',
+    measure_time: '',
+    wellhead_pressure: null,
+    reservoir_pressure: null,
+    flowing_pressure: null,
+    shut_in_pressure: null,
+    pressure_gradient: null,
+    measure_depth: null,
+    flow_rate: null,
+    water_level: null,
+    instrument: '',
+    description: ''
+  }
+  pressureDialogVisible.value = true
+}
+
+const handleSubmitPressure = async () => {
+  if (detailData.value) {
+    const index = detailData.value.pressure_data.findIndex((p: any) => p.id === pressureForm.value.id)
+    if (index >= 0) {
+      // 编辑模式：更新现有数据
+      detailData.value.pressure_data[index] = {
+        id: pressureForm.value.id,
+        drill_hole_id: pressureForm.value.drill_hole_id,
+        measure_date: pressureForm.value.measure_date,
+        measure_time: pressureForm.value.measure_time,
+        wellhead_pressure: pressureForm.value.wellhead_pressure,
+        reservoir_pressure: pressureForm.value.reservoir_pressure,
+        flowing_pressure: pressureForm.value.flowing_pressure,
+        shut_in_pressure: pressureForm.value.shut_in_pressure,
+        pressure_gradient: pressureForm.value.pressure_gradient,
+        measure_depth: pressureForm.value.measure_depth,
+        flow_rate: pressureForm.value.flow_rate,
+        water_level: pressureForm.value.water_level,
+        instrument: pressureForm.value.instrument,
+        description: pressureForm.value.description
+      }
+    } else {
+      // 新增模式
+      const newPressure = {
+        id: Date.now(),
+        drill_hole_id: pressureForm.value.drill_hole_id,
+        measure_date: pressureForm.value.measure_date,
+        measure_time: pressureForm.value.measure_time,
+        wellhead_pressure: pressureForm.value.wellhead_pressure,
+        reservoir_pressure: pressureForm.value.reservoir_pressure,
+        flowing_pressure: pressureForm.value.flowing_pressure,
+        shut_in_pressure: pressureForm.value.shut_in_pressure,
+        pressure_gradient: pressureForm.value.pressure_gradient,
+        measure_depth: pressureForm.value.measure_depth,
+        flow_rate: pressureForm.value.flow_rate,
+        water_level: pressureForm.value.water_level,
+        instrument: pressureForm.value.instrument,
+        description: pressureForm.value.description,
+        created_at: new Date().toISOString()
+      }
+      detailData.value.pressure_data.push(newPressure)
+    }
+  }
+  pressureDialogVisible.value = false
+  ElMessage.success('保存成功')
+}
+
+// 添加孔隙度数据
+const handleAddPorosity = (drillHoleId: number) => {
+  porosityForm.value = {
+    id: null,
+    drill_hole_id: drillHoleId,
+    sample_no: '',
+    sample_date: '',
+    depth_top: null,
+    depth_bottom: null,
+    depth: null,
+    lithology: '',
+    rock_type: '',
+    porosity_total: null,
+    porosity_effective: null,
+    permeability: null,
+    permeability_horizontal: null,
+    permeability_vertical: null,
+    density_bulk: null,
+    density_grain: null,
+    water_saturation: null,
+    test_method: '',
+    laboratory: '',
+    description: ''
+  }
+  porosityDialogVisible.value = true
+}
+
+const handleSubmitPorosity = async () => {
+  if (detailData.value) {
+    const index = detailData.value.porosity_data.findIndex((p: any) => p.id === porosityForm.value.id)
+    if (index >= 0) {
+      // 编辑模式：更新现有数据
+      detailData.value.porosity_data[index] = {
+        id: porosityForm.value.id,
+        drill_hole_id: porosityForm.value.drill_hole_id,
+        sample_no: porosityForm.value.sample_no,
+        sample_date: porosityForm.value.sample_date,
+        depth_top: porosityForm.value.depth_top,
+        depth_bottom: porosityForm.value.depth_bottom,
+        depth: porosityForm.value.depth,
+        lithology: porosityForm.value.lithology,
+        rock_type: porosityForm.value.rock_type,
+        porosity_total: porosityForm.value.porosity_total,
+        porosity_effective: porosityForm.value.porosity_effective,
+        permeability: porosityForm.value.permeability,
+        permeability_horizontal: porosityForm.value.permeability_horizontal,
+        permeability_vertical: porosityForm.value.permeability_vertical,
+        density_bulk: porosityForm.value.density_bulk,
+        density_grain: porosityForm.value.density_grain,
+        water_saturation: porosityForm.value.water_saturation,
+        test_method: porosityForm.value.test_method,
+        laboratory: porosityForm.value.laboratory,
+        description: porosityForm.value.description
+      }
+    } else {
+      // 新增模式
+      const newPorosity = {
+        id: Date.now(),
+        drill_hole_id: porosityForm.value.drill_hole_id,
+        sample_no: porosityForm.value.sample_no,
+        sample_date: porosityForm.value.sample_date,
+        depth_top: porosityForm.value.depth_top,
+        depth_bottom: porosityForm.value.depth_bottom,
+        depth: porosityForm.value.depth,
+        lithology: porosityForm.value.lithology,
+        rock_type: porosityForm.value.rock_type,
+        porosity_total: porosityForm.value.porosity_total,
+        porosity_effective: porosityForm.value.porosity_effective,
+        permeability: porosityForm.value.permeability,
+        permeability_horizontal: porosityForm.value.permeability_horizontal,
+        permeability_vertical: porosityForm.value.permeability_vertical,
+        density_bulk: porosityForm.value.density_bulk,
+        density_grain: porosityForm.value.density_grain,
+        water_saturation: porosityForm.value.water_saturation,
+        test_method: porosityForm.value.test_method,
+        laboratory: porosityForm.value.laboratory,
+        description: porosityForm.value.description,
+        created_at: new Date().toISOString()
+      }
+      detailData.value.porosity_data.push(newPorosity)
+    }
+  }
+  porosityDialogVisible.value = false
+  ElMessage.success('保存成功')
+}
+
+// 编辑压力数据
+const handleEditPressure = (row: any) => {
+  pressureForm.value = { ...row }
+  pressureDialogVisible.value = true
+}
+
+// 删除压力数据
+const handleDeletePressure = (id: number) => {
+  if (detailData.value) {
+    detailData.value.pressure_data = detailData.value.pressure_data.filter((p: any) => p.id !== id)
+    ElMessage.success('删除成功')
+  }
+}
+
+// 编辑孔隙度数据
+const handleEditPorosity = (row: any) => {
+  porosityForm.value = { ...row }
+  porosityDialogVisible.value = true
+}
+
+// 删除孔隙度数据
+const handleDeletePorosity = (id: number) => {
+  if (detailData.value) {
+    detailData.value.porosity_data = detailData.value.porosity_data.filter((p: any) => p.id !== id)
+    ElMessage.success('删除成功')
+  }
+}
+
+// 编辑测温数据
+const handleEditTemperature = (row: any) => {
+  tempForm.value = {
+    id: row.id,
+    drill_hole_id: row.drill_hole_id,
+    depth: row.depth,
+    temperature: row.temperature,
+    gradient: row.gradient || 0,
+    measure_type: row.measure_type || '稳态测温',
+    measure_date: row.measure_date || new Date().toISOString().split('T')[0]
+  }
+  tempDialogVisible.value = true
+}
+
+// 删除测温数据
+const handleDeleteTemperature = (id: number) => {
+  if (detailData.value) {
+    detailData.value.temperature_curves = detailData.value.temperature_curves.filter((t: any) => t.id !== id)
+    ElMessage.success('删除成功')
+  }
 }
 
 // ==================== 导入操作 ====================
@@ -747,6 +1067,16 @@ onMounted(() => {
               <el-table-column prop="gradient" label="梯度(°C/100m)" width="140" />
               <el-table-column prop="measure_type" label="测量类型" width="120" />
               <el-table-column prop="measure_date" label="测量日期" width="120" />
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" link size="small" @click="handleEditTemperature(row)">编辑</el-button>
+                  <el-popconfirm title="确定删除？" @confirm="handleDeleteTemperature(row.id)">
+                    <template #reference>
+                      <el-button type="danger" link size="small">删除</el-button>
+                    </template>
+                  </el-popconfirm>
+                </template>
+              </el-table-column>
             </el-table>
           </el-tab-pane>
 
@@ -772,6 +1102,16 @@ onMounted(() => {
               <el-table-column prop="porosity" label="孔隙度" width="100">
                 <template #default="{ row }">{{ row.porosity ? (row.porosity * 100).toFixed(1) + '%' : '-' }}</template>
               </el-table-column>
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" link size="small" @click="handleEditLayer(row)">编辑</el-button>
+                  <el-popconfirm title="确定删除？" @confirm="handleDeleteLayer(row.id)">
+                    <template #reference>
+                      <el-button type="danger" link size="small">删除</el-button>
+                    </template>
+                  </el-popconfirm>
+                </template>
+              </el-table-column>
             </el-table>
           </el-tab-pane>
 
@@ -780,12 +1120,29 @@ onMounted(() => {
             <template #label>
               <span><el-icon><Odometer /></el-icon> 压力数据 ({{ detailData?.pressure_data?.length || 0 }})</span>
             </template>
+            <div class="sub-toolbar">
+              <el-button type="primary" size="small" @click="handleAddPressure(selectedDrillHole.id)">
+                <el-icon><Plus /></el-icon>
+                添加压力数据
+              </el-button>
+            </div>
             <el-table :data="detailData?.pressure_data || []" border stripe size="small">
               <el-table-column prop="measure_date" label="日期" width="120" />
-              <el-table-column prop="wellhead_pressure" label="井口压力(MPa)" width="140" />
-              <el-table-column prop="reservoir_pressure" label="储层压力(MPa)" width="140" />
-              <el-table-column prop="flow_rate" label="流量(m³/h)" width="120" />
-              <el-table-column prop="water_level" label="动水位(m)" width="120" />
+              <el-table-column prop="measure_time" label="时间" width="100" />
+              <el-table-column prop="wellhead_pressure" label="井口压力(MPa)" width="130" />
+              <el-table-column prop="reservoir_pressure" label="储层压力(MPa)" width="130" />
+              <el-table-column prop="flow_rate" label="流量(m³/h)" width="110" />
+              <el-table-column prop="water_level" label="动水位(m)" width="110" />
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" link size="small" @click="handleEditPressure(row)">编辑</el-button>
+                  <el-popconfirm title="确定删除？" @confirm="handleDeletePressure(row.id)">
+                    <template #reference>
+                      <el-button type="danger" link size="small">删除</el-button>
+                    </template>
+                  </el-popconfirm>
+                </template>
+              </el-table-column>
             </el-table>
           </el-tab-pane>
 
@@ -794,13 +1151,29 @@ onMounted(() => {
             <template #label>
               <span><el-icon><Grid /></el-icon> 孔隙度数据 ({{ detailData?.porosity_data?.length || 0 }})</span>
             </template>
+            <div class="sub-toolbar">
+              <el-button type="primary" size="small" @click="handleAddPorosity(selectedDrillHole.id)">
+                <el-icon><Plus /></el-icon>
+                添加孔隙度数据
+              </el-button>
+            </div>
             <el-table :data="detailData?.porosity_data || []" border stripe size="small">
-              <el-table-column prop="sample_no" label="样品编号" width="120" />
-              <el-table-column prop="depth" label="深度(m)" width="100" />
-              <el-table-column prop="lithology" label="岩性" width="150" />
-              <el-table-column prop="porosity_total" label="总孔隙度(%)" width="120" />
-              <el-table-column prop="porosity_effective" label="有效孔隙度(%)" width="130" />
-              <el-table-column prop="permeability" label="渗透率(mD)" width="120" />
+              <el-table-column prop="sample_no" label="样品编号" width="110" />
+              <el-table-column prop="depth" label="深度(m)" width="90" />
+              <el-table-column prop="lithology" label="岩性" width="130" />
+              <el-table-column prop="porosity_total" label="总孔隙度(%)" width="110" />
+              <el-table-column prop="porosity_effective" label="有效孔隙度(%)" width="120" />
+              <el-table-column prop="permeability" label="渗透率(mD)" width="110" />
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" link size="small" @click="handleEditPorosity(row)">编辑</el-button>
+                  <el-popconfirm title="确定删除？" @confirm="handleDeletePorosity(row.id)">
+                    <template #reference>
+                      <el-button type="danger" link size="small">删除</el-button>
+                    </template>
+                  </el-popconfirm>
+                </template>
+              </el-table-column>
             </el-table>
           </el-tab-pane>
         </el-tabs>
@@ -1162,6 +1535,144 @@ onMounted(() => {
       <template #footer>
         <el-button @click="layerDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitLayer">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加/编辑压力数据对话框 -->
+    <el-dialog v-model="pressureDialogVisible" title="压力数据" width="550px">
+      <el-form :model="pressureForm" label-width="100px">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="测量日期">
+              <el-date-picker v-model="pressureForm.measure_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="测量时间">
+              <el-input v-model="pressureForm.measure_time" placeholder="如 10:30:00" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="井口压力">
+              <el-input-number v-model="pressureForm.wellhead_pressure" :controls="false" :precision="3" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="储层压力">
+              <el-input-number v-model="pressureForm.reservoir_pressure" :controls="false" :precision="3" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="流动压力">
+              <el-input-number v-model="pressureForm.flowing_pressure" :controls="false" :precision="3" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="关井压力">
+              <el-input-number v-model="pressureForm.shut_in_pressure" :controls="false" :precision="3" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="流量(m³/h)">
+              <el-input-number v-model="pressureForm.flow_rate" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="动水位(m)">
+              <el-input-number v-model="pressureForm.water_level" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="测量仪器">
+          <el-input v-model="pressureForm.instrument" placeholder="如 压力计型号" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="pressureForm.description" type="textarea" :rows="2" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pressureDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitPressure">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加/编辑孔隙度数据对话框 -->
+    <el-dialog v-model="porosityDialogVisible" title="孔隙度数据" width="600px">
+      <el-form :model="porosityForm" label-width="100px">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="样品编号">
+              <el-input v-model="porosityForm.sample_no" placeholder="如 S-001" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="采样日期">
+              <el-date-picker v-model="porosityForm.sample_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="取样深度(m)">
+              <el-input-number v-model="porosityForm.depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="总孔隙度(%)">
+              <el-input-number v-model="porosityForm.porosity_total" :min="0" :max="100" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="有效孔隙度(%)">
+              <el-input-number v-model="porosityForm.porosity_effective" :min="0" :max="100" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="渗透率(mD)">
+              <el-input-number v-model="porosityForm.permeability" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="水平渗透率(mD)">
+              <el-input-number v-model="porosityForm.permeability_horizontal" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="垂直渗透率(mD)">
+              <el-input-number v-model="porosityForm.permeability_vertical" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="岩性描述">
+          <el-input v-model="porosityForm.lithology" placeholder="如 砂岩、花岗岩" />
+        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="测试方法">
+              <el-input v-model="porosityForm.test_method" placeholder="如 气测法" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="测试单位">
+              <el-input v-model="porosityForm.laboratory" placeholder="测试实验室" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="备注">
+          <el-input v-model="porosityForm.description" type="textarea" :rows="2" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="porosityDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitPorosity">确定</el-button>
       </template>
     </el-dialog>
   </div>
