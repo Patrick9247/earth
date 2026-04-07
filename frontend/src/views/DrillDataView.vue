@@ -27,11 +27,7 @@ const importResult = ref<any>(null)
 const fileList = ref<UploadFile[]>([])
 
 const importTypes = [
-  { value: 'drill_info', label: '钻孔空间信息', description: '钻孔编号、坐标、深度等基本信息', icon: 'Aim' },
-  { value: 'layers', label: '热储层分层数据', description: '地层分层、岩性、厚度等信息', icon: 'DataLine' },
-  { value: 'temperature', label: '钻孔测温曲线', description: '不同深度的温度测量数据', icon: 'TrendCharts' },
-  { value: 'pressure', label: '孔口压力数据', description: '井口压力、储层压力等数据', icon: 'Odometer' },
-  { value: 'porosity', label: '岩石孔隙度数据', description: '岩石物性、孔隙度、渗透率数据', icon: 'Grid' }
+  { value: 'drill_info', label: '钻孔空间信息', description: '钻孔编号、坐标、深度等基本信息', icon: 'Aim' }
 ]
 
 // ==================== 手动输入表单 ====================
