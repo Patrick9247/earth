@@ -10,6 +10,7 @@ from ..models import DrillHole, DrillLayer, DrillTemperatureCurve, DrillPressure
 from ..schemas import (
     DrillHoleCreate,
     DrillHoleResponse,
+    DrillHoleWithDetailsCreate,
     MessageResponse
 )
 
@@ -106,6 +107,63 @@ async def create_drill_hole(drill_hole: DrillHoleCreate, db: Session = Depends(g
     db.commit()
     db.refresh(db_drill_hole)
     return db_drill_hole
+
+
+@router.post("/with-details")
+async def create_drill_hole_with_details(data: DrillHoleWithDetailsCreate, db: Session = Depends(get_db)):
+    """创建钻孔及其关联数据（分层、测温、压力、孔隙度）"""
+    # 检查hole_id是否已存在
+    existing = db.query(DrillHole).filter(DrillHole.hole_id == data.drill_hole.hole_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"钻孔编号 {data.drill_hole.hole_id} 已存在")
+    
+    # 创建钻孔基本信息
+    db_drill_hole = DrillHole(**data.drill_hole.model_dump())
+    db.add(db_drill_hole)
+    db.commit()
+    db.refresh(db_drill_hole)
+    
+    drill_hole_id = db_drill_hole.id
+    
+    # 创建分层数据
+    if data.layers:
+        for layer_data in data.layers:
+            layer_data["drill_hole_id"] = drill_hole_id
+            # 计算厚度
+            if "depth_top" in layer_data and "depth_bottom" in layer_data:
+                layer_data["thickness"] = layer_data["depth_bottom"] - layer_data["depth_top"]
+            db_layer = DrillLayer(**layer_data)
+            db.add(db_layer)
+    
+    # 创建测温数据
+    if data.temperature_curves:
+        for temp_data in data.temperature_curves:
+            temp_data["drill_hole_id"] = drill_hole_id
+            db_temp = DrillTemperatureCurve(**temp_data)
+            db.add(db_temp)
+    
+    # 创建压力数据
+    if data.pressure_data:
+        for pressure_data in data.pressure_data:
+            pressure_data["drill_hole_id"] = drill_hole_id
+            db_pressure = DrillPressureData(**pressure_data)
+            db.add(db_pressure)
+    
+    # 创建孔隙度数据
+    if data.porosity_data:
+        for porosity_data in data.porosity_data:
+            porosity_data["drill_hole_id"] = drill_hole_id
+            db_porosity = DrillPorosityData(**porosity_data)
+            db.add(db_porosity)
+    
+    db.commit()
+    db.refresh(db_drill_hole)
+    
+    return {
+        "success": True,
+        "message": "钻孔及其关联数据创建成功",
+        "drill_hole": db_drill_hole
+    }
 
 
 @router.post("/batch", response_model=List[DrillHoleResponse])

@@ -38,6 +38,8 @@ const importTypes = [
 const dialogVisible = ref(false)
 const editingItem = ref<any>(null)
 const form = ref({
+  activeTab: 'basic',
+  // 钻孔基本信息
   hole_id: '',
   hole_name: '',
   location_x: 0,
@@ -50,7 +52,12 @@ const form = ref({
   drill_start_date: '',
   drill_end_date: '',
   status: '完成',
-  description: ''
+  description: '',
+  // 关联数据
+  layers: [] as any[],
+  temperature_curves: [] as any[],
+  pressure_data: [] as any[],
+  porosity_data: [] as any[]
 })
 
 // 测温数据手动输入
@@ -146,9 +153,81 @@ const loadDrillHoleDetail = async (id: number) => {
 }
 
 // ==================== 手动输入操作 ====================
+// 添加分层数据
+const addLayer = () => {
+  form.value.layers.push({
+    layer_no: form.value.layers.length + 1,
+    layer_name: '',
+    layer_type: '',
+    depth_top: 0,
+    depth_bottom: 0,
+    lithology: '',
+    porosity: null,
+    permeability: null
+  })
+}
+
+// 移除分层数据
+const removeLayer = (index: number) => {
+  form.value.layers.splice(index, 1)
+  // 重新编号
+  form.value.layers.forEach((layer, idx) => {
+    layer.layer_no = idx + 1
+  })
+}
+
+// 添加测温数据
+const addTemperature = () => {
+  form.value.temperature_curves.push({
+    depth: 0,
+    temperature: 0,
+    gradient: null,
+    measure_date: '',
+    measure_type: '稳态测温'
+  })
+}
+
+// 移除测温数据
+const removeTemperature = (index: number) => {
+  form.value.temperature_curves.splice(index, 1)
+}
+
+// 添加压力数据
+const addPressure = () => {
+  form.value.pressure_data.push({
+    measure_date: '',
+    wellhead_pressure: null,
+    reservoir_pressure: null,
+    flow_rate: null,
+    water_level: null
+  })
+}
+
+// 移除压力数据
+const removePressure = (index: number) => {
+  form.value.pressure_data.splice(index, 1)
+}
+
+// 添加孔隙度数据
+const addPorosity = () => {
+  form.value.porosity_data.push({
+    sample_no: '',
+    depth: 0,
+    lithology: '',
+    porosity_total: null,
+    permeability: null
+  })
+}
+
+// 移除孔隙度数据
+const removePorosity = (index: number) => {
+  form.value.porosity_data.splice(index, 1)
+}
+
 const handleAdd = () => {
   editingItem.value = null
   form.value = {
+    activeTab: 'basic',
     hole_id: '',
     hole_name: '',
     location_x: 0,
@@ -161,14 +240,18 @@ const handleAdd = () => {
     drill_start_date: '',
     drill_end_date: '',
     status: '完成',
-    description: ''
+    description: '',
+    layers: [],
+    temperature_curves: [],
+    pressure_data: [],
+    porosity_data: []
   }
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
   editingItem.value = row
-  form.value = { ...row }
+  form.value = { ...row, layers: [], temperature_curves: [], pressure_data: [], porosity_data: [] }
   dialogVisible.value = true
 }
 
@@ -187,15 +270,52 @@ const handleDelete = async (id: number) => {
 
 const handleSubmit = async () => {
   try {
-    if (editingItem.value) {
+    // 新建钻孔时提交完整数据
+    if (!editingItem.value) {
+      // 准备提交数据
+      const submitData = {
+        drill_hole: {
+          hole_id: form.value.hole_id,
+          hole_name: form.value.hole_name,
+          location_x: form.value.location_x,
+          location_y: form.value.location_y,
+          elevation: form.value.elevation,
+          total_depth: form.value.total_depth,
+          final_depth: form.value.final_depth,
+          diameter: form.value.diameter,
+          drill_company: form.value.drill_company,
+          drill_start_date: form.value.drill_start_date,
+          drill_end_date: form.value.drill_end_date,
+          status: form.value.status,
+          description: form.value.description
+        },
+        layers: form.value.layers.length > 0 ? form.value.layers : undefined,
+        temperature_curves: form.value.temperature_curves.length > 0 ? form.value.temperature_curves : undefined,
+        pressure_data: form.value.pressure_data.length > 0 ? form.value.pressure_data : undefined,
+        porosity_data: form.value.porosity_data.length > 0 ? form.value.porosity_data : undefined
+      }
+      
+      // 提交到新 API 端点
+      const response = await fetch('http://localhost:5000/api/drill-holes/with-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submitData)
+      })
+      
+      if (response.ok) {
+        ElMessage.success('钻孔及其关联数据创建成功')
+        dialogVisible.value = false
+        loadDrillHoles()
+      } else {
+        throw new Error('创建失败')
+      }
+    } else {
+      // 编辑钻孔只更新基本信息
       await drillHolesApi.update(editingItem.value.id, form.value)
       ElMessage.success('更新成功')
-    } else {
-      await drillHolesApi.create(form.value)
-      ElMessage.success('创建成功')
+      dialogVisible.value = false
+      loadDrillHoles()
     }
-    dialogVisible.value = false
-    loadDrillHoles()
   } catch (error) {
     // 本地添加
     const newId = Math.max(...drillHoles.value.map(d => d.id || 0), 0) + 1
@@ -688,88 +808,280 @@ onMounted(() => {
     </template>
 
     <!-- 新建/编辑钻孔对话框 -->
-    <el-dialog v-model="dialogVisible" :title="editingItem ? '编辑钻孔' : '新建钻孔'" width="700px">
+    <el-dialog v-model="dialogVisible" :title="editingItem ? '编辑钻孔' : '新建钻孔'" width="900px" top="5vh">
       <el-form :model="form" label-width="120px">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="钻孔编号" required>
-              <el-input v-model="form.hole_id" placeholder="如 ZK-001" />
+        <el-tabs v-model="form.activeTab" class="form-tabs">
+          <!-- 基本信息 -->
+          <el-tab-pane label="基本信息" name="basic">
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="钻孔编号" required>
+                  <el-input v-model="form.hole_id" placeholder="如 ZK-001" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="钻孔名称">
+                  <el-input v-model="form.hole_name" placeholder="如 主探孔" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-divider content-position="left">空间坐标信息</el-divider>
+            <el-row :gutter="20">
+              <el-col :span="8">
+                <el-form-item label="X坐标(m)" required>
+                  <el-input-number v-model="form.location_x" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="Y坐标(m)" required>
+                  <el-input-number v-model="form.location_y" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="地面高程(m)">
+                  <el-input-number v-model="form.elevation" :controls="false" :precision="2" size="large" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-divider content-position="left">钻孔深度信息</el-divider>
+            <el-row :gutter="20">
+              <el-col :span="8">
+                <el-form-item label="总深度(m)">
+                  <el-input-number v-model="form.total_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="终孔深度(m)">
+                  <el-input-number v-model="form.final_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="孔径(mm)">
+                  <el-input-number v-model="form.diameter" :min="0" :controls="false" :precision="1" size="large" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-divider content-position="left">施工信息</el-divider>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="施工单位">
+                  <el-input v-model="form.drill_company" placeholder="如 地质勘探一队" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="状态">
+                  <el-select v-model="form.status" style="width: 100%">
+                    <el-option label="完成" value="完成" />
+                    <el-option label="施工中" value="施工中" />
+                    <el-option label="暂停" value="暂停" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="开孔日期">
+                  <el-date-picker v-model="form.drill_start_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="终孔日期">
+                  <el-date-picker v-model="form.drill_end_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-form-item label="备注">
+              <el-input v-model="form.description" type="textarea" :rows="2" />
             </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="钻孔名称">
-              <el-input v-model="form.hole_name" placeholder="如 主探孔" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-divider content-position="left">空间坐标信息</el-divider>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="X坐标(m)" required>
-              <el-input-number v-model="form.location_x" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="Y坐标(m)" required>
-              <el-input-number v-model="form.location_y" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="地面高程(m)">
-              <el-input-number v-model="form.elevation" :controls="false" :precision="2" size="large" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-divider content-position="left">钻孔深度信息</el-divider>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="总深度(m)">
-              <el-input-number v-model="form.total_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="终孔深度(m)">
-              <el-input-number v-model="form.final_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="孔径(mm)">
-              <el-input-number v-model="form.diameter" :min="0" :controls="false" :precision="1" size="large" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-divider content-position="left">施工信息</el-divider>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="施工单位">
-              <el-input v-model="form.drill_company" placeholder="如 地质勘探一队" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态">
-              <el-select v-model="form.status" style="width: 100%">
-                <el-option label="完成" value="完成" />
-                <el-option label="施工中" value="施工中" />
-                <el-option label="暂停" value="暂停" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="开孔日期">
-              <el-date-picker v-model="form.drill_start_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="终孔日期">
-              <el-date-picker v-model="form.drill_end_date" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="备注">
-          <el-input v-model="form.description" type="textarea" :rows="2" />
-        </el-form-item>
+          </el-tab-pane>
+
+          <!-- 分层数据 -->
+          <el-tab-pane label="地层分层" name="layers" v-if="!editingItem">
+            <div class="tab-toolbar">
+              <el-button type="primary" size="small" @click="addLayer">
+                <el-icon><Plus /></el-icon>
+                添加分层
+              </el-button>
+            </div>
+            <el-table :data="form.layers" border stripe size="small" max-height="400">
+              <el-table-column prop="layer_no" label="层号" width="60" />
+              <el-table-column label="地层名称" width="140">
+                <template #default="{ row }">
+                  <el-input v-model="row.layer_name" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="100">
+                <template #default="{ row }">
+                  <el-select v-model="row.layer_type" size="small" style="width: 100%">
+                    <el-option label="储层" value="储层" />
+                    <el-option label="盖层" value="盖层" />
+                    <el-option label="基底" value="基底" />
+                    <el-option label="沉积层" value="沉积层" />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="顶深(m)" width="90">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.depth_top" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="底深(m)" width="90">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.depth_bottom" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="岩性" width="120">
+                <template #default="{ row }">
+                  <el-input v-model="row.lithology" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="孔隙度" width="90">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.porosity" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="渗透率" width="90">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.permeability" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="70">
+                <template #default="{ $index }">
+                  <el-button type="danger" link @click="removeLayer($index)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+
+          <!-- 测温数据 -->
+          <el-tab-pane label="测温曲线" name="temperature" v-if="!editingItem">
+            <div class="tab-toolbar">
+              <el-button type="primary" size="small" @click="addTemperature">
+                <el-icon><Plus /></el-icon>
+                添加测温数据
+              </el-button>
+            </div>
+            <el-table :data="form.temperature_curves" border stripe size="small" max-height="400">
+              <el-table-column label="深度(m)" width="100">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.depth" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="温度(°C)" width="100">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.temperature" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="梯度" width="100">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.gradient" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="测量类型" width="120">
+                <template #default="{ row }">
+                  <el-select v-model="row.measure_type" size="small" style="width: 100%">
+                    <el-option label="稳态测温" value="稳态测温" />
+                    <el-option label="非稳态测温" value="非稳态测温" />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="测量日期" width="130">
+                <template #default="{ row }">
+                  <el-date-picker v-model="row.measure_date" type="date" value-format="YYYY-MM-DD" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="70">
+                <template #default="{ $index }">
+                  <el-button type="danger" link @click="removeTemperature($index)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+
+          <!-- 压力数据 -->
+          <el-tab-pane label="压力数据" name="pressure" v-if="!editingItem">
+            <div class="tab-toolbar">
+              <el-button type="primary" size="small" @click="addPressure">
+                <el-icon><Plus /></el-icon>
+                添加压力数据
+              </el-button>
+            </div>
+            <el-table :data="form.pressure_data" border stripe size="small" max-height="400">
+              <el-table-column label="测量日期" width="130">
+                <template #default="{ row }">
+                  <el-date-picker v-model="row.measure_date" type="date" value-format="YYYY-MM-DD" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="井口压力" width="120">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.wellhead_pressure" :controls="false" :precision="3" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="储层压力" width="120">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.reservoir_pressure" :controls="false" :precision="3" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="流量" width="100">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.flow_rate" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="动水位" width="100">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.water_level" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="70">
+                <template #default="{ $index }">
+                  <el-button type="danger" link @click="removePressure($index)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+
+          <!-- 孔隙度数据 -->
+          <el-tab-pane label="孔隙度数据" name="porosity" v-if="!editingItem">
+            <div class="tab-toolbar">
+              <el-button type="primary" size="small" @click="addPorosity">
+                <el-icon><Plus /></el-icon>
+                添加孔隙度数据
+              </el-button>
+            </div>
+            <el-table :data="form.porosity_data" border stripe size="small" max-height="400">
+              <el-table-column label="样品编号" width="120">
+                <template #default="{ row }">
+                  <el-input v-model="row.sample_no" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="深度(m)" width="90">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.depth" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="岩性" width="120">
+                <template #default="{ row }">
+                  <el-input v-model="row.lithology" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="总孔隙度(%)" width="110">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.porosity_total" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="渗透率" width="100">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.permeability" :controls="false" :precision="2" size="small" style="width: 100%" />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="70">
+                <template #default="{ $index }">
+                  <el-button type="danger" link @click="removePorosity($index)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -995,6 +1307,17 @@ onMounted(() => {
   justify-content: center;
   margin-top: 20px;
   padding: 20px 0;
+}
+
+/* 表单tabs样式 */
+.form-tabs {
+  margin-top: -10px;
+}
+
+.tab-toolbar {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 10px;
 }
 
 /* 数字输入框样式优化 */

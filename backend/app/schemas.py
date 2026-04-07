@@ -53,6 +53,15 @@ class DrillHoleCreate(DrillHoleBase):
     pass
 
 
+class DrillHoleWithDetailsCreate(BaseModel):
+    """钻孔及其关联数据的完整创建模型"""
+    drill_hole: DrillHoleCreate
+    layers: Optional[List[Dict[str, Any]]] = None
+    temperature_curves: Optional[List[Dict[str, Any]]] = None
+    pressure_data: Optional[List[Dict[str, Any]]] = None
+    porosity_data: Optional[List[Dict[str, Any]]] = None
+
+
 class DrillHoleResponse(DrillHoleBase):
     id: int
     temperature: Optional[float] = Field(None, description="平均温度(°C)")
