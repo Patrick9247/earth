@@ -297,7 +297,14 @@ const handleAdd = () => {
 
 const handleEdit = (row: any) => {
   editingItem.value = row
-  form.value = { ...row, layers: [], temperature_curves: [], pressure_data: [], porosity_data: [] }
+  form.value = {
+    ...row,
+    activeTab: 'basic',
+    layers: [],
+    temperature_curves: [],
+    pressure_data: [],
+    porosity_data: []
+  }
   dialogVisible.value = true
 }
 
