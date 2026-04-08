@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { gempyApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
 const loading = ref(false)
@@ -30,72 +29,68 @@ const calculateDensity = (T: number): number => {
   return Math.max(600, Math.min(density, 1050))
 }
 
+// 前端计算网格资源（基于专利方法）
+const calculateGridResource = () => {
+  let totalResource = 0
+  let liquidCount = 0
+  let twoPhaseCount = 0
+  let steamCount = 0
+  let totalGridCount = 0
+  
+  gridData.value.forEach((grid: any) => {
+    const gridCount = grid.gridCount || 1  // 默认1个网格
+    totalGridCount += gridCount
+    
+    // 根据相态计算
+    let phaseResource = 0
+    const density = calculateDensity(grid.temperature)
+    const delta_T = grid.temperature - gridForm.value.reference_temperature
+    
+    if (grid.phase === 'two_phase') {
+      // 气液共存：考虑气化潜热
+      twoPhaseCount += gridCount
+      phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T * 1.2
+    } else if (grid.phase === 'steam') {
+      // 蒸汽相：使用蒸汽比热容
+      steamCount += gridCount
+      const steamDensity = 0.6 // 蒸汽密度 kg/m³
+      phaseResource = grid.porosity * grid.volume * steamDensity * 2014 * delta_T
+    } else {
+      // 液态：标准计算
+      liquidCount += gridCount
+      phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T
+    }
+    
+    // 乘以网格数
+    totalResource += phaseResource * gridCount
+  })
+  
+  const extractable = totalResource * gridForm.value.recovery_factor
+  const annual = extractable * gridForm.value.utilization_efficiency / gridForm.value.lifetime_years
+  const power_mw = annual / (365.25 * 24 * 3600) / 1e6
+  
+  return {
+    total_resource_joules: totalResource,
+    total_grid_count: totalGridCount,
+    liquid_grid_count: liquidCount,
+    two_phase_grid_count: twoPhaseCount,
+    steam_grid_count: steamCount,
+    extractable_heat: extractable,
+    power_potential_mw: power_mw,
+    parameters: { ...gridForm.value }
+  }
+}
+
 // 网格计算
 const handleGridCalculate = async () => {
   loading.value = true
   try {
-    const res = await gempyApi.calculateGrid({
-      grids: gridData.value,
-      ...gridForm.value
-    })
-    if (res.data.success) {
-      result.value = res.data.data
-      ElMessage.success('网格计算完成！')
-    } else {
-      ElMessage.error(res.data.message || '计算失败')
-    }
+    // 直接使用前端计算，不依赖后端API（确保gridCount生效）
+    result.value = calculateGridResource()
+    ElMessage.success('网格计算完成！')
   } catch (error) {
     console.error('网格计算失败:', error)
-    // 模拟网格计算结果（基于专利方法）
-    let totalResource = 0
-    let liquidCount = 0
-    let twoPhaseCount = 0
-    let steamCount = 0
-    let totalGridCount = 0
-    
-    gridData.value.forEach(grid => {
-      const gridCount = grid.gridCount || 1  // 默认1个网格
-      totalGridCount += gridCount
-      
-      // 根据相态计算
-      let phaseResource = 0
-      const density = calculateDensity(grid.temperature)
-      const delta_T = grid.temperature - gridForm.value.reference_temperature
-      
-      if (grid.phase === 'two_phase') {
-        // 气液共存：考虑气化潜热
-        twoPhaseCount += gridCount
-        phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T * 1.2
-      } else if (grid.phase === 'steam') {
-        // 蒸汽相：使用蒸汽比热容
-        steamCount += gridCount
-        const steamDensity = 0.6 // 蒸汽密度 kg/m³
-        phaseResource = grid.porosity * grid.volume * steamDensity * 2014 * delta_T
-      } else {
-        // 液态：标准计算
-        liquidCount += gridCount
-        phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T
-      }
-      
-      // 乘以网格数
-      totalResource += phaseResource * gridCount
-    })
-    
-    const extractable = totalResource * gridForm.value.recovery_factor
-    const annual = extractable * gridForm.value.utilization_efficiency / gridForm.value.lifetime_years
-    const power_mw = annual / (365.25 * 24 * 3600) / 1e6
-    
-    result.value = {
-      total_resource_joules: totalResource,
-      total_grid_count: totalGridCount,
-      liquid_grid_count: liquidCount,
-      two_phase_grid_count: twoPhaseCount,
-      steam_grid_count: steamCount,
-      extractable_heat: extractable,
-      power_potential_mw: power_mw,
-      parameters: gridForm.value
-    }
-    ElMessage.success('网格计算完成（演示模式）！')
+    ElMessage.error('计算失败，请重试')
   } finally {
     loading.value = false
   }
