@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import * as echarts from 'echarts'
 import { useGeothermalStore } from '@/stores/geothermal'
 
 const store = useGeothermalStore()
-
-const chartRef = ref<HTMLDivElement | null>(null)
-let chart: echarts.ECharts | null = null
 
 // 地温范围分类
 const temperatureRanges = [
@@ -143,97 +139,9 @@ const formatNumber = (num: number, decimals: number = 2): string => {
   return num.toFixed(decimals)
 }
 
-// 初始化图表
-const initChart = () => {
-  if (!chartRef.value) return
-  
-  chart = echarts.init(chartRef.value)
-  updateChart()
-}
-
-// 更新图表
-const updateChart = () => {
-  if (!chart) return
-  
-  const data = gridData.value.temperatureDistribution
-  
-  const option = {
-    tooltip: {
-      trigger: 'item',
-      formatter: (params: any) => {
-        const item = data[params.dataIndex]
-        return `
-          <div style="font-weight:600;margin-bottom:4px">${params.name}</div>
-          <div>网格数量: ${formatNumber(item.value, 0)} 个</div>
-          <div>体积: ${formatNumber(item.volume)} m³</div>
-          <div>占比: ${params.percent}%</div>
-        `
-      }
-    },
-    series: [
-      {
-        name: '地温分布',
-        type: 'pie',
-        radius: ['35%', '65%'],
-        center: ['50%', '50%'],
-        avoidLabelOverlap: true,
-        itemStyle: {
-          borderRadius: 6,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: true,
-          position: 'outside',
-          formatter: '{b}\n{c}格',
-          fontSize: 11,
-          color: '#606266',
-          lineHeight: 16
-        },
-        labelLine: {
-          show: true,
-          length: 10,
-          length2: 8
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 13,
-            fontWeight: 'bold'
-          },
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.3)'
-          }
-        },
-        data: data.map(item => ({
-          name: item.name,
-          value: item.value,
-          itemStyle: { color: item.color }
-        }))
-      }
-    ]
-  }
-  
-  chart.setOption(option)
-}
-
-// 处理窗口大小变化
-const handleResize = () => {
-  chart?.resize()
-}
-
-// 监听数据变化
-watch(() => [store.extent, store.modelConfig.grid_resolution, store.drillHoles], () => {
-  updateChart()
-}, { deep: true })
-
 onMounted(async () => {
   // 确保数据已加载
   await store.initializeData()
-  initChart()
-  window.addEventListener('resize', handleResize)
 })
 </script>
 
@@ -242,22 +150,6 @@ onMounted(async () => {
     <h3 class="panel-title">🌡️ 地温网格监控</h3>
     
     <div class="monitor-content">
-      <!-- 饼图区域 + 图例 -->
-      <div class="chart-wrapper">
-        <div class="chart-container" ref="chartRef"></div>
-        <!-- 自定义图例 -->
-        <div class="custom-legend">
-          <div 
-            v-for="(item, index) in gridData.temperatureDistribution" 
-            :key="index"
-            class="legend-item"
-          >
-            <span class="legend-color" :style="{ background: item.color }"></span>
-            <span class="legend-text">{{ item.name }}</span>
-          </div>
-        </div>
-      </div>
-      
       <!-- 统计信息 -->
       <div class="stats-container">
         <!-- 总体统计 -->
@@ -331,49 +223,6 @@ onMounted(async () => {
 .monitor-content {
   display: flex;
   gap: 24px;
-}
-
-.chart-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.chart-container {
-  width: 350px;
-  height: 300px;
-}
-
-.custom-legend {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px 20px;
-  margin-top: 16px;
-  padding: 12px 16px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  width: 320px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.legend-color {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.legend-text {
-  font-size: 12px;
-  color: #606266;
-  white-space: nowrap;
 }
 
 .stats-container {
