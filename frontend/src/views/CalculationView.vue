@@ -242,19 +242,36 @@ const formatNumber = (num: number, decimals: number = 2): string => {
     <div class="card" v-if="result">
       <h3 class="card-title">✅ 计算结果</h3>
       
+      <!-- 调试信息 -->
+      <el-alert type="warning" :closable="false" style="margin-bottom: 16px;">
+        <template #title>调试信息：发电潜力={{ result.power_potential_mw }}, 总资源={{ result.total_resource_joules }}, 可采热量={{ result.extractable_heat }}</template>
+      </el-alert>
+      
       <!-- 网格计算结果 -->
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-statistic title="总资源量" :value="result.total_resource_joules" :formatter="(v: number) => formatNumber(v)" />
+          <div class="result-item">
+            <div class="result-label">总资源量</div>
+            <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
+          </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic title="发电潜力" :value="result.power_potential_mw" suffix="MW" :precision="2" />
+          <div class="result-item highlight">
+            <div class="result-label">发电潜力</div>
+            <div class="result-value">{{ result.power_potential_mw?.toFixed(4) || '0' }} MW</div>
+          </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic title="总网格数" :value="result.total_grid_count" />
+          <div class="result-item">
+            <div class="result-label">总网格数</div>
+            <div class="result-value">{{ result.total_grid_count || 0 }} 个</div>
+          </div>
         </el-col>
         <el-col :span="6">
-          <el-statistic title="可采热量" :value="result.extractable_heat" :formatter="(v: number) => formatNumber(v)" />
+          <div class="result-item">
+            <div class="result-label">可采热量</div>
+            <div class="result-value">{{ formatNumber(result.extractable_heat) }}</div>
+          </div>
         </el-col>
       </el-row>
       
@@ -347,6 +364,38 @@ const formatNumber = (num: number, decimals: number = 2): string => {
 </template>
 
 <style scoped>
+.result-item {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.result-item.highlight {
+  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  color: #fff;
+}
+
+.result-item.highlight .result-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.result-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.result-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #303133;
+}
+
+.result-item.highlight .result-value {
+  color: #fff;
+}
+
 .template-card {
   cursor: pointer;
   text-align: center;
