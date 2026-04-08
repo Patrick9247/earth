@@ -1,29 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { gempyApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
 const loading = ref(false)
 const result = ref<any>(null)
-const phaseInfo = ref<any>(null)
-const activeTab = ref('simple')
-
-// 简单计算表单
-const calcForm = ref({
-  model_id: 1,
-  reservoir_volume: 1e8,
-  avg_temperature: 150,
-  reference_temperature: 25,
-  porosity: 0.15,
-  pressure: 0.5,
-  water_density: null as number | null,
-  rock_density: 2600,
-  water_specific_heat: 4186,
-  rock_specific_heat: 880,
-  recovery_factor: 0.25,
-  utilization_efficiency: 0.1,
-  lifetime_years: 30
-})
 
 // 网格计算表单
 const gridForm = ref({
@@ -41,33 +22,6 @@ const gridData = ref<any[]>([
   { porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2 }
 ])
 
-// 相态判定
-const checkPhase = async () => {
-  try {
-    const res = await gempyApi.phaseDetermination(
-      calcForm.value.avg_temperature,
-      calcForm.value.pressure
-    )
-    if (res.data.success) {
-      phaseInfo.value = res.data.data
-    }
-  } catch (error) {
-    // 模拟相态判定
-    const T = calcForm.value.avg_temperature
-    const P = calcForm.value.pressure
-    const T_boiling = -8.97 * Math.log(P)
-    phaseInfo.value = {
-      temperature: T,
-      pressure: P,
-      boiling_point: Math.max(100, Math.min(T_boiling, 374)),
-      phase_type: T >= T_boiling ? 'two_phase' : 'liquid',
-      phase_description: T >= T_boiling ? '气液共存' : '液态水',
-      water_density: calculateDensity(T),
-      is_boiling: T >= T_boiling
-    }
-  }
-}
-
 // 计算水密度（专利公式）
 const calculateDensity = (T: number): number => {
   const A = 0.99987 + 6.0e-5 * T
@@ -75,30 +29,6 @@ const calculateDensity = (T: number): number => {
   const density = A * (1 - B * T) * 1000
   return Math.max(600, Math.min(density, 1050))
 }
-
-// 监听温度和压力变化，自动判定相态
-watch(
-  () => [calcForm.value.avg_temperature, calcForm.value.pressure],
-  () => {
-    checkPhase()
-  },
-  { immediate: true }
-)
-
-// 计算预估值（实时）
-const estimatedPower = computed(() => {
-  const v = calcForm.value
-  const delta_T = v.avg_temperature - v.reference_temperature
-  const water_density = calculateDensity(v.avg_temperature)
-  const water_vol = v.reservoir_volume * v.porosity
-  const rock_vol = v.reservoir_volume * (1 - v.porosity)
-  const total_heat = (water_vol * water_density * v.water_specific_heat + 
-                      rock_vol * v.rock_density * v.rock_specific_heat) * delta_T
-  const extractable = total_heat * v.recovery_factor
-  const annual = extractable * v.utilization_efficiency / v.lifetime_years
-  const power_mw = annual / (365.25 * 24 * 3600) / 1e6
-  return power_mw.toFixed(2)
-})
 
 // 网格计算
 const handleGridCalculate = async () => {
@@ -185,110 +115,90 @@ const formatNumber = (num: number, decimals: number = 2): string => {
   <div class="calculation-view">
     <h1 class="page-title">地热资源计算</h1>
     
-    <!-- 快速模板 -->
-    <!-- 计算方式选择 -->
+    <!-- 网格资源计算 -->
     <div class="card">
-      <el-tabs v-model="activeTab">
-        <el-tab-pane label="网格计算" name="grid">
-          <h3 class="card-title">🔬 网格资源计算（专利方法）</h3>
-          <p class="description">
-            基于专利《一种不规则热储层多相态地热流体资源量计算方法》，对每个网格进行相态判定后分别计算资源量。
-          </p>
-          
-          <div class="grid-toolbar">
-            <el-button type="primary" @click="addGrid">
-              <el-icon><Plus /></el-icon>
-              添加网格
+      <h3 class="card-title">🔬 网格资源计算（专利方法）</h3>
+      <p class="description">
+        基于专利《一种不规则热储层多相态地热流体资源量计算方法》，对每个网格进行相态判定后分别计算资源量。
+      </p>
+      
+      <div class="grid-toolbar">
+        <el-button type="primary" @click="addGrid">
+          <el-icon><Plus /></el-icon>
+          添加网格
+        </el-button>
+        <el-button type="success" @click="handleGridCalculate" :loading="loading">
+          <el-icon><Cpu /></el-icon>
+          计算网格资源
+        </el-button>
+      </div>
+
+      <el-table :data="gridData" border stripe>
+        <el-table-column label="网格编号" type="index" width="80" />
+        <el-table-column label="孔隙度" width="150">
+          <template #default="{ row }">
+            <el-input-number v-model="row.porosity" :min="0.01" :max="0.5" :step="0.01" size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column label="体积(m³)" width="160">
+          <template #default="{ row }">
+            <el-input-number v-model="row.volume" :min="1e5" :max="1e10" :step="1e6" size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column label="温度(°C)" width="120">
+          <template #default="{ row }">
+            <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column label="压力(MPa)" width="120">
+          <template #default="{ row }">
+            <el-input-number v-model="row.pressure" :min="0.1" :max="10" :step="0.1" size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column label="相态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="-8.97 * Math.log(row.pressure) <= row.temperature ? 'warning' : 'success'">
+              {{ -8.97 * Math.log(row.pressure) <= row.temperature ? '气液共存' : '液态' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="80">
+          <template #default="{ $index }">
+            <el-button type="danger" link @click="removeGrid($index)">
+              <el-icon><Delete /></el-icon>
             </el-button>
-            <el-button type="success" @click="handleGridCalculate" :loading="loading">
-              <el-icon><Cpu /></el-icon>
-              计算网格资源
-            </el-button>
-          </div>
+          </template>
+        </el-table-column>
+      </el-table>
 
-          <el-table :data="gridData" border stripe>
-            <el-table-column label="网格编号" type="index" width="80" />
-            <el-table-column label="孔隙度" width="150">
-              <template #default="{ row }">
-                <el-input-number v-model="row.porosity" :min="0.01" :max="0.5" :step="0.01" size="small" />
-              </template>
-            </el-table-column>
-            <el-table-column label="体积(m³)" width="160">
-              <template #default="{ row }">
-                <el-input-number v-model="row.volume" :min="1e5" :max="1e10" :step="1e6" size="small" />
-              </template>
-            </el-table-column>
-            <el-table-column label="温度(°C)" width="120">
-              <template #default="{ row }">
-                <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" />
-              </template>
-            </el-table-column>
-            <el-table-column label="压力(MPa)" width="120">
-              <template #default="{ row }">
-                <el-input-number v-model="row.pressure" :min="0.1" :max="10" :step="0.1" size="small" />
-              </template>
-            </el-table-column>
-            <el-table-column label="相态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="-8.97 * Math.log(row.pressure) <= row.temperature ? 'warning' : 'success'">
-                  {{ -8.97 * Math.log(row.pressure) <= row.temperature ? '气液共存' : '液态' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="80">
-              <template #default="{ $index }">
-                <el-button type="danger" link @click="removeGrid($index)">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <!-- 网格计算参数 -->
-          <div class="grid-params">
-            <el-row :gutter="20">
-              <el-col :span="6">
-                <div class="param-item">
-                  <label>参考温度</label>
-                  <el-input-number v-model="gridForm.reference_temperature" size="small" />
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="param-item">
-                  <label>采收率</label>
-                  <el-input-number v-model="gridForm.recovery_factor" :min="0.1" :max="0.5" :step="0.01" size="small" />
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="param-item">
-                  <label>利用效率</label>
-                  <el-input-number v-model="gridForm.utilization_efficiency" :min="0.05" :max="0.2" :step="0.01" size="small" />
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="param-item">
-                  <label>开采年限</label>
-                  <el-input-number v-model="gridForm.lifetime_years" :min="10" :max="50" size="small" />
-                </div>
-              </el-col>
-            </el-row>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-    </div>
-
-    <!-- 实时预估 -->
-    <div class="card" v-if="activeTab === 'simple'">
-      <h3 class="card-title">📊 实时预估</h3>
-      <div class="estimate-panel">
-        <div class="estimate-item highlight">
-          <span class="label">预估发电潜力</span>
-          <span class="value">{{ estimatedPower }} MW</span>
-        </div>
-        <div class="estimate-item" v-if="phaseInfo">
-          <span class="label">计算水密度</span>
-          <span class="value">{{ phaseInfo.water_density.toFixed(1) }} kg/m³</span>
-        </div>
+      <!-- 网格计算参数 -->
+      <div class="grid-params">
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <div class="param-item">
+              <label>参考温度</label>
+              <el-input-number v-model="gridForm.reference_temperature" size="small" />
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="param-item">
+              <label>采收率</label>
+              <el-input-number v-model="gridForm.recovery_factor" :min="0.1" :max="0.5" :step="0.01" size="small" />
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="param-item">
+              <label>利用效率</label>
+              <el-input-number v-model="gridForm.utilization_efficiency" :min="0.05" :max="0.2" :step="0.01" size="small" />
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="param-item">
+              <label>开采年限</label>
+              <el-input-number v-model="gridForm.lifetime_years" :min="10" :max="50" size="small" />
+            </div>
+          </el-col>
+        </el-row>
       </div>
     </div>
 
@@ -296,59 +206,28 @@ const formatNumber = (num: number, decimals: number = 2): string => {
     <div class="card" v-if="result">
       <h3 class="card-title">✅ 计算结果</h3>
       
-      <!-- 简单计算结果 -->
-      <template v-if="activeTab === 'simple'">
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="储层体积">{{ (result.volume / 1e6).toFixed(2) }} × 10⁶ m³</el-descriptions-item>
-          <el-descriptions-item label="平均温度">{{ result.temperature_avg }} °C</el-descriptions-item>
-          <el-descriptions-item label="开采年限">{{ result.lifetime_years }} 年</el-descriptions-item>
-          <el-descriptions-item label="热含量">{{ formatNumber(result.heat_content) }}</el-descriptions-item>
-          <el-descriptions-item label="可采热量">{{ formatNumber(result.extractable_heat) }}</el-descriptions-item>
-          <el-descriptions-item label="发电潜力">
-            <el-tag type="success" size="large">{{ result.power_potential?.toFixed(2) }} MW</el-tag>
-          </el-descriptions-item>
-        </el-descriptions>
-        
-        <!-- 相态信息 -->
-        <div v-if="result.phase_info" class="result-phase">
-          <h4>相态判定信息</h4>
-          <el-descriptions :column="4" border size="small">
-            <el-descriptions-item label="相态类型">
-              <el-tag :type="result.phase_info.phase_type === 'two_phase' ? 'warning' : 'success'">
-                {{ result.phase_info.phase_description }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="沸点温度">{{ result.phase_info.boiling_point?.toFixed(1) }} °C</el-descriptions-item>
-            <el-descriptions-item label="水密度">{{ result.water_density_calculated?.toFixed(1) }} kg/m³</el-descriptions-item>
-            <el-descriptions-item label="沸腾状态">{{ result.phase_info.is_boiling ? '是' : '否' }}</el-descriptions-item>
-          </el-descriptions>
-        </div>
-      </template>
-      
       <!-- 网格计算结果 -->
-      <template v-else>
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <el-statistic title="总资源量" :value="result.total_resource_joules" :formatter="(v: number) => formatNumber(v)" />
-          </el-col>
-          <el-col :span="6">
-            <el-statistic title="发电潜力" :value="result.power_potential_mw" suffix="MW" :precision="2" />
-          </el-col>
-          <el-col :span="6">
-            <el-statistic title="液态网格数" :value="result.liquid_grid_count" />
-          </el-col>
-          <el-col :span="6">
-            <el-statistic title="气液共存网格数" :value="result.two_phase_grid_count" />
-          </el-col>
-        </el-row>
-        
-        <el-divider />
-        
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="可采热量">{{ formatNumber(result.extractable_heat) }}</el-descriptions-item>
-          <el-descriptions-item label="采收率">{{ (result.parameters?.recovery_factor * 100).toFixed(0) }}%</el-descriptions-item>
-        </el-descriptions>
-      </template>
+      <el-row :gutter="20">
+        <el-col :span="6">
+          <el-statistic title="总资源量" :value="result.total_resource_joules" :formatter="(v: number) => formatNumber(v)" />
+        </el-col>
+        <el-col :span="6">
+          <el-statistic title="发电潜力" :value="result.power_potential_mw" suffix="MW" :precision="2" />
+        </el-col>
+        <el-col :span="6">
+          <el-statistic title="液态网格数" :value="result.liquid_grid_count" />
+        </el-col>
+        <el-col :span="6">
+          <el-statistic title="气液共存网格数" :value="result.two_phase_grid_count" />
+        </el-col>
+      </el-row>
+      
+      <el-divider />
+      
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="可采热量">{{ formatNumber(result.extractable_heat) }}</el-descriptions-item>
+        <el-descriptions-item label="采收率">{{ (result.parameters?.recovery_factor * 100).toFixed(0) }}%</el-descriptions-item>
+      </el-descriptions>
     </div>
 
     <!-- 计算公式说明 -->
