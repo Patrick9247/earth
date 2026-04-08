@@ -222,10 +222,6 @@ onMounted(async () => {
   margin-bottom: 24px;
 }
 
-.monitor-panel {
-  margin-bottom: 24px;
-}
-
 .quick-calc-form {
   display: flex;
   flex-wrap: wrap;
