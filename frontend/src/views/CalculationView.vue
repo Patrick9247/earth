@@ -22,20 +22,6 @@ const gridData = ref<any[]>([
   { gridCount: 3, porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2, phase: 'two_phase' }
 ])
 
-// 获取相态类型
-const getPhaseType = (row: any): string => {
-  if (row.phase === 'two_phase') return '气液共存'
-  if (row.phase === 'steam') return '蒸汽'
-  return '液态'
-}
-
-// 获取相态标签类型
-const getPhaseTagType = (row: any): string => {
-  if (row.phase === 'two_phase') return 'warning'
-  if (row.phase === 'steam') return 'danger'
-  return 'success'
-}
-
 // 计算水密度（专利公式）
 const calculateDensity = (T: number): number => {
   const A = 0.99987 + 6.0e-5 * T
