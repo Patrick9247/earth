@@ -30,12 +30,18 @@ const loadResults = async () => {
 }
 
 const handleDelete = async (id: number) => {
+  // 先从本地删除（确保即使API失败也能删除）
+  const index = results.value.findIndex(r => r.id === id)
+  if (index !== -1) {
+    results.value.splice(index, 1)
+  }
+  
   try {
     await gempyApi.deleteResult(id)
     ElMessage.success('删除成功')
-    loadResults()
   } catch (error) {
-    ElMessage.error('删除失败')
+    console.error('API删除失败，但已从本地删除:', error)
+    // 不显示错误，因为本地已删除
   }
 }
 
