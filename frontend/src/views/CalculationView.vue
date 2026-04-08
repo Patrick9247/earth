@@ -16,11 +16,25 @@ const gridForm = ref({
 
 // 网格数据
 const gridData = ref<any[]>([
-  { porosity: 0.15, volume: 1e7, temperature: 120, pressure: 0.3 },
-  { porosity: 0.12, volume: 1e7, temperature: 150, pressure: 0.5 },
-  { porosity: 0.10, volume: 1e7, temperature: 180, pressure: 0.8 },
-  { porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2 }
+  { gridCount: 10, porosity: 0.15, volume: 1e7, temperature: 120, pressure: 0.3, phase: 'liquid' },
+  { gridCount: 8, porosity: 0.12, volume: 1e7, temperature: 150, pressure: 0.5, phase: 'liquid' },
+  { gridCount: 5, porosity: 0.10, volume: 1e7, temperature: 180, pressure: 0.8, phase: 'two_phase' },
+  { gridCount: 3, porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2, phase: 'two_phase' }
 ])
+
+// 获取相态类型
+const getPhaseType = (row: any): string => {
+  if (row.phase === 'two_phase') return '气液共存'
+  if (row.phase === 'steam') return '蒸汽'
+  return '液态'
+}
+
+// 获取相态标签类型
+const getPhaseTagType = (row: any): string => {
+  if (row.phase === 'two_phase') return 'warning'
+  if (row.phase === 'steam') return 'danger'
+  return 'success'
+}
 
 // 计算水密度（专利公式）
 const calculateDensity = (T: number): number => {
@@ -46,25 +60,39 @@ const handleGridCalculate = async () => {
     }
   } catch (error) {
     console.error('网格计算失败:', error)
-    // 模拟网格计算结果
+    // 模拟网格计算结果（基于专利方法）
     let totalResource = 0
     let liquidCount = 0
     let twoPhaseCount = 0
+    let steamCount = 0
+    let totalGridCount = 0
     
     gridData.value.forEach(grid => {
-      const T_boiling = -8.97 * Math.log(grid.pressure)
-      const isTwoPhase = grid.temperature >= T_boiling
+      const gridCount = grid.gridCount || 1  // 默认1个网格
+      totalGridCount += gridCount
+      
+      // 根据相态计算
+      let phaseResource = 0
       const density = calculateDensity(grid.temperature)
       const delta_T = grid.temperature - gridForm.value.reference_temperature
       
-      if (isTwoPhase) {
-        twoPhaseCount++
-        // 简化的两相计算
-        totalResource += grid.porosity * grid.volume * density * 4186 * delta_T * 1.2
+      if (grid.phase === 'two_phase') {
+        // 气液共存：考虑气化潜热
+        twoPhaseCount += gridCount
+        phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T * 1.2
+      } else if (grid.phase === 'steam') {
+        // 蒸汽相：使用蒸汽比热容
+        steamCount += gridCount
+        const steamDensity = 0.6 // 蒸汽密度 kg/m³
+        phaseResource = grid.porosity * grid.volume * steamDensity * 2014 * delta_T
       } else {
-        liquidCount++
-        totalResource += grid.porosity * grid.volume * density * 4186 * delta_T
+        // 液态：标准计算
+        liquidCount += gridCount
+        phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T
       }
+      
+      // 乘以网格数
+      totalResource += phaseResource * gridCount
     })
     
     const extractable = totalResource * gridForm.value.recovery_factor
@@ -73,8 +101,10 @@ const handleGridCalculate = async () => {
     
     result.value = {
       total_resource_joules: totalResource,
+      total_grid_count: totalGridCount,
       liquid_grid_count: liquidCount,
       two_phase_grid_count: twoPhaseCount,
+      steam_grid_count: steamCount,
       extractable_heat: extractable,
       power_potential_mw: power_mw,
       parameters: gridForm.value
@@ -88,10 +118,12 @@ const handleGridCalculate = async () => {
 // 添加网格
 const addGrid = () => {
   gridData.value.push({
+    gridCount: 5,
     porosity: 0.12,
     volume: 1e7,
     temperature: 150,
-    pressure: 0.5
+    pressure: 0.5,
+    phase: 'liquid'
   })
 }
 
@@ -135,31 +167,38 @@ const formatNumber = (num: number, decimals: number = 2): string => {
 
       <el-table :data="gridData" border stripe>
         <el-table-column label="网格编号" type="index" width="80" />
-        <el-table-column label="孔隙度" width="150">
+        <el-table-column label="网格数" width="100">
+          <template #default="{ row }">
+            <el-input-number v-model="row.gridCount" :min="1" :max="1000" :step="1" size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column label="孔隙度" width="130">
           <template #default="{ row }">
             <el-input-number v-model="row.porosity" :min="0.01" :max="0.5" :step="0.01" size="small" />
           </template>
         </el-table-column>
-        <el-table-column label="体积(m³)" width="160">
+        <el-table-column label="体积(m³)" width="140">
           <template #default="{ row }">
             <el-input-number v-model="row.volume" :min="1e5" :max="1e10" :step="1e6" size="small" />
           </template>
         </el-table-column>
-        <el-table-column label="温度(°C)" width="120">
+        <el-table-column label="温度(°C)" width="110">
           <template #default="{ row }">
             <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" />
           </template>
         </el-table-column>
-        <el-table-column label="压力(MPa)" width="120">
+        <el-table-column label="压力(MPa)" width="110">
           <template #default="{ row }">
             <el-input-number v-model="row.pressure" :min="0.1" :max="10" :step="0.1" size="small" />
           </template>
         </el-table-column>
-        <el-table-column label="相态" width="100">
+        <el-table-column label="相态" width="120">
           <template #default="{ row }">
-            <el-tag :type="-8.97 * Math.log(row.pressure) <= row.temperature ? 'warning' : 'success'">
-              {{ -8.97 * Math.log(row.pressure) <= row.temperature ? '气液共存' : '液态' }}
-            </el-tag>
+            <el-select v-model="row.phase" size="small" style="width: 100px">
+              <el-option label="液态" value="liquid" />
+              <el-option label="气液共存" value="two_phase" />
+              <el-option label="蒸汽" value="steam" />
+            </el-select>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="80">
@@ -215,18 +254,46 @@ const formatNumber = (num: number, decimals: number = 2): string => {
           <el-statistic title="发电潜力" :value="result.power_potential_mw" suffix="MW" :precision="2" />
         </el-col>
         <el-col :span="6">
-          <el-statistic title="液态网格数" :value="result.liquid_grid_count" />
+          <el-statistic title="总网格数" :value="result.total_grid_count" />
         </el-col>
         <el-col :span="6">
-          <el-statistic title="气液共存网格数" :value="result.two_phase_grid_count" />
+          <el-statistic title="可采热量" :value="result.extractable_heat" :formatter="(v: number) => formatNumber(v)" />
+        </el-col>
+      </el-row>
+      
+      <el-divider />
+      
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <el-statistic title="液态网格" :value="result.liquid_grid_count">
+            <template #suffix>
+              <span style="font-size: 14px; color: #67c23a;">个</span>
+            </template>
+          </el-statistic>
+        </el-col>
+        <el-col :span="8">
+          <el-statistic title="气液共存网格" :value="result.two_phase_grid_count">
+            <template #suffix>
+              <span style="font-size: 14px; color: #e6a23c;">个</span>
+            </template>
+          </el-statistic>
+        </el-col>
+        <el-col :span="8">
+          <el-statistic title="蒸汽网格" :value="result.steam_grid_count || 0">
+            <template #suffix>
+              <span style="font-size: 14px; color: #f56c6c;">个</span>
+            </template>
+          </el-statistic>
         </el-col>
       </el-row>
       
       <el-divider />
       
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="可采热量">{{ formatNumber(result.extractable_heat) }}</el-descriptions-item>
         <el-descriptions-item label="采收率">{{ (result.parameters?.recovery_factor * 100).toFixed(0) }}%</el-descriptions-item>
+        <el-descriptions-item label="利用效率">{{ (result.parameters?.utilization_efficiency * 100).toFixed(0) }}%</el-descriptions-item>
+        <el-descriptions-item label="开采年限">{{ result.parameters?.lifetime_years }} 年</el-descriptions-item>
+        <el-descriptions-item label="参考温度">{{ result.parameters?.reference_temperature }} °C</el-descriptions-item>
       </el-descriptions>
     </div>
 
@@ -235,14 +302,16 @@ const formatNumber = (num: number, decimals: number = 2): string => {
       <h3 class="card-title">📖 计算公式说明（基于专利）</h3>
       <div class="formula-section">
         <el-collapse>
-          <el-collapse-item title="相态判定曲线方程" name="1">
+          <el-collapse-item title="相态选择说明" name="1">
             <div class="formula">
+              <p><strong>相态类型：</strong></p>
+              <ul>
+                <li><strong>液态</strong>：温度低于沸点，完全为液态水</li>
+                <li><strong>气液共存</strong>：温度达到沸点，水和蒸汽共存</li>
+                <li><strong>蒸汽</strong>：高温高压下的过热蒸汽</li>
+              </ul>
               <p><strong>沸点温度计算：</strong>T<sub>boiling</sub> = -8.97 × ln(P)</p>
               <p>其中 P 为压力 (MPa)</p>
-              <ul>
-                <li>当 T < T<sub>boiling</sub>：液态水</li>
-                <li>当 T ≥ T<sub>boiling</sub>：气液共存</li>
-              </ul>
             </div>
           </el-collapse-item>
           <el-collapse-item title="密度校正公式" name="2">
@@ -265,6 +334,13 @@ const formatNumber = (num: number, decimals: number = 2): string => {
               <p>Q<sub>liquid_two_phase</sub> = Σ(φᵢ × Vᵢ × ρ × (v<sub>g</sub>/(v<sub>g</sub>-v<sub>f</sub>)) × C<sub>p</sub> × ΔT)</p>
               <p>Q<sub>steam</sub> = Σ(φᵢ × Vᵢ × ρ × (v<sub>f</sub>/(v<sub>g</sub>-v<sub>f</sub>)) × (L + C<sub>pg</sub> × ΔT))</p>
               <p>其中：v<sub>g</sub> 为水蒸气比容，v<sub>f</sub> 为水比容，L 为气化潜热</p>
+            </div>
+          </el-collapse-item>
+          <el-collapse-item title="蒸汽态资源量公式" name="5">
+            <div class="formula">
+              <p><strong>蒸汽态资源量：</strong></p>
+              <p>Q<sub>steam</sub> = Σ(φᵢ × Vᵢ × ρ<sub>steam</sub> × C<sub>pg</sub> × (Tᵢ - T₀))</p>
+              <p>其中：ρ<sub>steam</sub> 为蒸汽密度（约0.6 kg/m³），C<sub>pg</sub> 为蒸汽比热容（约2014 J/kg·K）</p>
             </div>
           </el-collapse-item>
         </el-collapse>
