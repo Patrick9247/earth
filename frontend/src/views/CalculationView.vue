@@ -160,7 +160,7 @@ const formatNumber = (num: number, decimals: number = 2): string => {
         </el-table-column>
         <el-table-column label="体积(m³)" width="140">
           <template #default="{ row }">
-            <el-input-number v-model="row.volume" :min="1e5" :max="1e10" :step="1e6" size="small" />
+            <el-input-number v-model="row.volume" size="small" />
           </template>
         </el-table-column>
         <el-table-column label="温度(°C)" width="110">
