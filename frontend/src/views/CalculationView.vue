@@ -170,7 +170,7 @@ const formatNumber = (num: number, decimals: number = 2): string => {
         </el-table-column>
         <el-table-column label="压力(MPa)" width="110">
           <template #default="{ row }">
-            <el-input-number v-model="row.pressure" :min="0.1" :max="10" :step="0.1" size="small" />
+            <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" />
           </template>
         </el-table-column>
         <el-table-column label="相态" width="120">
