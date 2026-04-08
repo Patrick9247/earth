@@ -100,40 +100,6 @@ const estimatedPower = computed(() => {
   return power_mw.toFixed(2)
 })
 
-// 简单计算
-const handleCalculate = async () => {
-  loading.value = true
-  try {
-    const res = await gempyApi.calculate(calcForm.value)
-    if (res.data.success) {
-      result.value = res.data.result
-      ElMessage.success('计算完成！')
-    } else {
-      ElMessage.error(res.data.message || '计算失败')
-    }
-  } catch (error) {
-    console.error('计算失败:', error)
-    // 模拟结果
-    const water_density = calculateDensity(calcForm.value.avg_temperature)
-    result.value = {
-      id: Date.now(),
-      name: '计算结果',
-      volume: calcForm.value.reservoir_volume,
-      temperature_avg: calcForm.value.avg_temperature,
-      heat_content: parseFloat(estimatedPower.value) * 365.25 * 24 * 3600 * 1e6 * calcForm.value.lifetime_years / calcForm.value.utilization_efficiency / calcForm.value.recovery_factor,
-      extractable_heat: parseFloat(estimatedPower.value) * 365.25 * 24 * 3600 * 1e6 * calcForm.value.lifetime_years / calcForm.value.utilization_efficiency,
-      power_potential: parseFloat(estimatedPower.value),
-      lifetime_years: calcForm.value.lifetime_years,
-      phase_info: phaseInfo.value,
-      water_density_calculated: water_density,
-      created_at: new Date().toISOString()
-    }
-    ElMessage.success('计算完成！')
-  } finally {
-    loading.value = false
-  }
-}
-
 // 网格计算
 const handleGridCalculate = async () => {
   loading.value = true
@@ -204,21 +170,7 @@ const removeGrid = (index: number) => {
   gridData.value.splice(index, 1)
 }
 
-const presetTemplates = [
-  { name: '低温地热田', temperature: 90, porosity: 0.20, pressure: 0.2 },
-  { name: '中温地热田', temperature: 150, porosity: 0.15, pressure: 0.5 },
-  { name: '高温地热田', temperature: 220, porosity: 0.10, pressure: 1.5 },
-  { name: '干热岩', temperature: 300, porosity: 0.02, pressure: 3.0 }
-]
-
-const applyTemplate = (tpl: any) => {
-  calcForm.value.avg_temperature = tpl.temperature
-  calcForm.value.porosity = tpl.porosity
-  calcForm.value.pressure = tpl.pressure
-  ElMessage.success(`已应用模板：${tpl.name}`)
-}
-
-// 格式化数字
+// 删除网格
 const formatNumber = (num: number, decimals: number = 2): string => {
   if (num >= 1e18) return (num / 1e18).toFixed(decimals) + ' EJ'
   if (num >= 1e15) return (num / 1e15).toFixed(decimals) + ' PJ'
@@ -234,117 +186,9 @@ const formatNumber = (num: number, decimals: number = 2): string => {
     <h1 class="page-title">地热资源计算</h1>
     
     <!-- 快速模板 -->
-    <div class="card">
-      <h3 class="card-title">⚡ 快速模板</h3>
-      <el-row :gutter="16">
-        <el-col :span="6" v-for="tpl in presetTemplates" :key="tpl.name">
-          <el-card shadow="hover" class="template-card" @click="applyTemplate(tpl)">
-            <h4>{{ tpl.name }}</h4>
-            <p>温度: {{ tpl.temperature }}°C</p>
-            <p>孔隙度: {{ (tpl.porosity * 100).toFixed(0) }}%</p>
-            <p>压力: {{ tpl.pressure }} MPa</p>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
-
     <!-- 计算方式选择 -->
     <div class="card">
       <el-tabs v-model="activeTab">
-        <el-tab-pane label="简单计算" name="simple">
-          <h3 class="card-title">📐 简单计算参数</h3>
-          <el-form :model="calcForm" label-width="140px">
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="储层体积(m³)">
-                  <el-input-number 
-                    v-model="calcForm.reservoir_volume" 
-                    :min="1e6" 
-                    :max="1e12"
-                    :step="1e7"
-                    :controls="false"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="平均温度(°C)">
-                  <el-input-number v-model="calcForm.avg_temperature" :min="50" :max="400" style="width: 100%" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="储层压力(MPa)">
-                  <el-input-number v-model="calcForm.pressure" :min="0.1" :max="10" :step="0.1" style="width: 100%" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-
-            <!-- 相态判定结果 -->
-            <div v-if="phaseInfo" class="phase-panel">
-              <el-alert
-                :title="`相态判定结果：${phaseInfo.phase_description}`"
-                :type="phaseInfo.phase_type === 'two_phase' ? 'warning' : 'success'"
-                show-icon
-              >
-                <template #default>
-                  <div class="phase-details">
-                    <span>沸点温度: <b>{{ phaseInfo.boiling_point.toFixed(1) }}°C</b></span>
-                    <span>计算水密度: <b>{{ phaseInfo.water_density.toFixed(1) }} kg/m³</b></span>
-                    <span>状态: <b>{{ phaseInfo.is_boiling ? '已沸腾' : '未沸腾' }}</b></span>
-                  </div>
-                </template>
-              </el-alert>
-            </div>
-
-            <el-divider content-position="left">物性参数</el-divider>
-            
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="孔隙度">
-                  <el-slider v-model="calcForm.porosity" :min="0" :max="0.5" :step="0.01" show-input />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="岩石密度(kg/m³)">
-                  <el-input-number v-model="calcForm.rock_density" style="width: 100%" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="参考温度(°C)">
-                  <el-input-number v-model="calcForm.reference_temperature" style="width: 100%" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-
-            <el-divider content-position="left">经济参数</el-divider>
-            
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="采收率">
-                  <el-slider v-model="calcForm.recovery_factor" :min="0.1" :max="0.5" :step="0.01" show-input />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="利用效率">
-                  <el-slider v-model="calcForm.utilization_efficiency" :min="0.05" :max="0.2" :step="0.01" show-input />
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="开采年限(年)">
-                  <el-input-number v-model="calcForm.lifetime_years" :min="10" :max="50" style="width: 100%" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-
-            <el-form-item>
-              <el-button type="primary" size="large" @click="handleCalculate" :loading="loading">
-                <el-icon><Cpu /></el-icon>
-                开始计算
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-
         <el-tab-pane label="网格计算" name="grid">
           <h3 class="card-title">🔬 网格资源计算（专利方法）</h3>
           <p class="description">
