@@ -155,7 +155,7 @@ const formatNumber = (num: number, decimals: number = 2): string => {
         </el-table-column>
         <el-table-column label="孔隙度" width="130">
           <template #default="{ row }">
-            <el-input-number v-model="row.porosity" :min="0.01" :max="0.5" :step="0.01" size="small" />
+            <el-input-number v-model="row.porosity" :min="0" :step="0.01" size="small" />
           </template>
         </el-table-column>
         <el-table-column label="体积(m³)" width="140">
