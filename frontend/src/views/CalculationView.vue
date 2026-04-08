@@ -38,45 +38,61 @@ const calculateGridResource = () => {
   let totalGridCount = 0
   
   gridData.value.forEach((grid: any) => {
-    const gridCount = grid.gridCount || 1  // 默认1个网格
+    const gridCount = Number(grid.gridCount) || 1  // 默认1个网格
+    const porosity = Number(grid.porosity) || 0
+    const volume = Number(grid.volume) || 0
+    const temperature = Number(grid.temperature) || 0
+    const phase = grid.phase || 'liquid'
+    
     totalGridCount += gridCount
     
     // 根据相态计算
     let phaseResource = 0
-    const density = calculateDensity(grid.temperature)
-    const delta_T = grid.temperature - gridForm.value.reference_temperature
+    const density = calculateDensity(temperature)
+    const delta_T = temperature - gridForm.value.reference_temperature
     
-    if (grid.phase === 'two_phase') {
+    if (delta_T <= 0 || volume <= 0 || porosity <= 0) {
+      // 跳过无效数据
+      return
+    }
+    
+    if (phase === 'two_phase') {
       // 气液共存：考虑气化潜热
       twoPhaseCount += gridCount
-      phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T * 1.2
-    } else if (grid.phase === 'steam') {
+      phaseResource = porosity * volume * density * 4186 * delta_T * 1.2
+    } else if (phase === 'steam') {
       // 蒸汽相：使用蒸汽比热容
       steamCount += gridCount
       const steamDensity = 0.6 // 蒸汽密度 kg/m³
-      phaseResource = grid.porosity * grid.volume * steamDensity * 2014 * delta_T
+      phaseResource = porosity * volume * steamDensity * 2014 * delta_T
     } else {
       // 液态：标准计算
       liquidCount += gridCount
-      phaseResource = grid.porosity * grid.volume * density * 4186 * delta_T
+      phaseResource = porosity * volume * density * 4186 * delta_T
     }
     
     // 乘以网格数
     totalResource += phaseResource * gridCount
   })
   
-  const extractable = totalResource * gridForm.value.recovery_factor
-  const annual = extractable * gridForm.value.utilization_efficiency / gridForm.value.lifetime_years
-  const power_mw = annual / (365.25 * 24 * 3600) / 1e6
+  const recovery_factor = Number(gridForm.value.recovery_factor) || 0.25
+  const utilization_efficiency = Number(gridForm.value.utilization_efficiency) || 0.1
+  const lifetime_years = Number(gridForm.value.lifetime_years) || 30
+  
+  const extractable = totalResource * recovery_factor
+  const annual = lifetime_years > 0 ? extractable * utilization_efficiency / lifetime_years : 0
+  const power_mw = annual > 0 ? annual / (365.25 * 24 * 3600) / 1e6 : 0
+  
+  console.log('计算参数:', { totalResource, extractable, annual, power_mw, gridData: gridData.value })
   
   return {
-    total_resource_joules: totalResource,
+    total_resource_joules: totalResource || 0,
     total_grid_count: totalGridCount,
     liquid_grid_count: liquidCount,
     two_phase_grid_count: twoPhaseCount,
     steam_grid_count: steamCount,
-    extractable_heat: extractable,
-    power_potential_mw: power_mw,
+    extractable_heat: extractable || 0,
+    power_potential_mw: power_mw || 0,
     parameters: { ...gridForm.value }
   }
 }
