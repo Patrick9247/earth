@@ -15,15 +15,12 @@ const loadResults = async () => {
   loading.value = true
   try {
     const res = await gempyApi.getResults()
+    console.log('API返回数据:', res.data)
     results.value = res.data || []
   } catch (error) {
     console.error('加载失败:', error)
-    // 模拟数据
-    results.value = [
-      { id: 1, name: '地热田A计算', volume: 1e8, temperature_avg: 150, heat_content: 1.5e18, extractable_heat: 3.75e17, power_potential: 12.5, lifetime_years: 30, created_at: '2024-01-15' },
-      { id: 2, name: '地热田B计算', volume: 5e7, temperature_avg: 180, heat_content: 2.1e18, extractable_heat: 5.2e17, power_potential: 18.3, lifetime_years: 25, created_at: '2024-01-20' },
-      { id: 3, name: '干热岩资源评估', volume: 2e8, temperature_avg: 250, heat_content: 8.6e18, extractable_heat: 2.1e18, power_potential: 45.2, lifetime_years: 30, created_at: '2024-02-01' }
-    ]
+    ElMessage.error('加载计算结果失败，请检查网络连接')
+    results.value = []  // 不要显示预置数据
   } finally {
     loading.value = false
   }
