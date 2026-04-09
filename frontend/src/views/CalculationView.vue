@@ -45,6 +45,58 @@ const calculateBoilingPoint = (pressure: number): number => {
   return 26.12 * Math.log(pressureKpa) - 8.97
 }
 
+// 物理常数
+const WATER_SPECIFIC_HEAT = 4186      // 地热水比热容 J/(kg·K)
+const STEAM_SPECIFIC_HEAT = 2080       // 气体比热容 J/(kg·K)
+const LATENT_HEAT_VAPORIZATION = 2260000  // 气化潜热 J/kg
+const WATER_SPECIFIC_VOLUME = 0.001    // 水的比容 m³/kg (100°C)
+const STEAM_SPECIFIC_VOLUME = 1.673    // 水蒸气比容 m³/kg (100°C, 1atm)
+
+// 计算液态地热流体资源量
+// Q₁ = Σ(φᵢ × Vᵢ × ρᵢ × Cw × (Tᵢ - T₀))
+const calculateLiquidResource = (
+  porosity: number,
+  volume: number,
+  density: number,
+  temperature: number,
+  referenceTemp: number
+): number => {
+  return porosity * volume * density * WATER_SPECIFIC_HEAT * (temperature - referenceTemp)
+}
+
+// 计算气液共存时液态地热流体资源量
+// Q₂ = Σ(φᵢ × Vᵢ × (1 - ρᵢ × vg) / (vp - vg) × Cw × (T_boil - T₀))
+const calculateTwoPhaseLiquidResource = (
+  porosity: number,
+  volume: number,
+  density: number,
+  boilingPoint: number,
+  referenceTemp: number
+): number => {
+  const vg = STEAM_SPECIFIC_VOLUME
+  const vp = WATER_SPECIFIC_VOLUME
+  const factor = (1 - density * vg) / (vp - vg)
+  return porosity * volume * factor * WATER_SPECIFIC_HEAT * (boilingPoint - referenceTemp)
+}
+
+// 计算气液共存时水蒸汽资源量
+// Q₃ = Σ(φᵢ × Vᵢ × (ρᵢ - (1 - ρᵢ × vg) / (vp - vg)) × [Cw × (T_boil - T₀) + Lv + Cv × (Tᵢ - T_boil)])
+const calculateSteamResource = (
+  porosity: number,
+  volume: number,
+  density: number,
+  temperature: number,
+  boilingPoint: number,
+  referenceTemp: number
+): number => {
+  const vg = STEAM_SPECIFIC_VOLUME
+  const vp = WATER_SPECIFIC_VOLUME
+  const factor1 = (1 - density * vg) / (vp - vg)
+  const factor2 = density - factor1
+  const latentHeat = WATER_SPECIFIC_HEAT * (boilingPoint - referenceTemp) + LATENT_HEAT_VAPORIZATION + STEAM_SPECIFIC_HEAT * (temperature - boilingPoint)
+  return porosity * volume * factor2 * latentHeat
+}
+
 // 根据温度和压力自动判断相态
 const determinePhase = (temperature: number, pressure: number): string => {
   const boilingPoint = calculateBoilingPoint(pressure)
@@ -53,49 +105,52 @@ const determinePhase = (temperature: number, pressure: number): string => {
 
 // 前端计算网格资源（基于专利方法）
 const calculateGridResource = () => {
-  let totalResource = 0
-  let liquidCount = 0
-  let twoPhaseCount = 0
-  let steamCount = 0
+  let totalLiquidResource = 0  // Q₁
+  let totalTwoPhaseLiquidResource = 0  // Q₂
+  let totalSteamResource = 0  // Q₃
+  let totalResource = 0  // Q₄ = Q₂ + Q₃
+  let liquidGridCount = 0
+  let twoPhaseGridCount = 0
   let totalGridCount = 0
   
   gridData.value.forEach((grid: any) => {
-    const gridCount = Number(grid.gridCount) || 1  // 默认1个网格
+    const gridCount = Number(grid.gridCount) || 1
     const porosity = Number(grid.porosity) || 0
     const volume = Number(grid.volume) || 0
     const temperature = Number(grid.temperature) || 0
-    // 自动根据温度和压力判断相态
-    const phase = determinePhase(temperature, grid.pressure)
+    const pressure = Number(grid.pressure) || 0.1
+    const phase = determinePhase(temperature, pressure)
+    const boilingPoint = calculateBoilingPoint(pressure)
+    const referenceTemp = gridForm.value.reference_temperature
+    const density = calculateDensity(temperature, pressure)
     
     totalGridCount += gridCount
     
-    // 根据相态计算
-    let phaseResource = 0
-    const density = calculateDensity(temperature, grid.pressure)
-    const delta_T = temperature - gridForm.value.reference_temperature
-    
-    if (delta_T <= 0 || volume <= 0 || porosity <= 0) {
-      // 跳过无效数据
+    if (porosity <= 0 || volume <= 0) {
       return
     }
     
     if (phase === 'two_phase') {
-      // 气液共存：考虑气化潜热
-      twoPhaseCount += gridCount
-      phaseResource = porosity * volume * density * 4186 * delta_T * 1.2
-    } else if (phase === 'steam') {
-      // 蒸汽相：使用蒸汽比热容
-      steamCount += gridCount
-      const steamDensity = 0.6 // 蒸汽密度 kg/m³
-      phaseResource = porosity * volume * steamDensity * 2014 * delta_T
+      // 气液共存网格
+      twoPhaseGridCount += gridCount
+      
+      // Q₂: 气液共存时液态地热流体资源量
+      const q2 = calculateTwoPhaseLiquidResource(porosity, volume, density, boilingPoint, referenceTemp)
+      // Q₃: 气液共存时水蒸汽资源量
+      const q3 = calculateSteamResource(porosity, volume, density, temperature, boilingPoint, referenceTemp)
+      
+      totalTwoPhaseLiquidResource += q2 * gridCount
+      totalSteamResource += q3 * gridCount
+      totalResource += (q2 + q3) * gridCount
     } else {
-      // 液态：标准计算
-      liquidCount += gridCount
-      phaseResource = porosity * volume * density * 4186 * delta_T
+      // 液态水网格
+      liquidGridCount += gridCount
+      
+      // Q₁: 液态地热流体资源量
+      const q1 = calculateLiquidResource(porosity, volume, density, temperature, referenceTemp)
+      totalLiquidResource += q1 * gridCount
+      totalResource += q1 * gridCount
     }
-    
-    // 乘以网格数
-    totalResource += phaseResource * gridCount
   })
   
   const recovery_factor = Number(gridForm.value.recovery_factor) || 0.25
@@ -106,14 +161,16 @@ const calculateGridResource = () => {
   const annual = lifetime_years > 0 ? extractable * utilization_efficiency / lifetime_years : 0
   const power_mw = annual > 0 ? annual / (365.25 * 24 * 3600) / 1e6 : 0
   
-  console.log('计算参数:', { totalResource, extractable, annual, power_mw, gridData: gridData.value })
+  console.log('计算参数:', { totalResource, extractable, annual, power_mw, totalLiquidResource, totalTwoPhaseLiquidResource, totalSteamResource })
   
   return {
     total_resource_joules: totalResource || 0,
+    liquid_resource_joules: totalLiquidResource || 0,
+    two_phase_liquid_resource_joules: totalTwoPhaseLiquidResource || 0,
+    steam_resource_joules: totalSteamResource || 0,
     total_grid_count: totalGridCount,
-    liquid_grid_count: liquidCount,
-    two_phase_grid_count: twoPhaseCount,
-    steam_grid_count: steamCount,
+    liquid_grid_count: liquidGridCount,
+    two_phase_grid_count: twoPhaseGridCount,
     extractable_heat: extractable || 0,
     power_potential_mw: power_mw || 0,
     parameters: { ...gridForm.value }
@@ -269,17 +326,11 @@ const formatNumber = (num: number, decimals: number = 2): string => {
       
       <!-- 调试信息 -->
       <el-alert type="warning" :closable="false" style="margin-bottom: 16px;">
-        <template #title>调试信息：发电潜力={{ result.power_potential_mw }}, 总资源={{ result.total_resource_joules }}, 可采热量={{ result.extractable_heat }}</template>
+        <template #title>调试信息：发电潜力={{ result.power_potential_mw?.toFixed(4) || '0' }}, 总资源Q₄={{ formatNumber(result.total_resource_joules) }}</template>
       </el-alert>
       
       <!-- 网格计算结果 -->
       <el-row :gutter="20">
-        <el-col :span="6">
-          <div class="result-item">
-            <div class="result-label">总资源量</div>
-            <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
-          </div>
-        </el-col>
         <el-col :span="6">
           <div class="result-item highlight">
             <div class="result-label">发电潜力</div>
@@ -288,8 +339,8 @@ const formatNumber = (num: number, decimals: number = 2): string => {
         </el-col>
         <el-col :span="6">
           <div class="result-item">
-            <div class="result-label">总网格数</div>
-            <div class="result-value">{{ result.total_grid_count || 0 }} 个</div>
+            <div class="result-label">地热资源总量 Q₄</div>
+            <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
           </div>
         </el-col>
         <el-col :span="6">
@@ -298,29 +349,54 @@ const formatNumber = (num: number, decimals: number = 2): string => {
             <div class="result-value">{{ formatNumber(result.extractable_heat) }}</div>
           </div>
         </el-col>
+        <el-col :span="6">
+          <div class="result-item">
+            <div class="result-label">总网格数</div>
+            <div class="result-value">{{ result.total_grid_count || 0 }} 个</div>
+          </div>
+        </el-col>
       </el-row>
       
       <el-divider />
       
+      <!-- 资源量分类 -->
+      <h4 style="margin: 16px 0 12px;">资源量分类</h4>
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-statistic title="液态网格" :value="result.liquid_grid_count">
+          <div class="result-item">
+            <div class="result-label">液态资源量 Q₁</div>
+            <div class="result-value">{{ formatNumber(result.liquid_resource_joules) }}</div>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="result-item">
+            <div class="result-label">气液共存液态资源量 Q₂</div>
+            <div class="result-value">{{ formatNumber(result.two_phase_liquid_resource_joules) }}</div>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="result-item">
+            <div class="result-label">蒸汽资源量 Q₃</div>
+            <div class="result-value">{{ formatNumber(result.steam_resource_joules) }}</div>
+          </div>
+        </el-col>
+      </el-row>
+      
+      <el-divider />
+      
+      <!-- 网格分类统计 -->
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-statistic title="液态水网格" :value="result.liquid_grid_count || 0">
             <template #suffix>
               <span style="font-size: 14px; color: #67c23a;">个</span>
             </template>
           </el-statistic>
         </el-col>
-        <el-col :span="8">
-          <el-statistic title="气液共存网格" :value="result.two_phase_grid_count">
+        <el-col :span="12">
+          <el-statistic title="气液共存网格" :value="result.two_phase_grid_count || 0">
             <template #suffix>
               <span style="font-size: 14px; color: #e6a23c;">个</span>
-            </template>
-          </el-statistic>
-        </el-col>
-        <el-col :span="8">
-          <el-statistic title="蒸汽网格" :value="result.steam_grid_count || 0">
-            <template #suffix>
-              <span style="font-size: 14px; color: #f56c6c;">个</span>
             </template>
           </el-statistic>
         </el-col>
@@ -343,18 +419,13 @@ const formatNumber = (num: number, decimals: number = 2): string => {
         <el-collapse>
           <el-collapse-item title="相态选择说明" name="1">
             <div class="formula">
-              <p><strong>相态类型：</strong></p>
+              <p><strong>相态判断规则：</strong></p>
               <ul>
-                <li><strong>液态</strong>：温度低于沸点，完全为液态水</li>
-                <li><strong>气液共存</strong>：温度达到沸点，水和蒸汽共存</li>
-                <li><strong>蒸汽</strong>：高温高压下的过热蒸汽</li>
+                <li>当 Tᵢ &lt; T<sub>boil</sub>：液态水网格集</li>
+                <li>当 Tᵢ ≥ T<sub>boil</sub>：气液共存网格集</li>
               </ul>
               <p><strong>沸点温度计算：</strong>T<sub>boil</sub> = 26.12 × ln(Pᵢ) - 8.97</p>
               <p>其中 Pᵢ 为压力(kPa)</p>
-              <ul>
-                <li>当 Tᵢ &lt; T<sub>boil</sub>：液态水</li>
-                <li>当 Tᵢ ≥ T<sub>boil</sub>：气液共存</li>
-              </ul>
             </div>
           </el-collapse-item>
           <el-collapse-item title="密度校正公式（IAPWS-IF97）" name="2">
@@ -366,26 +437,32 @@ const formatNumber = (num: number, decimals: number = 2): string => {
               <p>其中：Tᵢ 为温度(°C)，Pᵢ 为压力(kPa)</p>
             </div>
           </el-collapse-item>
-          <el-collapse-item title="液态资源量公式" name="3">
+          <el-collapse-item title="液态资源量公式 Q₁" name="3">
             <div class="formula">
               <p><strong>液态地热流体资源量：</strong></p>
-              <p>Q<sub>liquid</sub> = Σ(φᵢ × Vᵢ × ρᵢ × C<sub>p</sub> × (Tᵢ - T₀))</p>
-              <p>其中：φᵢ 为孔隙度，Vᵢ 为体积，ρᵢ 为密度，C<sub>p</sub> 为比热容</p>
+              <p>Q₁ = Σ(φᵢ × Vᵢ × ρᵢ × C<sub>w</sub> × (Tᵢ - T₀))</p>
+              <p>其中：φᵢ 为孔隙度，Vᵢ 为体积，ρᵢ 为密度，C<sub>w</sub> 为地热水比热容，T₀ 为参考温度</p>
             </div>
           </el-collapse-item>
-          <el-collapse-item title="气液共存资源量公式" name="4">
+          <el-collapse-item title="气液共存液态资源量公式 Q₂" name="4">
             <div class="formula">
-              <p><strong>气液共存总资源量：</strong>Q<sub>total</sub> = Q<sub>liquid_two_phase</sub> + Q<sub>steam</sub></p>
-              <p>Q<sub>liquid_two_phase</sub> = Σ(φᵢ × Vᵢ × ρ × (v<sub>g</sub>/(v<sub>g</sub>-v<sub>f</sub>)) × C<sub>p</sub> × ΔT)</p>
-              <p>Q<sub>steam</sub> = Σ(φᵢ × Vᵢ × ρ × (v<sub>f</sub>/(v<sub>g</sub>-v<sub>f</sub>)) × (L + C<sub>pg</sub> × ΔT))</p>
-              <p>其中：v<sub>g</sub> 为水蒸气比容，v<sub>f</sub> 为水比容，L 为气化潜热</p>
+              <p><strong>气液共存时液态地热流体资源量：</strong></p>
+              <p>Q₂ = Σ(φᵢ × Vᵢ × (1 - ρᵢ × v<sub>g</sub>) / (v<sub>p</sub> - v<sub>g</sub>) × C<sub>w</sub> × (T<sub>boil</sub> - T₀))</p>
+              <p>其中：v<sub>g</sub> 为水蒸气比容，v<sub>p</sub> 为水的比容</p>
             </div>
           </el-collapse-item>
-          <el-collapse-item title="蒸汽态资源量公式" name="5">
+          <el-collapse-item title="气液共存蒸汽资源量公式 Q₃" name="5">
             <div class="formula">
-              <p><strong>蒸汽态资源量：</strong></p>
-              <p>Q<sub>steam</sub> = Σ(φᵢ × Vᵢ × ρ<sub>steam</sub> × C<sub>pg</sub> × (Tᵢ - T₀))</p>
-              <p>其中：ρ<sub>steam</sub> 为蒸汽密度（约0.6 kg/m³），C<sub>pg</sub> 为蒸汽比热容（约2014 J/kg·K）</p>
+              <p><strong>气液共存时水蒸汽资源量：</strong></p>
+              <p>Q₃ = Σ(φᵢ × Vᵢ × (ρᵢ - (1 - ρᵢ × v<sub>g</sub>) / (v<sub>p</sub> - v<sub>g</sub>)) × [Cw × (T<sub>boil</sub> - T₀) + L<sub>v</sub> + C<sub>v</sub> × (Tᵢ - T<sub>boil</sub>)])</p>
+              <p>其中：L<sub>v</sub> 为气化潜热，C<sub>v</sub> 为气体比热容</p>
+            </div>
+          </el-collapse-item>
+          <el-collapse-item title="地热资源总量 Q₄" name="6">
+            <div class="formula">
+              <p><strong>热储层的地热资源总量：</strong></p>
+              <p>Q₄ = Q₂ + Q₃</p>
+              <p>注：液态水网格只计算 Q₁，气液共存网格计算 Q₂ + Q₃</p>
             </div>
           </el-collapse-item>
         </el-collapse>

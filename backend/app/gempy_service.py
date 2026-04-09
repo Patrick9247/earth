@@ -358,7 +358,8 @@ class GeothermalCalculator:
         计算气液共存时的地热资源量
         
         根据专利公式:
-        Q_total = Q_liquid_two_phase + Q_steam
+        Q₂ = Σ(φᵢ × Vᵢ × (1 - ρᵢ × vg) / (vp - vg) × Cw × (T_boil - T₀))
+        Q₃ = Σ(φᵢ × Vᵢ × (ρᵢ - (1 - ρᵢ × vg) / (vp - vg)) × [Cw × (T_boil - T₀) + Lv + Cv × (Tᵢ - T_boil)])
         
         Args:
             porosity: 孔隙度
@@ -368,39 +369,48 @@ class GeothermalCalculator:
             reference_temp: 参考温度 (°C)
             
         Returns:
-            包含液态资源量、蒸汽资源量和总资源量的字典
+            包含Q₂、Q₃和总资源量的字典
         """
         pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         density = self.calculate_water_density(temperature, pressure_kpa)
-        delta_T = temperature - reference_temp
+        
+        # 计算沸点温度
+        T_boil = self.calculate_boiling_point(pressure_kpa)
         
         vg = self.STEAM_SPECIFIC_VOLUME  # m³/kg
-        vf = self.WATER_SPECIFIC_VOLUME  # m³/kg
+        vp = self.WATER_SPECIFIC_VOLUME  # m³/kg
         
-        liquid_fraction = vg / (vg - vf)
-        steam_fraction = vf / (vg - vf)
+        # Q₂: 气液共存液态资源量
+        # (1 - ρᵢ × vg) / (vp - vg) 表示液态水质量分数
+        liquid_mass_fraction = (1 - density * vg) / (vp - vg)
+        delta_T_boil = T_boil - reference_temp
         
-        Q_liquid_two_phase = (
-            porosity * volume * density * liquid_fraction * 
-            self.WATER_SPECIFIC_HEAT * delta_T
+        Q2 = (
+            porosity * volume * liquid_mass_fraction * 
+            self.WATER_SPECIFIC_HEAT * delta_T_boil
         )
         
-        L = self.LATENT_HEAT_VAPORIZATION * 1000  # 转换为 J/kg
-        Cpg = self.STEAM_SPECIFIC_HEAT * 1000  # 转换为 J/(kg·K)
+        # Q₃: 气液共存蒸汽资源量
+        # ρᵢ - (1 - ρᵢ × vg) / (vp - vg) 表示蒸汽质量分数
+        steam_mass_fraction = density - liquid_mass_fraction
+        Lv = self.LATENT_HEAT_VAPORIZATION * 1000  # J/kg
+        Cv = self.STEAM_SPECIFIC_HEAT * 1000  # J/(kg·K)
+        delta_T_excess = temperature - T_boil
         
-        Q_steam = (
-            porosity * volume * density * steam_fraction * 
-            (L + Cpg * delta_T)
+        Q3 = (
+            porosity * volume * steam_mass_fraction * 
+            (self.WATER_SPECIFIC_HEAT * delta_T_boil + Lv + Cv * delta_T_excess)
         )
         
-        Q_total = Q_liquid_two_phase + Q_steam
+        Q_total = Q2 + Q3
         
         return {
-            'liquid_resource': Q_liquid_two_phase,
-            'steam_resource': Q_steam,
+            'liquid_resource': Q2,      # Q₂
+            'steam_resource': Q3,       # Q₃
             'total_resource': Q_total,
-            'liquid_fraction': liquid_fraction,
-            'steam_fraction': steam_fraction
+            'boiling_temp': T_boil,
+            'liquid_mass_fraction': liquid_mass_fraction,
+            'steam_mass_fraction': steam_mass_fraction
         }
     
     def calculate_grid_resources(
@@ -422,14 +432,14 @@ class GeothermalCalculator:
             reference_temp: 参考温度 (°C)
             
         Returns:
-            计算结果汇总
+            计算结果汇总，包含Q₁、Q₂、Q₃、Q₄
         """
         liquid_grids = []
         two_phase_grids = []
         
-        total_liquid_resource = 0.0
-        total_two_phase_liquid = 0.0
-        total_steam_resource = 0.0
+        total_liquid_resource = 0.0  # Q₁
+        total_two_phase_liquid = 0.0  # Q₂
+        total_steam_resource = 0.0   # Q₃
         
         for i, grid in enumerate(grid_data):
             porosity = grid.get('porosity', 0.15)
@@ -469,20 +479,26 @@ class GeothermalCalculator:
                     **result
                 })
         
-        # 总资源量
+        # 总资源量 Q₄ = Q₂ + Q₃ (气液共存部分)
+        # 注意：Q₄是热储层的地热资源总量，根据专利不包含纯液态部分
         total_resource = (
             total_liquid_resource + 
             total_two_phase_liquid + 
             total_steam_resource
         )
         
+        # 热储层资源量 (Q₄)
+        reservoir_resource = total_two_phase_liquid + total_steam_resource
+        
         return {
             'total_resource_joules': total_resource,
-            'liquid_phase_resource': total_liquid_resource,
-            'two_phase_liquid_resource': total_two_phase_liquid,
-            'steam_resource': total_steam_resource,
+            'liquid_resource_joules': total_liquid_resource,        # Q₁
+            'two_phase_liquid_resource_joules': total_two_phase_liquid,  # Q₂
+            'steam_resource_joules': total_steam_resource,          # Q₃
+            'reservoir_resource_joules': reservoir_resource,        # Q₄
             'liquid_grid_count': len(liquid_grids),
             'two_phase_grid_count': len(two_phase_grids),
+            'total_grid_count': len(liquid_grids) + len(two_phase_grids),
             'liquid_grids': liquid_grids,
             'two_phase_grids': two_phase_grids
         }
