@@ -80,6 +80,9 @@ const handleGridCalculate = async () => {
   }
   
   loading.value = true
+  result.value = null  // 清除之前的结果
+  ElMessage.info('正在计算，请稍候...')
+  
   try {
     // 转换为后端API格式
     const grids = gridData.value.flatMap((grid: any) => {
@@ -92,6 +95,8 @@ const handleGridCalculate = async () => {
       }))
     })
     
+    console.log(`[网格计算] 准备计算 ${grids.length} 个网格...`)
+    
     // 调用后端API计算并保存
     const res = await gempyApi.calculateGrid({
       grids,
@@ -101,16 +106,27 @@ const handleGridCalculate = async () => {
       lifetime_years: gridForm.value.lifetime_years
     })
     
+    console.log('[网格计算] API响应:', res.data)
+    
     if (res.data.success) {
       result.value = res.data.data
       saveResult()  // 保存计算结果
-      ElMessage.success('网格计算完成并保存！')
+      ElMessage.success(`网格计算完成！共 ${grids.length} 个网格`)
     } else {
       ElMessage.error(res.data.message || '计算失败')
     }
   } catch (error: any) {
     console.error('网格计算失败:', error)
-    ElMessage.error(error?.response?.data?.detail || '计算失败，请重试')
+    // 详细错误信息
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.error('请求超时，请减少网格数量或稍后重试')
+    } else if (error.response) {
+      ElMessage.error(error.response.data?.detail || error.response.data?.message || '服务器错误')
+    } else if (error.request) {
+      ElMessage.error('无法连接服务器，请检查网络')
+    } else {
+      ElMessage.error(error.message || '计算失败，请重试')
+    }
   } finally {
     loading.value = false
   }
