@@ -92,7 +92,7 @@ const exportToCSV = () => {
   }
 
   // CSV 表头
-  const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(J)', '可采热量(J)', '发电潜力(MW)', '开采年限(年)', '创建时间']
+  const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(J)', '可采热量(J)', '发电潜力(MW)', '创建时间']
   
   // CSV 数据行
   const rows = results.value.map(row => [
@@ -102,7 +102,6 @@ const exportToCSV = () => {
     row.heat_content?.toFixed(2) || '0.00',
     row.extractable_heat?.toFixed(2) || '0.00',
     row.power_potential?.toFixed(6) || '0.000000',
-    row.lifetime_years,
     row.created_at
   ])
 
@@ -176,7 +175,6 @@ onMounted(() => {
             <span style="color: #67c23a; font-weight: 600;">{{ formatPower(row.power_potential) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="lifetime_years" label="开采年限" width="100" />
         <el-table-column prop="created_at" label="创建时间" width="120" />
         <el-table-column label="操作" fixed="right" width="150">
           <template #default="{ row }">
