@@ -100,6 +100,7 @@ const removeGrid = (index: number) => {
 
 // 删除网格
 const formatNumber = (num: number, decimals: number = 2): string => {
+  if (!num && num !== 0) return '0'
   if (num >= 1e18) return (num / 1e18).toFixed(decimals) + ' EJ'
   if (num >= 1e15) return (num / 1e15).toFixed(decimals) + ' PJ'
   if (num >= 1e12) return (num / 1e12).toFixed(decimals) + ' TJ'
@@ -110,6 +111,7 @@ const formatNumber = (num: number, decimals: number = 2): string => {
 
 // 智能格式化功率单位
 const formatPower = (mw: number): string => {
+  if (!mw && mw !== 0) return '0'
   if (mw >= 1e6) return (mw / 1e6).toFixed(4) + ' TW'    // 太瓦
   if (mw >= 1e3) return (mw / 1e3).toFixed(4) + ' GW'    // 吉瓦
   if (mw >= 1) return mw.toFixed(4) + ' MW'               // 兆瓦
