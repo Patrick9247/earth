@@ -178,6 +178,7 @@ async def export_results_csv():
 @router.get("/grids/csv")
 async def export_grids_csv(result_id: int = None):
     """导出网格数据为 CSV"""
+    grids = []
     try:
         from ..database import SessionLocal
         from ..models import GeothermalResource
@@ -187,12 +188,12 @@ async def export_grids_csv(result_id: int = None):
         
         if result_id:
             result = db.query(GeothermalResource).filter(GeothermalResource.id == result_id).first()
-            if result and result.original_grids:
+            if result and result.parameters:
+                # 从parameters.original_grids获取网格数据
+                params = result.parameters if isinstance(result.parameters, dict) else json.loads(result.parameters)
+                grids = params.get('original_grids', [])
+            elif result and result.original_grids:
                 grids = json.loads(result.original_grids)
-            else:
-                grids = []
-        else:
-            grids = []
         
         db.close()
     except Exception as e:

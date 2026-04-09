@@ -74,6 +74,16 @@ const formatPower = (mw: number): string => {
   return mw.toExponential(4) + ' W'
 }
 
+// 格式化体积显示
+const formatVolume = (vol: number | null | undefined): string => {
+  if (!vol) return '0 m³'
+  if (vol >= 1e12) return (vol / 1e12).toFixed(2) + ' × 10¹² m³'
+  if (vol >= 1e9) return (vol / 1e9).toFixed(2) + ' × 10⁹ m³'
+  if (vol >= 1e6) return (vol / 1e6).toFixed(2) + ' × 10⁶ m³'
+  if (vol >= 1e3) return (vol / 1e3).toFixed(2) + ' × 10³ m³'
+  return vol.toFixed(2) + ' m³'
+}
+
 // 导出为 CSV
 const exportToCSV = () => {
   if (results.value.length === 0) {
@@ -143,7 +153,12 @@ onMounted(() => {
       <el-table :data="results" v-loading="loading" stripe>
         <el-table-column prop="name" label="名称" width="200" />
         <el-table-column prop="volume" label="储层体积(m³)" width="150">
-          <template #default="{ row }">{{ (row.volume / 1e6).toFixed(1) }} × 10⁶</template>
+          <template #default="{ row }">
+            <span v-if="row.volume >= 1e9">{{ (row.volume / 1e9).toFixed(2) }} × 10⁹</span>
+            <span v-else-if="row.volume >= 1e6">{{ (row.volume / 1e6).toFixed(2) }} × 10⁶</span>
+            <span v-else-if="row.volume >= 1e3">{{ (row.volume / 1e3).toFixed(2) }} × 10³</span>
+            <span v-else>{{ row.volume?.toFixed(2) || '0.00' }}</span>
+          </template>
         </el-table-column>
         <el-table-column prop="temperature_avg" label="平均温度(°C)" width="120">
           <template #default="{ row }">
@@ -192,14 +207,14 @@ onMounted(() => {
       </el-col>
       <el-col :span="8">
         <div class="stat-card info">
-          <div class="stat-value">{{ formatPower(results.reduce((sum: number, r: any) => sum + (r.power_potential || 0), 0)) }}</div>
-          <div class="stat-label">总发电潜力</div>
+          <div class="stat-value">{{ formatNumber(results.reduce((sum: number, r: any) => sum + (r.extractable_heat || 0), 0)) }}</div>
+          <div class="stat-label">总可采热量</div>
         </div>
       </el-col>
       <el-col :span="8">
-        <div class="stat-card info">
-          <div class="stat-value">{{ formatNumber(results.reduce((sum: number, r: any) => sum + (r.extractable_heat || 0), 0)) }}</div>
-          <div class="stat-label">总可采热量</div>
+        <div class="stat-card success">
+          <div class="stat-value">{{ formatVolume(results.reduce((sum: number, r: any) => sum + (r.volume || 0), 0)) }}</div>
+          <div class="stat-label">总储层体积</div>
         </div>
       </el-col>
     </el-row>
@@ -209,7 +224,7 @@ onMounted(() => {
       <el-descriptions :column="2" border v-if="selectedResult">
         <el-descriptions-item label="名称">{{ selectedResult.name }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ selectedResult.created_at }}</el-descriptions-item>
-        <el-descriptions-item label="储层体积">{{ (selectedResult.volume / 1e6).toFixed(2) }} × 10⁶ m³</el-descriptions-item>
+        <el-descriptions-item label="储层体积">{{ formatVolume(selectedResult.volume) }}</el-descriptions-item>
         <el-descriptions-item label="平均温度">{{ selectedResult.temperature_avg }} °C</el-descriptions-item>
         <el-descriptions-item label="热含量">{{ formatNumber(selectedResult.heat_content) }}</el-descriptions-item>
         <el-descriptions-item label="可采热量">{{ formatNumber(selectedResult.extractable_heat) }}</el-descriptions-item>

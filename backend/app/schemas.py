@@ -242,6 +242,24 @@ class GeothermalResourceResponse(GeothermalResourceBase):
         from_attributes = True
 
 
+class GeothermalResourceListItem(BaseModel):
+    """用于列表显示的简化响应模型（不含大数据字段）"""
+    id: int
+    name: str
+    model_type: Optional[str] = None
+    volume: Optional[float] = None
+    temperature_avg: Optional[float] = None
+    temperature_max: Optional[float] = None
+    heat_content: Optional[float] = None
+    extractable_heat: Optional[float] = None
+    power_potential: Optional[float] = None
+    lifetime_years: Optional[int] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
 # ==================== 模型配置 Schemas ====================
 class ModelConfigBase(BaseModel):
     name: str = Field(..., description="配置名称")

@@ -14,6 +14,7 @@ from ..schemas import (
     GeothermalCalculationRequest,
     GeothermalCalculationResponse,
     GeothermalResourceResponse,
+    GeothermalResourceListItem,
     GridCalculationRequest,
     GridCalculationResponse,
     MessageResponse
@@ -185,10 +186,10 @@ async def calculate_geothermal_resource(
         )
 
 
-@router.get("/results", response_model=List[GeothermalResourceResponse])
+@router.get("/results", response_model=List[GeothermalResourceListItem])
 async def get_calculation_results(db: Session = Depends(get_db)):
-    """获取所有计算结果"""
-    results = db.query(GeothermalResource).all()
+    """获取所有计算结果（简化列表，不含大数据字段）"""
+    results = db.query(GeothermalResource).order_by(GeothermalResource.created_at.desc()).all()
     return results
 
 
