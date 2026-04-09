@@ -92,16 +92,16 @@ const exportToCSV = () => {
   }
 
   // CSV 表头
-  const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(EJ)', '可采热量(EJ)', '发电潜力(MW)', '开采年限(年)', '创建时间']
+  const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(J)', '可采热量(J)', '发电潜力(MW)', '开采年限(年)', '创建时间']
   
   // CSV 数据行
   const rows = results.value.map(row => [
     row.name,
-    (row.volume / 1e6).toFixed(2) + 'e6',
-    row.temperature_avg,
-    (row.heat_content / 1e18).toFixed(4),
-    (row.extractable_heat / 1e18).toFixed(4),
-    row.power_potential?.toFixed(2) || '0.00',
+    row.volume?.toFixed(2) || '0.00',
+    row.temperature_avg?.toFixed(2) || '0.00',
+    row.heat_content?.toFixed(2) || '0.00',
+    row.extractable_heat?.toFixed(2) || '0.00',
+    row.power_potential?.toFixed(6) || '0.000000',
     row.lifetime_years,
     row.created_at
   ])
