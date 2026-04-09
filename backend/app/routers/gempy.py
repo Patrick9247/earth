@@ -290,17 +290,34 @@ async def calculate_grid_resources(
         
         # 尝试保存结果到数据库
         try:
+            # 构建包含原始网格数据的参数
+            save_params = {
+                'grid_count': len(request.grids),
+                'reference_temperature': request.reference_temperature,
+                'recovery_factor': request.recovery_factor,
+                'utilization_efficiency': request.utilization_efficiency,
+                'lifetime_years': request.lifetime_years,
+                'original_grids': [
+                    {
+                        'porosity': g.porosity,
+                        'volume': g.volume,
+                        'temperature': g.temperature,
+                        'pressure': g.pressure
+                    } for g in request.grids
+                ]
+            }
+            
             db_resource = GeothermalResource(
                 name=f"网格计算_{len(request.grids)}个网格",
                 model_type="grid_calculation",
-                volume=sum(g['volume'] for g in grid_data),
-                temperature_avg=sum(g['temperature'] for g in grid_data) / len(grid_data),
-                temperature_max=max(g['temperature'] for g in grid_data),
+                volume=sum(g.volume for g in request.grids),
+                temperature_avg=sum(g.temperature for g in request.grids) / len(request.grids),
+                temperature_max=max(g.temperature for g in request.grids),
                 heat_content=results['total_resource_joules'],
                 extractable_heat=power_results['extractable_heat'],
                 power_potential=power_results['power_potential_mw'],
                 lifetime_years=request.lifetime_years,
-                parameters=final_results['parameters'],
+                parameters=save_params,
                 result_data=final_results
             )
             db.add(db_resource)

@@ -106,7 +106,8 @@ coze build && coze start
 - `GET /api/export/layers/csv` - 导出地质层(CSV)
 - `GET /api/export/drill-holes/csv` - 导出钻孔数据(CSV)
 - `GET /api/export/results/csv` - 导出计算结果(CSV)
-- `GET /api/export/all/json` - 导出所有数据(JSON)
+- `GET /api/export/grids/csv` - 导出网格数据(CSV)，支持 `result_id` 参数
+- `GET /api/export/all/json` - 导出所有数据(JSON)，支持 `result_id` 参数获取网格数据
 - `GET /api/export/report` - 生成汇总报告
 
 ### 系统接口
