@@ -217,6 +217,19 @@ const formatNumber = (num: number, decimals: number = 2): string => {
   if (num >= 1e6) return (num / 1e6).toFixed(decimals) + ' MJ'
   return num.toFixed(decimals) + ' J'
 }
+
+// 智能格式化功率单位
+const formatPower = (mw: number): string => {
+  if (mw >= 1e6) return (mw / 1e6).toFixed(4) + ' TW'    // 太瓦
+  if (mw >= 1e3) return (mw / 1e3).toFixed(4) + ' GW'    // 吉瓦
+  if (mw >= 1) return mw.toFixed(4) + ' MW'               // 兆瓦
+  if (mw >= 1e-3) return (mw * 1e3).toFixed(4) + ' kW'    // 千瓦
+  if (mw >= 1e-6) return (mw * 1e6).toFixed(4) + ' W'    // 瓦
+  if (mw >= 1e-9) return (mw * 1e9).toFixed(4) + ' mW'   // 毫瓦
+  if (mw >= 1e-12) return (mw * 1e12).toFixed(4) + ' μW'  // 微瓦
+  if (mw >= 1e-15) return (mw * 1e15).toFixed(4) + ' nW'  // 纳瓦
+  return mw.toExponential(4) + ' W'                       // 科学计数法
+}
 </script>
 
 <template>
@@ -326,7 +339,7 @@ const formatNumber = (num: number, decimals: number = 2): string => {
       
       <!-- 调试信息 -->
       <el-alert type="warning" :closable="false" style="margin-bottom: 16px;">
-        <template #title>调试信息：发电潜力={{ result.power_potential_mw?.toFixed(4) || '0' }}, 总资源Q₄={{ formatNumber(result.total_resource_joules) }}</template>
+        <template #title>调试信息：发电潜力={{ formatPower(result.power_potential_mw) }}, 总资源Q₄={{ formatNumber(result.total_resource_joules) }}</template>
       </el-alert>
       
       <!-- 网格计算结果 -->
@@ -334,7 +347,7 @@ const formatNumber = (num: number, decimals: number = 2): string => {
         <el-col :span="6">
           <div class="result-item highlight">
             <div class="result-label">发电潜力</div>
-            <div class="result-value">{{ result.power_potential_mw?.toFixed(4) || '0' }} MW</div>
+            <div class="result-value">{{ formatPower(result.power_potential_mw) }}</div>
           </div>
         </el-col>
         <el-col :span="6">
