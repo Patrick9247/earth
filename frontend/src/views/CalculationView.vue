@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { gempyApi } from '@/api'
 
@@ -14,8 +14,41 @@ const gridForm = ref({
   lifetime_years: 30
 })
 
-// 网格数据 - 初始为空，用户自行添加
-const gridData = ref<any[]>([])
+// 网格数据 - 从localStorage恢复
+const getStoredGridData = (): any[] => {
+  try {
+    const stored = localStorage.getItem('gridData')
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+const gridData = ref<any[]>(getStoredGridData())
+
+// 保存网格数据到localStorage
+const saveGridData = () => {
+  localStorage.setItem('gridData', JSON.stringify(gridData.value))
+}
+
+// 保存计算结果到localStorage
+const saveResult = () => {
+  if (result.value) {
+    localStorage.setItem('gridResult', JSON.stringify(result.value))
+  }
+}
+
+// 页面加载时恢复计算结果
+onMounted(() => {
+  try {
+    const storedResult = localStorage.getItem('gridResult')
+    if (storedResult) {
+      result.value = JSON.parse(storedResult)
+    }
+  } catch {
+    // ignore
+  }
+})
 
 // 计算沸点温度 T_boil = 26.12 * ln(P) - 8.97
 const calculateBoilingPoint = (pressure: number): number => {
@@ -70,6 +103,7 @@ const handleGridCalculate = async () => {
     
     if (res.data.success) {
       result.value = res.data.data
+      saveResult()  // 保存计算结果
       ElMessage.success('网格计算完成并保存！')
     } else {
       ElMessage.error(res.data.message || '计算失败')
@@ -91,11 +125,13 @@ const addGrid = () => {
     temperature: null,
     pressure: null
   })
+  saveGridData()
 }
 
 // 删除网格
 const removeGrid = (index: number) => {
   gridData.value.splice(index, 1)
+  saveGridData()
 }
 
 // 删除网格
@@ -146,31 +182,31 @@ const formatPower = (mw: number): string => {
         </el-button>
       </div>
 
-      <el-table :data="gridData" border stripe>
+      <el-table :data="gridData" border stripe @change="saveGridData">
         <el-table-column label="网格编号" type="index" width="80" />
         <el-table-column label="网格数" width="100">
           <template #default="{ row }">
-            <el-input-number v-model="row.gridCount" :min="1" :max="1000" :step="1" size="small" />
+            <el-input-number v-model="row.gridCount" :min="1" :max="1000" :step="1" size="small" @change="saveGridData" />
           </template>
         </el-table-column>
         <el-table-column label="孔隙度" width="130">
           <template #default="{ row }">
-            <el-input-number v-model="row.porosity" :min="0" :step="0.01" size="small" />
+            <el-input-number v-model="row.porosity" :min="0" :step="0.01" size="small" @change="saveGridData" />
           </template>
         </el-table-column>
         <el-table-column label="体积(m³)" width="140">
           <template #default="{ row }">
-            <el-input-number v-model="row.volume" size="small" />
+            <el-input-number v-model="row.volume" size="small" @change="saveGridData" />
           </template>
         </el-table-column>
         <el-table-column label="温度(°C)" width="110">
           <template #default="{ row }">
-            <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" />
+            <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" @change="saveGridData" />
           </template>
         </el-table-column>
         <el-table-column label="压力(MPa)" width="110">
           <template #default="{ row }">
-            <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" />
+            <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" @change="saveGridData" />
           </template>
         </el-table-column>
         <el-table-column label="沸点温度(°C)" width="120">
