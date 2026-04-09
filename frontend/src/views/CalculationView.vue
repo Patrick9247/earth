@@ -414,15 +414,6 @@ const formatPower = (mw: number): string => {
           </el-statistic>
         </el-col>
       </el-row>
-      
-      <el-divider />
-      
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="采收率">{{ (result.parameters?.recovery_factor * 100).toFixed(0) }}%</el-descriptions-item>
-        <el-descriptions-item label="利用效率">{{ (result.parameters?.utilization_efficiency * 100).toFixed(0) }}%</el-descriptions-item>
-        <el-descriptions-item label="开采年限">{{ result.parameters?.lifetime_years }} 年</el-descriptions-item>
-        <el-descriptions-item label="参考温度">{{ result.parameters?.reference_temperature }} °C</el-descriptions-item>
-      </el-descriptions>
     </div>
 
     <!-- 计算公式说明 -->
