@@ -242,84 +242,85 @@ class GeothermalCalculator:
     LATENT_HEAT_VAPORIZATION = 2257  # kJ/kg 气化潜热
     STEAM_SPECIFIC_HEAT = 2.08  # kJ/(kg·K) 水蒸气比热容
     
-    def calculate_boiling_point(self, pressure: float) -> float:
+    def calculate_boiling_point(self, pressure_kpa: float) -> float:
         """
         相态判定曲线方程 - 计算沸点温度
         
-        根据专利公式: T_boiling = -8.97 × ln(P)
+        根据专利公式: T_boil = 26.12 × ln(Pᵢ) - 8.97
         
         Args:
-            pressure: 压力 (MPa)
+            pressure_kpa: 压力 (kPa)
             
         Returns:
             沸点温度 (°C)
         """
-        if pressure <= 0:
+        if pressure_kpa <= 0:
             return 100.0  # 默认常压沸点
         
-        # 专利公式: T = -8.97 × ln(P)
-        # 这里压力单位需要确认，假设为MPa
-        T_boiling = -8.97 * math.log(pressure)
+        # 专利公式: T_boil = 26.12 × ln(Pᵢ) - 8.97
+        T_boiling = 26.12 * math.log(pressure_kpa) - 8.97
         
         # 限制在合理范围内
-        return max(100.0, min(T_boiling, 374.0))  # 水的临界温度约374°C
+        return max(0.0, min(T_boiling, 374.0))  # 水的临界温度约374°C
     
-    def determine_phase(self, temperature: float, pressure: float) -> str:
+    def determine_phase(self, temperature: float, pressure_mpa: float) -> str:
         """
         相态判定
         
         根据专利方法，比较网格温度与沸点温度：
-        - T < T_boiling: 液态水
-        - T >= T_boiling: 气液共存
+        - T < T_boil: 液态水
+        - T >= T_boil: 气液共存
         
         Args:
             temperature: 网格温度 (°C)
-            pressure: 网格压力 (MPa)
+            pressure_mpa: 网格压力 (MPa)
             
         Returns:
             相态类型: 'liquid' 或 'two_phase'
         """
-        T_boiling = self.calculate_boiling_point(pressure)
+        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
+        T_boiling = self.calculate_boiling_point(pressure_kpa)
         
         if temperature < T_boiling:
             return 'liquid'
         else:
             return 'two_phase'
     
-    def calculate_water_density(self, temperature: float) -> float:
+    def calculate_water_density(self, temperature: float, pressure_kpa: float) -> float:
         """
-        密度校正公式 - 计算地热流体密度
+        密度校正公式 - 计算地热流体密度 (基于 IAPWS-IF97)
         
         根据专利公式:
-        ρ = A × (1 - B × T)
-        A = 0.99987 + 6.0×10⁻⁵ × T
-        B = 2.0×10⁻⁴ + 1.0×10⁻⁵ × T
+        ρᵢ = 137.1358 × e^(A) + 139.3560 × e^(B) + 769.9024
+        A = -(Pᵢ - 163278.7315)² / (6.613 × 10¹⁰)
+        B = -(Tᵢ - 4.1171)² / 29947.659
         
         Args:
             temperature: 温度 (°C)
+            pressure_kpa: 压力 (kPa)
             
         Returns:
             水密度 (kg/m³)
         """
-        T = temperature
+        Ti = temperature
+        Pi = pressure_kpa
         
-        # A = 0.99987 + 6.0×10⁻⁵ × T
-        A = 0.99987 + 6.0e-5 * T
+        # 参数A和B
+        A = -math.pow(Pi - 163278.7315, 2) / (6.613e10)
+        B = -math.pow(Ti - 4.1171, 2) / 29947.659
         
-        # B = 2.0×10⁻⁴ + 1.0×10⁻⁵ × T  
-        B = 2.0e-4 + 1.0e-5 * T
+        # 密度计算 (kg/m³)
+        density = 137.1358 * math.exp(A) + 139.3560 * math.exp(B) + 769.9024
         
-        # ρ = A × (1 - B × T) × 1000 (转换为kg/m³)
-        density = A * (1 - B * T) * self.WATER_DENSITY_STANDARD
-        
-        # 限制在合理范围内
-        return max(600.0, min(density, 1050.0))
+        # 确保密度在合理范围内
+        return max(600.0, min(density, 1100.0))
     
     def calculate_liquid_resource(
         self,
         porosity: float,
         volume: float,
         temperature: float,
+        pressure_mpa: float,
         reference_temp: float = 25.0
     ) -> float:
         """
@@ -328,32 +329,21 @@ class GeothermalCalculator:
         根据专利公式:
         Q_liquid = Σ(φi × Vi × ρi × Cp × (Ti - T0))
         
-        其中:
-        - φi: 第i网格的孔隙度
-        - Vi: 第i网格的体积
-        - ρi: 第i网格中地热流体的密度
-        - Cp: 地热水的比热容
-        - Ti: 第i网格的温度
-        - T0: 参考温度
-        
         Args:
             porosity: 孔隙度
             volume: 网格体积 (m³)
             temperature: 温度 (°C)
+            pressure_mpa: 压力 (MPa)
             reference_temp: 参考温度 (°C)
             
         Returns:
             液态地热流体资源量 (J)
         """
-        # 计算密度
-        density = self.calculate_water_density(temperature)
-        
-        # 温度差
+        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
+        density = self.calculate_water_density(temperature, pressure_kpa)
         delta_T = temperature - reference_temp
         
-        # Q = φ × V × ρ × Cp × ΔT
         resource = porosity * volume * density * self.WATER_SPECIFIC_HEAT * delta_T
-        
         return resource
     
     def calculate_two_phase_resource(
@@ -361,6 +351,7 @@ class GeothermalCalculator:
         porosity: float,
         volume: float,
         temperature: float,
+        pressure_mpa: float,
         reference_temp: float = 25.0
     ) -> Dict[str, float]:
         """
@@ -369,42 +360,31 @@ class GeothermalCalculator:
         根据专利公式:
         Q_total = Q_liquid_two_phase + Q_steam
         
-        其中:
-        Q_liquid_two_phase = Σ(φi × Vi × ρl × (vg / (vg - vf)) × Cp × (Ti - T0))
-        Q_steam = Σ(φi × Vi × ρl × (vf / (vg - vf)) × (L + Cpg × (Ti - T0))
-        
         Args:
             porosity: 孔隙度
             volume: 网格体积 (m³)
             temperature: 温度 (°C)
+            pressure_mpa: 压力 (MPa)
             reference_temp: 参考温度 (°C)
             
         Returns:
             包含液态资源量、蒸汽资源量和总资源量的字典
         """
-        # 计算密度
-        density = self.calculate_water_density(temperature)
-        
-        # 温度差
+        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
+        density = self.calculate_water_density(temperature, pressure_kpa)
         delta_T = temperature - reference_temp
         
-        # 水蒸气比容和水的比容
         vg = self.STEAM_SPECIFIC_VOLUME  # m³/kg
         vf = self.WATER_SPECIFIC_VOLUME  # m³/kg
         
-        # 气液共存时液态水比例
         liquid_fraction = vg / (vg - vf)
-        # 蒸汽比例
         steam_fraction = vf / (vg - vf)
         
-        # 气液共存时液态地热流体的资源量
         Q_liquid_two_phase = (
             porosity * volume * density * liquid_fraction * 
             self.WATER_SPECIFIC_HEAT * delta_T
         )
         
-        # 气液共存时水蒸汽的资源量
-        # L = 气化潜热, Cpg = 气体比热容
         L = self.LATENT_HEAT_VAPORIZATION * 1000  # 转换为 J/kg
         Cpg = self.STEAM_SPECIFIC_HEAT * 1000  # 转换为 J/(kg·K)
         
@@ -413,7 +393,6 @@ class GeothermalCalculator:
             (L + Cpg * delta_T)
         )
         
-        # 总资源量
         Q_total = Q_liquid_two_phase + Q_steam
         
         return {
@@ -466,7 +445,7 @@ class GeothermalCalculator:
             
             if phase == 'liquid':
                 resource = self.calculate_liquid_resource(
-                    porosity, volume, temperature, reference_temp
+                    porosity, volume, temperature, pressure, reference_temp
                 )
                 total_liquid_resource += resource
                 liquid_grids.append({
@@ -478,7 +457,7 @@ class GeothermalCalculator:
                 })
             else:
                 result = self.calculate_two_phase_resource(
-                    porosity, volume, temperature, reference_temp
+                    porosity, volume, temperature, pressure, reference_temp
                 )
                 total_two_phase_liquid += result['liquid_resource']
                 total_steam_resource += result['steam_resource']
@@ -570,9 +549,11 @@ class GeothermalCalculator:
         Returns:
             完整计算结果
         """
+        pressure_kpa = pressure * 1000  # MPa 转 kPa
+        
         # 使用密度校正公式计算实际水密度
         if water_density is None:
-            water_density = self.calculate_water_density(avg_temperature)
+            water_density = self.calculate_water_density(avg_temperature, pressure_kpa)
         
         # 相态判定
         phase = self.determine_phase(avg_temperature, pressure)
@@ -598,12 +579,12 @@ class GeothermalCalculator:
             phase_info = {
                 'phase_type': 'liquid',
                 'water_density': water_density,
-                'boiling_point': self.calculate_boiling_point(pressure)
+                'boiling_point': self.calculate_boiling_point(pressure_kpa)
             }
         else:
             # 气液共存计算
             result = self.calculate_two_phase_resource(
-                porosity, reservoir_volume, avg_temperature, reference_temperature
+                porosity, reservoir_volume, avg_temperature, pressure, reference_temperature
             )
             
             # 加上岩石热量
@@ -613,7 +594,7 @@ class GeothermalCalculator:
             phase_info = {
                 'phase_type': 'two_phase',
                 'water_density': water_density,
-                'boiling_point': self.calculate_boiling_point(pressure),
+                'boiling_point': self.calculate_boiling_point(pressure_kpa),
                 'liquid_fraction': result['liquid_fraction'],
                 'steam_fraction': result['steam_fraction'],
                 'liquid_resource': result['liquid_resource'],
