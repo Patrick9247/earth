@@ -301,36 +301,6 @@ const formatPower = (mw: number): string => {
           </template>
         </el-table-column>
       </el-table>
-
-      <!-- 网格计算参数 -->
-      <div class="grid-params">
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <div class="param-item">
-              <label>参考温度</label>
-              <el-input-number v-model="gridForm.reference_temperature" size="small" />
-            </div>
-          </el-col>
-          <el-col :span="6">
-            <div class="param-item">
-              <label>采收率</label>
-              <el-input-number v-model="gridForm.recovery_factor" :min="0.1" :max="0.5" :step="0.01" size="small" />
-            </div>
-          </el-col>
-          <el-col :span="6">
-            <div class="param-item">
-              <label>利用效率</label>
-              <el-input-number v-model="gridForm.utilization_efficiency" :min="0.05" :max="0.2" :step="0.01" size="small" />
-            </div>
-          </el-col>
-          <el-col :span="6">
-            <div class="param-item">
-              <label>开采年限</label>
-              <el-input-number v-model="gridForm.lifetime_years" :min="10" :max="50" size="small" />
-            </div>
-          </el-col>
-        </el-row>
-      </div>
     </div>
 
     <!-- 计算结果 -->
