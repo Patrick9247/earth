@@ -15,10 +15,10 @@ const gridForm = ref({
 
 // 网格数据
 const gridData = ref<any[]>([
-  { gridCount: 10, porosity: 0.15, volume: 1e7, temperature: 120, pressure: 0.3, phase: 'liquid' },
-  { gridCount: 8, porosity: 0.12, volume: 1e7, temperature: 150, pressure: 0.5, phase: 'liquid' },
-  { gridCount: 5, porosity: 0.10, volume: 1e7, temperature: 180, pressure: 0.8, phase: 'two_phase' },
-  { gridCount: 3, porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2, phase: 'two_phase' }
+  { gridCount: 10, porosity: 0.15, volume: 1e7, temperature: 120, pressure: 0.3 },
+  { gridCount: 8, porosity: 0.12, volume: 1e7, temperature: 150, pressure: 0.5 },
+  { gridCount: 5, porosity: 0.10, volume: 1e7, temperature: 180, pressure: 0.8 },
+  { gridCount: 3, porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2 }
 ])
 
 // 基于 IAPWS-IF97 标准的密度计算公式
@@ -38,6 +38,19 @@ const calculateDensity = (T: number, P: number): number => {
   return Math.max(600, Math.min(density, 1100))
 }
 
+// 计算沸点温度 T_boil = 26.12 * ln(P) - 8.97
+const calculateBoilingPoint = (pressure: number): number => {
+  const pressureKpa = pressure * 1000  // MPa 转 kPa
+  if (pressureKpa <= 0) return 100.0
+  return 26.12 * Math.log(pressureKpa) - 8.97
+}
+
+// 根据温度和压力自动判断相态
+const determinePhase = (temperature: number, pressure: number): string => {
+  const boilingPoint = calculateBoilingPoint(pressure)
+  return temperature >= boilingPoint ? 'two_phase' : 'liquid'
+}
+
 // 前端计算网格资源（基于专利方法）
 const calculateGridResource = () => {
   let totalResource = 0
@@ -51,7 +64,8 @@ const calculateGridResource = () => {
     const porosity = Number(grid.porosity) || 0
     const volume = Number(grid.volume) || 0
     const temperature = Number(grid.temperature) || 0
-    const phase = grid.phase || 'liquid'
+    // 自动根据温度和压力判断相态
+    const phase = determinePhase(temperature, grid.pressure)
     
     totalGridCount += gridCount
     
@@ -128,8 +142,7 @@ const addGrid = () => {
     porosity: 0.12,
     volume: 1e7,
     temperature: 150,
-    pressure: 0.5,
-    phase: 'liquid'
+    pressure: 0.5
   })
 }
 
@@ -198,13 +211,16 @@ const formatNumber = (num: number, decimals: number = 2): string => {
             <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" />
           </template>
         </el-table-column>
+        <el-table-column label="沸点温度(°C)" width="120">
+          <template #default="{ row }">
+            {{ calculateBoilingPoint(row.pressure).toFixed(1) }}
+          </template>
+        </el-table-column>
         <el-table-column label="相态" width="120">
           <template #default="{ row }">
-            <el-select v-model="row.phase" size="small" style="width: 100px">
-              <el-option label="液态" value="liquid" />
-              <el-option label="气液共存" value="two_phase" />
-              <el-option label="蒸汽" value="steam" />
-            </el-select>
+            <el-tag :type="determinePhase(row.temperature, row.pressure) === 'liquid' ? 'success' : 'warning'" size="small">
+              {{ determinePhase(row.temperature, row.pressure) === 'liquid' ? '液态水' : '气液共存' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="80">
