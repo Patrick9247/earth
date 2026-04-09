@@ -333,8 +333,12 @@ const formatNumber = (num: number, decimals: number = 2): string => {
                 <li><strong>气液共存</strong>：温度达到沸点，水和蒸汽共存</li>
                 <li><strong>蒸汽</strong>：高温高压下的过热蒸汽</li>
               </ul>
-              <p><strong>沸点温度计算：</strong>T<sub>boiling</sub> = -8.97 × ln(P)</p>
-              <p>其中 P 为压力 (MPa)</p>
+              <p><strong>沸点温度计算：</strong>T<sub>boil</sub> = 26.12 × ln(Pᵢ) - 8.97</p>
+              <p>其中 Pᵢ 为压力(kPa)</p>
+              <ul>
+                <li>当 Tᵢ &lt; T<sub>boil</sub>：液态水</li>
+                <li>当 Tᵢ ≥ T<sub>boil</sub>：气液共存</li>
+              </ul>
             </div>
           </el-collapse-item>
           <el-collapse-item title="密度校正公式（IAPWS-IF97）" name="2">
