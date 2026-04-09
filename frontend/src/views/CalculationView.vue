@@ -21,12 +21,21 @@ const gridData = ref<any[]>([
   { gridCount: 3, porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2, phase: 'two_phase' }
 ])
 
-// 计算水密度（专利公式）
-const calculateDensity = (T: number): number => {
-  const A = 0.99987 + 6.0e-5 * T
-  const B = 2.0e-4 + 1.0e-5 * T
-  const density = A * (1 - B * T) * 1000
-  return Math.max(600, Math.min(density, 1050))
+// 基于 IAPWS-IF97 标准的密度计算公式
+const calculateDensity = (T: number, P: number): number => {
+  // T: 温度(°C), P: 压力(MPa) -> 转换为 kPa
+  const Ti = T
+  const Pi = P * 1000  // MPa 转 kPa
+  
+  // 参数A和B
+  const A = -Math.pow(Pi - 163278.7315, 2) / (6.613e10)
+  const B = -Math.pow(Ti - 4.1171, 2) / 29947.659
+  
+  // 密度计算 (kg/m³)
+  const density = 137.1358 * Math.exp(A) + 139.3560 * Math.exp(B) + 769.9024
+  
+  // 确保密度在合理范围内
+  return Math.max(600, Math.min(density, 1100))
 }
 
 // 前端计算网格资源（基于专利方法）
@@ -48,7 +57,7 @@ const calculateGridResource = () => {
     
     // 根据相态计算
     let phaseResource = 0
-    const density = calculateDensity(temperature)
+    const density = calculateDensity(temperature, grid.pressure)
     const delta_T = temperature - gridForm.value.reference_temperature
     
     if (delta_T <= 0 || volume <= 0 || porosity <= 0) {
@@ -328,11 +337,13 @@ const formatNumber = (num: number, decimals: number = 2): string => {
               <p>其中 P 为压力 (MPa)</p>
             </div>
           </el-collapse-item>
-          <el-collapse-item title="密度校正公式" name="2">
+          <el-collapse-item title="密度校正公式（IAPWS-IF97）" name="2">
             <div class="formula">
-              <p><strong>地热流体密度：</strong>ρ = A × (1 - B × T) × 1000 kg/m³</p>
-              <p>A = 0.99987 + 6.0×10⁻⁵ × T</p>
-              <p>B = 2.0×10⁻⁴ + 1.0×10⁻⁵ × T</p>
+              <p><strong>地热流体密度：</strong></p>
+              <p>ρᵢ = 137.1358 × e<sup>A</sup> + 139.3560 × e<sup>B</sup> + 769.9024</p>
+              <p><strong>参数A：</strong>A = -(Pᵢ - 163278.7315)<sup>2</sup> / (6.613 × 10<sup>10</sup>)</p>
+              <p><strong>参数B：</strong>B = -(Tᵢ - 4.1171)<sup>2</sup> / 29947.659</p>
+              <p>其中：Tᵢ 为温度(°C)，Pᵢ 为压力(kPa)</p>
             </div>
           </el-collapse-item>
           <el-collapse-item title="液态资源量公式" name="3">
