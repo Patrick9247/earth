@@ -49,6 +49,31 @@ const viewDetail = (row: any) => {
   selectedResult.value = row
 }
 
+// 格式化数字显示
+const formatNumber = (num: number): string => {
+  if (!num) return '0'
+  if (num >= 1e18) return (num / 1e18).toFixed(2) + ' EJ'
+  if (num >= 1e15) return (num / 1e15).toFixed(2) + ' PJ'
+  if (num >= 1e12) return (num / 1e12).toFixed(2) + ' TJ'
+  if (num >= 1e9) return (num / 1e9).toFixed(2) + ' GJ'
+  if (num >= 1e6) return (num / 1e6).toFixed(2) + ' MJ'
+  if (num >= 1e3) return (num / 1e3).toFixed(2) + ' kJ'
+  return num.toFixed(2) + ' J'
+}
+
+// 格式化功率显示
+const formatPower = (mw: number): string => {
+  if (!mw) return '0'
+  if (mw >= 1e6) return (mw / 1e6).toFixed(4) + ' TW'
+  if (mw >= 1e3) return (mw / 1e3).toFixed(4) + ' GW'
+  if (mw >= 1) return mw.toFixed(4) + ' MW'
+  if (mw >= 1e-3) return (mw * 1e3).toFixed(4) + ' kW'
+  if (mw >= 1e-6) return (mw * 1e6).toFixed(4) + ' W'
+  if (mw >= 1e-9) return (mw * 1e9).toFixed(4) + ' mW'
+  if (mw >= 1e-12) return (mw * 1e12).toFixed(4) + ' μW'
+  return mw.toExponential(4) + ' W'
+}
+
 // 导出为 CSV
 const exportToCSV = () => {
   if (results.value.length === 0) {
@@ -125,15 +150,15 @@ onMounted(() => {
             <el-tag :type="row.temperature_avg > 150 ? 'danger' : 'success'">{{ row.temperature_avg }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="heat_content" label="热含量(EJ)" width="120">
-          <template #default="{ row }">{{ (row.heat_content / 1e18).toFixed(2) }}</template>
+        <el-table-column prop="heat_content" label="热含量(J)" width="140">
+          <template #default="{ row }">{{ formatNumber(row.heat_content) }}</template>
         </el-table-column>
-        <el-table-column prop="extractable_heat" label="可采热量(EJ)" width="120">
-          <template #default="{ row }">{{ (row.extractable_heat / 1e18).toFixed(2) }}</template>
+        <el-table-column prop="extractable_heat" label="可采热量(J)" width="140">
+          <template #default="{ row }">{{ formatNumber(row.extractable_heat) }}</template>
         </el-table-column>
-        <el-table-column prop="power_potential" label="发电潜力(MW)" width="120">
+        <el-table-column prop="power_potential" label="发电潜力" width="120">
           <template #default="{ row }">
-            <span style="color: #67c23a; font-weight: 600;">{{ row.power_potential?.toFixed(1) }}</span>
+            <span style="color: #67c23a; font-weight: 600;">{{ formatPower(row.power_potential) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="lifetime_years" label="开采年限" width="100" />
@@ -161,14 +186,20 @@ onMounted(() => {
       </el-col>
       <el-col :span="8">
         <div class="stat-card success">
-          <div class="stat-value">{{ results.reduce((sum, r) => sum + (r.power_potential || 0), 0).toFixed(1) }}</div>
-          <div class="stat-label">总发电潜力 (MW)</div>
+          <div class="stat-value">{{ formatPower(results.reduce((sum: number, r: any) => sum + (r.power_potential || 0), 0)) }}</div>
+          <div class="stat-label">总发电潜力</div>
         </div>
       </el-col>
       <el-col :span="8">
         <div class="stat-card info">
-          <div class="stat-value">{{ (results.reduce((sum, r) => sum + (r.extractable_heat || 0), 0) / 1e18).toFixed(2) }}</div>
-          <div class="stat-label">总可采热量 (EJ)</div>
+          <div class="stat-value">{{ formatPower(results.reduce((sum: number, r: any) => sum + (r.power_potential || 0), 0)) }}</div>
+          <div class="stat-label">总发电潜力</div>
+        </div>
+      </el-col>
+      <el-col :span="8">
+        <div class="stat-card info">
+          <div class="stat-value">{{ formatNumber(results.reduce((sum: number, r: any) => sum + (r.extractable_heat || 0), 0)) }}</div>
+          <div class="stat-label">总可采热量</div>
         </div>
       </el-col>
     </el-row>
@@ -180,10 +211,10 @@ onMounted(() => {
         <el-descriptions-item label="创建时间">{{ selectedResult.created_at }}</el-descriptions-item>
         <el-descriptions-item label="储层体积">{{ (selectedResult.volume / 1e6).toFixed(2) }} × 10⁶ m³</el-descriptions-item>
         <el-descriptions-item label="平均温度">{{ selectedResult.temperature_avg }} °C</el-descriptions-item>
-        <el-descriptions-item label="热含量">{{ (selectedResult.heat_content / 1e18).toFixed(4) }} EJ</el-descriptions-item>
-        <el-descriptions-item label="可采热量">{{ (selectedResult.extractable_heat / 1e18).toFixed(4) }} EJ</el-descriptions-item>
+        <el-descriptions-item label="热含量">{{ formatNumber(selectedResult.heat_content) }}</el-descriptions-item>
+        <el-descriptions-item label="可采热量">{{ formatNumber(selectedResult.extractable_heat) }}</el-descriptions-item>
         <el-descriptions-item label="发电潜力" :span="2">
-          <el-tag type="success" size="large">{{ selectedResult.power_potential?.toFixed(2) }} MW</el-tag>
+          <el-tag type="success" size="large">{{ formatPower(selectedResult.power_potential) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="开采年限">{{ selectedResult.lifetime_years }} 年</el-descriptions-item>
       </el-descriptions>
