@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { gempyApi } from '@/api'
 
 const loading = ref(false)
 const result = ref<any>(null)
@@ -13,30 +14,8 @@ const gridForm = ref({
   lifetime_years: 30
 })
 
-// 网格数据
-const gridData = ref<any[]>([
-  { gridCount: 10, porosity: 0.15, volume: 1e7, temperature: 120, pressure: 0.3 },
-  { gridCount: 8, porosity: 0.12, volume: 1e7, temperature: 150, pressure: 0.5 },
-  { gridCount: 5, porosity: 0.10, volume: 1e7, temperature: 180, pressure: 0.8 },
-  { gridCount: 3, porosity: 0.08, volume: 1e7, temperature: 200, pressure: 1.2 }
-])
-
-// 基于 IAPWS-IF97 标准的密度计算公式
-const calculateDensity = (T: number, P: number): number => {
-  // T: 温度(°C), P: 压力(MPa) -> 转换为 kPa
-  const Ti = T
-  const Pi = P * 1000  // MPa 转 kPa
-  
-  // 参数A和B
-  const A = -Math.pow(Pi - 163278.7315, 2) / (6.613e10)
-  const B = -Math.pow(Ti - 4.1171, 2) / 29947.659
-  
-  // 密度计算 (kg/m³)
-  const density = 137.1358 * Math.exp(A) + 139.3560 * Math.exp(B) + 769.9024
-  
-  // 确保密度在合理范围内
-  return Math.max(600, Math.min(density, 1100))
-}
+// 网格数据 - 初始为空，用户自行添加
+const gridData = ref<any[]>([])
 
 // 计算沸点温度 T_boil = 26.12 * ln(P) - 8.97
 const calculateBoilingPoint = (pressure: number): number => {
@@ -45,148 +24,59 @@ const calculateBoilingPoint = (pressure: number): number => {
   return 26.12 * Math.log(pressureKpa) - 8.97
 }
 
-// 物理常数
-const WATER_SPECIFIC_HEAT = 4186      // 地热水比热容 J/(kg·K)
-const STEAM_SPECIFIC_HEAT = 2080       // 气体比热容 J/(kg·K)
-const LATENT_HEAT_VAPORIZATION = 2260000  // 气化潜热 J/kg
-const WATER_SPECIFIC_VOLUME = 0.001    // 水的比容 m³/kg (100°C)
-const STEAM_SPECIFIC_VOLUME = 1.673    // 水蒸气比容 m³/kg (100°C, 1atm)
-
-// 计算液态地热流体资源量
-// Q₁ = Σ(φᵢ × Vᵢ × ρᵢ × Cw × (Tᵢ - T₀))
-const calculateLiquidResource = (
-  porosity: number,
-  volume: number,
-  density: number,
-  temperature: number,
-  referenceTemp: number
-): number => {
-  return porosity * volume * density * WATER_SPECIFIC_HEAT * (temperature - referenceTemp)
-}
-
-// 计算气液共存时液态地热流体资源量
-// Q₂ = Σ(φᵢ × Vᵢ × (1 - ρᵢ × vg) / (vp - vg) × Cw × (T_boil - T₀))
-const calculateTwoPhaseLiquidResource = (
-  porosity: number,
-  volume: number,
-  density: number,
-  boilingPoint: number,
-  referenceTemp: number
-): number => {
-  const vg = STEAM_SPECIFIC_VOLUME
-  const vp = WATER_SPECIFIC_VOLUME
-  const factor = (1 - density * vg) / (vp - vg)
-  return porosity * volume * factor * WATER_SPECIFIC_HEAT * (boilingPoint - referenceTemp)
-}
-
-// 计算气液共存时水蒸汽资源量
-// Q₃ = Σ(φᵢ × Vᵢ × (ρᵢ - (1 - ρᵢ × vg) / (vp - vg)) × [Cw × (T_boil - T₀) + Lv + Cv × (Tᵢ - T_boil)])
-const calculateSteamResource = (
-  porosity: number,
-  volume: number,
-  density: number,
-  temperature: number,
-  boilingPoint: number,
-  referenceTemp: number
-): number => {
-  const vg = STEAM_SPECIFIC_VOLUME
-  const vp = WATER_SPECIFIC_VOLUME
-  const factor1 = (1 - density * vg) / (vp - vg)
-  const factor2 = density - factor1
-  const latentHeat = WATER_SPECIFIC_HEAT * (boilingPoint - referenceTemp) + LATENT_HEAT_VAPORIZATION + STEAM_SPECIFIC_HEAT * (temperature - boilingPoint)
-  return porosity * volume * factor2 * latentHeat
-}
-
 // 根据温度和压力自动判断相态
 const determinePhase = (temperature: number, pressure: number): string => {
   const boilingPoint = calculateBoilingPoint(pressure)
   return temperature >= boilingPoint ? 'two_phase' : 'liquid'
 }
 
-// 前端计算网格资源（基于专利方法）
-const calculateGridResource = () => {
-  let totalLiquidResource = 0  // Q₁
-  let totalTwoPhaseLiquidResource = 0  // Q₂
-  let totalSteamResource = 0  // Q₃
-  let totalResource = 0  // Q₄ = Q₂ + Q₃
-  let liquidGridCount = 0
-  let twoPhaseGridCount = 0
-  let totalGridCount = 0
-  
-  gridData.value.forEach((grid: any) => {
-    const gridCount = Number(grid.gridCount) || 1
-    const porosity = Number(grid.porosity) || 0
-    const volume = Number(grid.volume) || 0
-    const temperature = Number(grid.temperature) || 0
-    const pressure = Number(grid.pressure) || 0.1
-    const phase = determinePhase(temperature, pressure)
-    const boilingPoint = calculateBoilingPoint(pressure)
-    const referenceTemp = gridForm.value.reference_temperature
-    const density = calculateDensity(temperature, pressure)
-    
-    totalGridCount += gridCount
-    
-    if (porosity <= 0 || volume <= 0) {
-      return
-    }
-    
-    if (phase === 'two_phase') {
-      // 气液共存网格
-      twoPhaseGridCount += gridCount
-      
-      // Q₂: 气液共存时液态地热流体资源量
-      const q2 = calculateTwoPhaseLiquidResource(porosity, volume, density, boilingPoint, referenceTemp)
-      // Q₃: 气液共存时水蒸汽资源量
-      const q3 = calculateSteamResource(porosity, volume, density, temperature, boilingPoint, referenceTemp)
-      
-      totalTwoPhaseLiquidResource += q2 * gridCount
-      totalSteamResource += q3 * gridCount
-      totalResource += (q2 + q3) * gridCount
-    } else {
-      // 液态水网格
-      liquidGridCount += gridCount
-      
-      // Q₁: 液态地热流体资源量
-      const q1 = calculateLiquidResource(porosity, volume, density, temperature, referenceTemp)
-      totalLiquidResource += q1 * gridCount
-      totalResource += q1 * gridCount
-    }
-  })
-  
-  const recovery_factor = Number(gridForm.value.recovery_factor) || 0.25
-  const utilization_efficiency = Number(gridForm.value.utilization_efficiency) || 0.1
-  const lifetime_years = Number(gridForm.value.lifetime_years) || 30
-  
-  const extractable = totalResource * recovery_factor
-  const annual = lifetime_years > 0 ? extractable * utilization_efficiency / lifetime_years : 0
-  const power_mw = annual > 0 ? annual / (365.25 * 24 * 3600) / 1e6 : 0
-  
-  console.log('计算参数:', { totalResource, extractable, annual, power_mw, totalLiquidResource, totalTwoPhaseLiquidResource, totalSteamResource })
-  
-  return {
-    total_resource_joules: totalResource || 0,
-    liquid_resource_joules: totalLiquidResource || 0,
-    two_phase_liquid_resource_joules: totalTwoPhaseLiquidResource || 0,
-    steam_resource_joules: totalSteamResource || 0,
-    total_grid_count: totalGridCount,
-    liquid_grid_count: liquidGridCount,
-    two_phase_grid_count: twoPhaseGridCount,
-    extractable_heat: extractable || 0,
-    power_potential_mw: power_mw || 0,
-    parameters: { ...gridForm.value }
-  }
-}
-
 // 网格计算
 const handleGridCalculate = async () => {
+  // 验证数据
+  if (gridData.value.length === 0) {
+    ElMessage.warning('请先添加网格数据')
+    return
+  }
+  
+  for (let i = 0; i < gridData.value.length; i++) {
+    const grid = gridData.value[i]
+    if (!grid.porosity || !grid.volume || !grid.temperature || !grid.pressure) {
+      ElMessage.warning(`第 ${i + 1} 行网格数据不完整，请填写所有字段`)
+      return
+    }
+  }
+  
   loading.value = true
   try {
-    // 直接使用前端计算，不依赖后端API（确保gridCount生效）
-    result.value = calculateGridResource()
-    ElMessage.success('网格计算完成！')
-  } catch (error) {
+    // 转换为后端API格式
+    const grids = gridData.value.flatMap((grid: any) => {
+      const count = grid.gridCount || 1
+      return Array.from({ length: count }, () => ({
+        porosity: grid.porosity,
+        volume: grid.volume / count, // 每个网格的体积
+        temperature: grid.temperature,
+        pressure: grid.pressure
+      }))
+    })
+    
+    // 调用后端API计算并保存
+    const res = await gempyApi.calculateGrid({
+      grids,
+      reference_temperature: gridForm.value.reference_temperature,
+      recovery_factor: gridForm.value.recovery_factor,
+      utilization_efficiency: gridForm.value.utilization_efficiency,
+      lifetime_years: gridForm.value.lifetime_years
+    })
+    
+    if (res.data.success) {
+      result.value = res.data.data
+      ElMessage.success('网格计算完成并保存！')
+    } else {
+      ElMessage.error(res.data.message || '计算失败')
+    }
+  } catch (error: any) {
     console.error('网格计算失败:', error)
-    ElMessage.error('计算失败，请重试')
+    ElMessage.error(error?.response?.data?.detail || '计算失败，请重试')
   } finally {
     loading.value = false
   }
@@ -195,11 +85,11 @@ const handleGridCalculate = async () => {
 // 添加网格
 const addGrid = () => {
   gridData.value.push({
-    gridCount: 5,
-    porosity: 0.12,
-    volume: 1e7,
-    temperature: 150,
-    pressure: 0.5
+    gridCount: 1,
+    porosity: null,
+    volume: null,
+    temperature: null,
+    pressure: null
   })
 }
 
