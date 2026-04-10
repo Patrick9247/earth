@@ -243,7 +243,7 @@ class GeothermalResourceResponse(GeothermalResourceBase):
 
 
 class GeothermalResourceListItem(BaseModel):
-    """用于列表显示的简化响应模型（不含大数据字段）"""
+    """用于列表显示的简化响应模型"""
     id: int
     name: str
     model_type: Optional[str] = None
@@ -254,6 +254,7 @@ class GeothermalResourceListItem(BaseModel):
     extractable_heat: Optional[float] = None
     power_potential: Optional[float] = None
     lifetime_years: Optional[int] = None
+    parameters: Optional[Dict[str, Any]] = None  # 包含网格数据等参数
     created_at: datetime
     
     class Config:

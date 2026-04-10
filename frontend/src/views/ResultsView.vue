@@ -42,8 +42,12 @@ const handleDelete = async (id: number) => {
   }
 }
 
-const viewDetail = (row: any) => {
+const viewDetail = async (row: any) => {
   selectedResult.value = row
+  // 如果有网格数据，从parameters中获取
+  if (row.parameters && row.parameters.original_grids) {
+    selectedResult.value.grids = row.parameters.original_grids
+  }
 }
 
 // 格式化数字显示
@@ -215,7 +219,7 @@ onMounted(() => {
     </el-row>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="dialogVisible" title="计算结果详情" width="600px" @close="selectedResult = null">
+    <el-dialog v-model="dialogVisible" title="计算结果详情" width="900px" @close="selectedResult = null">
       <el-descriptions :column="2" border v-if="selectedResult">
         <el-descriptions-item label="名称">{{ selectedResult.name }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ selectedResult.created_at }}</el-descriptions-item>
@@ -226,8 +230,23 @@ onMounted(() => {
         <el-descriptions-item label="发电潜力" :span="2">
           <el-tag type="success" size="large">{{ formatPower(selectedResult.power_potential) }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="开采年限">{{ selectedResult.lifetime_years }} 年</el-descriptions-item>
       </el-descriptions>
+
+      <!-- 网格数据表格 -->
+      <div v-if="selectedResult?.grids?.length" style="margin-top: 20px;">
+        <h4>网格数据 ({{ selectedResult.grids.length }} 个)</h4>
+        <el-table :data="selectedResult.grids" size="small" max-height="300" border stripe>
+          <el-table-column type="index" label="编号" width="60" />
+          <el-table-column prop="porosity" label="孔隙度" width="100">
+            <template #default="{ row }">{{ row.porosity?.toFixed(4) }}</template>
+          </el-table-column>
+          <el-table-column prop="volume" label="体积(m³)" width="120">
+            <template #default="{ row }">{{ row.volume?.toFixed(2) }}</template>
+          </el-table-column>
+          <el-table-column prop="temperature" label="温度(°C)" width="100" />
+          <el-table-column prop="pressure" label="压力(MPa)" width="100" />
+        </el-table>
+      </div>
     </el-dialog>
   </div>
 </template>
