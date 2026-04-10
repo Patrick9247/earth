@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     MYSQL_DATABASE: str = "geothermal_db"
     
     # SQLite 作为备选数据库
-    USE_SQLITE: bool = True
+    USE_SQLITE: bool = True  # 设为False启用MySQL
     SQLITE_DB_PATH: str = ""
     
     # GemPy 配置
