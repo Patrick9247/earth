@@ -15,18 +15,18 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="ignore"  # 忽略未定义的环境变量
     )
-    
+
     # 应用基础配置
     APP_NAME: str = "地热流体资源建模系统"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
     
     # 数据库配置
-    MYSQL_HOST: str = "localhost"
-    MYSQL_PORT: int = 3306
-    MYSQL_USER: str = "root"
-    MYSQL_PASSWORD: str = ""
-    MYSQL_DATABASE: str = "geothermal_db"
+    MYSQL_HOST: str = os.getenv("MYSQL_HOST", "localhost")
+    MYSQL_PORT: int = int(os.getenv("MYSQL_PORT", "3306"))
+    MYSQL_USER: str = os.getenv("MYSQL_USER", "root")
+    MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "root")
+    MYSQL_DATABASE: str = os.getenv("MYSQL_DATABASE", "earthheat")
     
     # SQLite 作为备选数据库
     USE_SQLITE: bool = True  # 设为False启用MySQL
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # 环境变量（显式定义避免验证错误）
     COZE_WORKSPACE_PATH: str = ""
     COZE_PROJECT_ENV: str = "DEV"
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # 动态设置 SQLite 数据库路径
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
                 self.SQLITE_DB_PATH = f"{workspace}/data/geothermal.db"
             else:
                 self.SQLITE_DB_PATH = "/tmp/geothermal.db"
-    
+
     @property
     def DATABASE_URL(self) -> str:
         """数据库连接URL"""

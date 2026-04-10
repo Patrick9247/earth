@@ -25,7 +25,6 @@ async def get_drill_holes(
 ):
     """获取所有钻孔数据"""
     drill_holes = db.query(DrillHole).offset(skip).limit(limit).all()
-    
     # 为每个钻孔添加平均温度
     result = []
     for dh in drill_holes:
@@ -47,12 +46,10 @@ async def get_drill_holes(
             "created_at": dh.created_at,
             "updated_at": dh.updated_at,
         }
-        
         # 获取温度数据并计算平均温度
         temp_data = db.query(DrillTemperatureCurve).filter(
             DrillTemperatureCurve.drill_hole_id == dh.id
         ).all()
-        
         if temp_data:
             temps = [t.corrected_temp or t.temperature for t in temp_data if t.corrected_temp or t.temperature]
             if temps:
@@ -65,10 +62,7 @@ async def get_drill_holes(
             dh_dict["temperature"] = 15 + (dh.total_depth or 500) * 0.03
         
         result.append(dh_dict)
-    
     return result
-
-
 @router.get("/{drill_hole_id}", response_model=DrillHoleResponse)
 async def get_drill_hole(drill_hole_id: int, db: Session = Depends(get_db)):
     """获取单个钻孔数据"""
@@ -76,15 +70,12 @@ async def get_drill_hole(drill_hole_id: int, db: Session = Depends(get_db)):
     if not drill_hole:
         raise HTTPException(status_code=404, detail="钻孔数据未找到")
     return drill_hole
-
-
 @router.get("/{drill_hole_id}/detail")
 async def get_drill_hole_detail(drill_hole_id: int, db: Session = Depends(get_db)):
     """获取钻孔详细信息，包含关联数据"""
     drill_hole = db.query(DrillHole).filter(DrillHole.id == drill_hole_id).first()
     if not drill_hole:
         raise HTTPException(status_code=404, detail="钻孔数据未找到")
-    
     return {
         "drill_hole": drill_hole,
         "layers": db.query(DrillLayer).filter(DrillLayer.drill_hole_id == drill_hole_id).all(),
@@ -92,8 +83,6 @@ async def get_drill_hole_detail(drill_hole_id: int, db: Session = Depends(get_db
         "pressure_data": db.query(DrillPressureData).filter(DrillPressureData.drill_hole_id == drill_hole_id).all(),
         "porosity_data": db.query(DrillPorosityData).filter(DrillPorosityData.drill_hole_id == drill_hole_id).all()
     }
-
-
 @router.post("/", response_model=DrillHoleResponse)
 async def create_drill_hole(drill_hole: DrillHoleCreate, db: Session = Depends(get_db)):
     """创建钻孔数据"""
@@ -107,8 +96,6 @@ async def create_drill_hole(drill_hole: DrillHoleCreate, db: Session = Depends(g
     db.commit()
     db.refresh(db_drill_hole)
     return db_drill_hole
-
-
 @router.post("/with-details")
 async def create_drill_hole_with_details(data: DrillHoleWithDetailsCreate, db: Session = Depends(get_db)):
     """创建钻孔及其关联数据（分层、测温、压力、孔隙度）"""
@@ -116,7 +103,6 @@ async def create_drill_hole_with_details(data: DrillHoleWithDetailsCreate, db: S
     existing = db.query(DrillHole).filter(DrillHole.hole_id == data.drill_hole.hole_id).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"钻孔编号 {data.drill_hole.hole_id} 已存在")
-    
     # 创建钻孔基本信息
     db_drill_hole = DrillHole(**data.drill_hole.model_dump())
     db.add(db_drill_hole)
