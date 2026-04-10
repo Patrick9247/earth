@@ -2,11 +2,15 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ElLoading } from 'element-plus'
-import { gempyApi } from '@/api'
+import { gempyApi, gridCalcApi } from '@/api'
 
 const loading = ref(false)
 const result = ref<any>(null)
 let loadingInstance: any = null
+
+// 当前编辑的表单ID
+const currentFormId = ref<number | null>(null)
+const currentFormName = ref('未命名')
 
 // 网格计算表单
 const gridForm = ref({
@@ -16,39 +20,100 @@ const gridForm = ref({
   lifetime_years: 30
 })
 
-// 网格数据 - 从localStorage恢复
-const getStoredGridData = (): any[] => {
+// 网格数据
+const gridData = ref<any[]>([])
+
+// 加载表单列表
+const loadFormList = async () => {
   try {
-    const stored = localStorage.getItem('gridData')
-    return stored ? JSON.parse(stored) : []
-  } catch {
+    const res = await gridCalcApi.getAll()
+    return res.data || []
+  } catch (error) {
+    console.error('加载表单列表失败:', error)
     return []
   }
 }
 
-const gridData = ref<any[]>(getStoredGridData())
-
-// 保存网格数据到localStorage
-const saveGridData = () => {
-  localStorage.setItem('gridData', JSON.stringify(gridData.value))
-}
-
-// 保存计算结果到localStorage
-const saveResult = () => {
-  if (result.value) {
-    localStorage.setItem('gridResult', JSON.stringify(result.value))
+// 加载指定表单
+const loadForm = async (formId: number) => {
+  try {
+    const res = await gridCalcApi.getOne(formId)
+    const form = res.data
+    currentFormId.value = form.id
+    currentFormName.value = form.name
+    gridForm.value = {
+      reference_temperature: form.reference_temperature,
+      recovery_factor: form.recovery_factor,
+      utilization_efficiency: form.utilization_efficiency,
+      lifetime_years: form.lifetime_years
+    }
+    gridData.value = form.grids || []
+    ElMessage.success(`已加载: ${form.name}`)
+  } catch (error) {
+    console.error('加载表单失败:', error)
+    ElMessage.error('加载表单失败')
   }
 }
 
-// 页面加载时恢复计算结果
-onMounted(() => {
+// 新建表单
+const createNewForm = async () => {
   try {
-    const storedResult = localStorage.getItem('gridResult')
-    if (storedResult) {
-      result.value = JSON.parse(storedResult)
+    const res = await gridCalcApi.create({
+      name: `计算方案_${Date.now()}`,
+      reference_temperature: 25,
+      recovery_factor: 0.25,
+      utilization_efficiency: 0.1,
+      lifetime_years: 30,
+      grids: []
+    })
+    currentFormId.value = res.data.id
+    currentFormName.value = res.data.name
+    gridData.value = []
+    ElMessage.success('已创建新表单')
+  } catch (error) {
+    console.error('创建表单失败:', error)
+    ElMessage.error('创建表单失败')
+  }
+}
+
+// 保存当前表单
+const saveCurrentForm = async () => {
+  if (!currentFormId.value) {
+    await createNewForm()
+  }
+  
+  if (currentFormId.value) {
+    try {
+      await gridCalcApi.update(currentFormId.value, {
+        name: currentFormName.value,
+        reference_temperature: gridForm.value.reference_temperature,
+        recovery_factor: gridForm.value.recovery_factor,
+        utilization_efficiency: gridForm.value.utilization_efficiency,
+        lifetime_years: gridForm.value.lifetime_years,
+        grids: gridData.value
+      })
+      ElMessage.success('保存成功')
+    } catch (error) {
+      console.error('保存表单失败:', error)
+      ElMessage.error('保存表单失败')
     }
-  } catch {
-    // ignore
+  }
+}
+
+// 保存网格数据到数据库
+const saveGridDataToDb = () => {
+  saveCurrentForm()
+}
+
+// 页面加载时初始化
+onMounted(async () => {
+  // 加载表单列表，如果有则加载最新的
+  const forms = await loadFormList()
+  if (forms.length > 0) {
+    await loadForm(forms[0].id)
+  } else {
+    // 没有表单则创建新表单
+    await createNewForm()
   }
 })
 
@@ -117,7 +182,7 @@ const handleGridCalculate = async () => {
     
     if (res.data.success) {
       result.value = res.data.data
-      saveResult()  // 保存计算结果
+      saveGridDataToDb()  // 保存到数据库
       ElMessage.success(`网格计算完成！共 ${grids.length} 个网格`)
     } else {
       ElMessage.error(res.data.message || '计算失败')
@@ -153,16 +218,16 @@ const addGrid = () => {
     temperature: null,
     pressure: null
   })
-  saveGridData()
+  saveGridDataToDb()
 }
 
 // 删除网格
 const removeGrid = (index: number) => {
   gridData.value.splice(index, 1)
-  saveGridData()
+  saveGridDataToDb()
 }
 
-// 删除网格
+// 格式化数字
 const formatNumber = (num: number, decimals: number = 2): string => {
   if (!num && num !== 0) return '0'
   if (num >= 1e18) return (num / 1e18).toFixed(decimals) + ' EJ'
@@ -210,31 +275,31 @@ const formatPower = (mw: number): string => {
         </el-button>
       </div>
 
-      <el-table :data="gridData" border stripe @change="saveGridData">
+      <el-table :data="gridData" border stripe>
         <el-table-column label="网格编号" type="index" width="80" />
         <el-table-column label="网格数" width="100">
           <template #default="{ row }">
-            <el-input-number v-model="row.gridCount" :min="1" :max="1000" :step="1" size="small" @change="saveGridData" />
+            <el-input-number v-model="row.gridCount" :min="1" :max="1000" :step="1" size="small" @change="saveGridDataToDb" />
           </template>
         </el-table-column>
         <el-table-column label="孔隙度" width="130">
           <template #default="{ row }">
-            <el-input-number v-model="row.porosity" :min="0" :step="0.01" size="small" @change="saveGridData" />
+            <el-input-number v-model="row.porosity" :min="0" :step="0.01" size="small" @change="saveGridDataToDb" />
           </template>
         </el-table-column>
         <el-table-column label="体积(m³)" width="140">
           <template #default="{ row }">
-            <el-input-number v-model="row.volume" size="small" @change="saveGridData" />
+            <el-input-number v-model="row.volume" size="small" @change="saveGridDataToDb" />
           </template>
         </el-table-column>
         <el-table-column label="温度(°C)" width="110">
           <template #default="{ row }">
-            <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" @change="saveGridData" />
+            <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" @change="saveGridDataToDb" />
           </template>
         </el-table-column>
         <el-table-column label="压力(MPa)" width="110">
           <template #default="{ row }">
-            <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" @change="saveGridData" />
+            <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" @change="saveGridDataToDb" />
           </template>
         </el-table-column>
         <el-table-column label="沸点温度(°C)" width="120">

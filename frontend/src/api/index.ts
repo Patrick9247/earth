@@ -68,6 +68,15 @@ export const resourceApi = {
     api.get('/resource/density', { params: { temperature, pressure, phase } })
 }
 
+// ==================== 网格计算表单 API ====================
+export const gridCalcApi = {
+  getAll: () => api.get('/grid-calculations/'),
+  getOne: (id: number) => api.get(`/grid-calculations/${id}`),
+  create: (data: any) => api.post('/grid-calculations/', data),
+  update: (id: number, data: any) => api.put(`/grid-calculations/${id}`, data),
+  delete: (id: number) => api.delete(`/grid-calculations/${id}`)
+}
+
 // ==================== CSV导入 API ====================
 export const importApi = {
   downloadTemplate: (type: string) => `/api/import/template/${type}`,

@@ -360,3 +360,48 @@ class MessageResponse(BaseModel):
     """通用消息响应"""
     success: bool
     message: str
+
+
+# ==================== 网格计算表单数据 Schemas ====================
+class GridItemSchema(BaseModel):
+    """单个网格数据"""
+    gridCount: Optional[int] = Field(1, description="网格数量")
+    porosity: Optional[float] = Field(None, ge=0, le=1, description="孔隙度")
+    volume: Optional[float] = Field(None, gt=0, description="体积(m³)")
+    temperature: Optional[float] = Field(None, description="温度(°C)")
+    pressure: Optional[float] = Field(None, description="压力(MPa)")
+
+
+class GridCalculationFormBase(BaseModel):
+    """网格计算表单基础模型"""
+    name: str = Field(..., description="计算名称")
+    reference_temperature: float = Field(25, description="参考温度(°C)")
+    recovery_factor: float = Field(0.25, ge=0, le=1, description="采收率")
+    utilization_efficiency: float = Field(0.1, ge=0, le=1, description="利用效率")
+    lifetime_years: int = Field(30, ge=1, description="开采年限(年)")
+    grids: List[Dict[str, Any]] = Field(default_factory=list, description="网格数据列表")
+
+
+class GridCalculationFormCreate(GridCalculationFormBase):
+    """创建网格计算表单"""
+    pass
+
+
+class GridCalculationFormUpdate(BaseModel):
+    """更新网格计算表单"""
+    name: Optional[str] = None
+    reference_temperature: Optional[float] = None
+    recovery_factor: Optional[float] = None
+    utilization_efficiency: Optional[float] = None
+    lifetime_years: Optional[int] = None
+    grids: Optional[List[Dict[str, Any]]] = None
+
+
+class GridCalculationFormResponse(GridCalculationFormBase):
+    """网格计算表单响应"""
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True

@@ -265,3 +265,18 @@ class CsvImportRecord(Base):
     error_details = Column(JSON, comment="错误详情")
     status = Column(String(50), default="处理中", comment="导入状态")
     created_at = Column(DateTime, server_default=func.now())
+
+
+class GridCalculation(Base):
+    """网格资源计算表单数据（专利方法）"""
+    __tablename__ = "grid_calculations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, comment="计算名称")
+    reference_temperature = Column(Float, default=25, comment="参考温度(°C)")
+    recovery_factor = Column(Float, default=0.25, comment="采收率")
+    utilization_efficiency = Column(Float, default=0.1, comment="利用效率")
+    lifetime_years = Column(Integer, default=30, comment="开采年限(年)")
+    grids = Column(JSON, comment="网格数据列表")
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
