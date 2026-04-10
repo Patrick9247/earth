@@ -162,7 +162,7 @@ onMounted(() => {
         </el-table-column>
         <el-table-column prop="temperature_avg" label="平均温度(°C)" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.temperature_avg > 150 ? 'danger' : 'success'">{{ row.temperature_avg }}</el-tag>
+            <el-tag :type="row.temperature_avg > 150 ? 'danger' : 'success'">{{ row.temperature_avg?.toFixed(4) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="heat_content" label="热含量(J)" width="140">
