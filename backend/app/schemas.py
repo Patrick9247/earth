@@ -363,15 +363,6 @@ class MessageResponse(BaseModel):
 
 
 # ==================== 网格计算表单数据 Schemas ====================
-class GridItemSchema(BaseModel):
-    """单个网格数据"""
-    gridCount: Optional[int] = Field(1, description="网格数量")
-    porosity: Optional[float] = Field(None, ge=0, le=1, description="孔隙度")
-    volume: Optional[float] = Field(None, gt=0, description="体积(m³)")
-    temperature: Optional[float] = Field(None, description="温度(°C)")
-    pressure: Optional[float] = Field(None, description="压力(MPa)")
-
-
 class GridCalculationFormBase(BaseModel):
     """网格计算表单基础模型"""
     name: str = Field(..., description="计算名称")
@@ -379,7 +370,6 @@ class GridCalculationFormBase(BaseModel):
     recovery_factor: float = Field(0.25, ge=0, le=1, description="采收率")
     utilization_efficiency: float = Field(0.1, ge=0, le=1, description="利用效率")
     lifetime_years: int = Field(30, ge=1, description="开采年限(年)")
-    grids: List[Dict[str, Any]] = Field(default_factory=list, description="网格数据列表")
 
 
 class GridCalculationFormCreate(GridCalculationFormBase):
@@ -394,11 +384,47 @@ class GridCalculationFormUpdate(BaseModel):
     recovery_factor: Optional[float] = None
     utilization_efficiency: Optional[float] = None
     lifetime_years: Optional[int] = None
-    grids: Optional[List[Dict[str, Any]]] = None
 
 
 class GridCalculationFormResponse(GridCalculationFormBase):
     """网格计算表单响应"""
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+# ==================== 单个网格数据 Schemas ====================
+class GridItemBase(BaseModel):
+    """单个网格基础模型"""
+    calc_id: int = Field(..., description="所属计算ID")
+    grid_count: int = Field(1, ge=1, description="网格数量")
+    porosity: Optional[float] = Field(None, ge=0, le=1, description="孔隙度")
+    volume: Optional[float] = Field(None, gt=0, description="体积(m³)")
+    temperature: Optional[float] = Field(None, description="温度(°C)")
+    pressure: Optional[float] = Field(None, description="压力(MPa)")
+    sort_order: Optional[int] = Field(0, description="排序顺序")
+
+
+class GridItemCreate(GridItemBase):
+    """创建网格"""
+    pass
+
+
+class GridItemUpdate(BaseModel):
+    """更新网格"""
+    grid_count: Optional[int] = None
+    porosity: Optional[float] = None
+    volume: Optional[float] = None
+    temperature: Optional[float] = None
+    pressure: Optional[float] = None
+    sort_order: Optional[int] = None
+
+
+class GridItemResponse(GridItemBase):
+    """网格响应"""
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None

@@ -70,11 +70,17 @@ export const resourceApi = {
 
 // ==================== 网格计算表单 API ====================
 export const gridCalcApi = {
+  // 表单操作
   getAll: () => api.get('/grid-calculations/'),
   getOne: (id: number) => api.get(`/grid-calculations/${id}`),
   create: (data: any) => api.post('/grid-calculations/', data),
   update: (id: number, data: any) => api.put(`/grid-calculations/${id}`, data),
-  delete: (id: number) => api.delete(`/grid-calculations/${id}`)
+  delete: (id: number) => api.delete(`/grid-calculations/${id}`),
+  // 网格操作
+  getGrids: (calcId: number) => api.get(`/grid-calculations/${calcId}/grids`),
+  addGrid: (calcId: number, data: any) => api.post(`/grid-calculations/${calcId}/grids`, data),
+  updateGrid: (calcId: number, itemId: number, data: any) => api.put(`/grid-calculations/${calcId}/grids/${itemId}`, data),
+  deleteGrid: (calcId: number, itemId: number) => api.delete(`/grid-calculations/${calcId}/grids/${itemId}`)
 }
 
 // ==================== CSV导入 API ====================

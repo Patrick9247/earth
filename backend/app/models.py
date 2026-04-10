@@ -277,6 +277,21 @@ class GridCalculation(Base):
     recovery_factor = Column(Float, default=0.25, comment="采收率")
     utilization_efficiency = Column(Float, default=0.1, comment="利用效率")
     lifetime_years = Column(Integer, default=30, comment="开采年限(年)")
-    grids = Column(JSON, comment="网格数据列表")
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class GridItem(Base):
+    """单个网格数据"""
+    __tablename__ = "grid_items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    calc_id = Column(Integer, nullable=False, index=True, comment="所属计算ID")
+    grid_count = Column(Integer, default=1, comment="网格数量")
+    porosity = Column(Float, comment="孔隙度")
+    volume = Column(Float, comment="体积(m³)")
+    temperature = Column(Float, comment="温度(°C)")
+    pressure = Column(Float, comment="压力(MPa)")
+    sort_order = Column(Integer, default=0, comment="排序顺序")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
