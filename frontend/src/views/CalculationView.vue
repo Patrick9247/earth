@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { ElLoading } from 'element-plus'
 import { gempyApi } from '@/api'
 
 const loading = ref(false)
 const result = ref<any>(null)
+let loadingInstance: any = null
 
 // 网格计算表单
 const gridForm = ref({
@@ -81,7 +83,12 @@ const handleGridCalculate = async () => {
   
   loading.value = true
   result.value = null  // 清除之前的结果
-  ElMessage.info('正在计算，请稍候...')
+  // 显示加载遮罩
+  loadingInstance = ElLoading.service({
+    lock: true,
+    text: '正在计算，请稍候...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
   
   try {
     // 转换为后端API格式
@@ -129,6 +136,11 @@ const handleGridCalculate = async () => {
     }
   } finally {
     loading.value = false
+    // 关闭加载遮罩
+    if (loadingInstance) {
+      loadingInstance.close()
+      loadingInstance = null
+    }
   }
 }
 
