@@ -8,6 +8,22 @@ from .database import Base
 from datetime import datetime
 
 
+class User(Base):
+    """用户模型"""
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, nullable=False, index=True, comment="用户名")
+    hashed_password = Column(String(255), nullable=False, comment="密码哈希")
+    role = Column(String(20), nullable=False, default="ADMIN", comment="角色: SUPER(超级管理员), ADMIN(普通管理员)")
+    email = Column(String(100), comment="邮箱")
+    full_name = Column(String(100), comment="姓名")
+    phone = Column(String(20), comment="联系电话")
+    is_active = Column(Boolean, default=True, comment="是否启用")
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class GeologicalLayer(Base):
     """地质层模型"""
     __tablename__ = "geological_layers"

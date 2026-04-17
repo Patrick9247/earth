@@ -136,4 +136,18 @@ export const drillHoleDetailApi = {
   getDetail: (id: number) => api.get(`/drill-holes/${id}/detail`)
 }
 
+// ==================== 用户管理 API ====================
+export const usersApi = {
+  login: (username: string, password: string) => 
+    api.post('/users/login', { username, password }),
+  register: (data: any) => api.post('/users/register', data),
+  getMe: () => api.get('/users/me'),
+  getAll: () => api.get('/users/'),
+  getOne: (id: number) => api.get(`/users/${id}`),
+  create: (data: any) => api.post('/users/', data),
+  update: (id: number, data: any) => api.put(`/users/${id}`, data),
+  delete: (id: number) => api.delete(`/users/${id}`),
+  toggleActive: (id: number) => api.patch(`/users/${id}/toggle-active`)
+}
+
 export default api

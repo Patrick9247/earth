@@ -3,6 +3,12 @@ import type { RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: { title: '用户登录', requiresAuth: false }
+  },
+  {
     path: '/',
     name: 'home',
     component: () => import('@/views/HomeView.vue'),
@@ -39,6 +45,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '计算结果' }
   },
   {
+    path: '/users',
+    name: 'users',
+    component: () => import('@/views/UserManagementView.vue'),
+    meta: { title: '用户管理' }
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/views/SettingsView.vue'),
@@ -59,7 +71,20 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   document.title = `${to.meta.title || '首页'} - 地热流体资源建模系统`
-  next()
+  
+  // 检查是否需要登录
+  const token = localStorage.getItem('token')
+  const requiresAuth = to.meta.requiresAuth !== false && to.name !== 'login'
+  
+  if (requiresAuth && !token) {
+    // 未登录，跳转到登录页面
+    next({ name: 'login' })
+  } else if (to.name === 'login' && token) {
+    // 已登录，跳转到首页
+    next({ name: 'home' })
+  } else {
+    next()
+  }
 })
 
 export default router
