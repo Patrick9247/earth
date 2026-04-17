@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import * as echarts from 'echarts'
 import { drillHolesApi, importApi, drillHoleDetailApi } from '@/api/get-api.ts'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
@@ -854,30 +855,39 @@ const handleSizeChange = (size: number) => {
   currentPage.value = 1
 }
 
-import {onUnmounted } from 'vue'
-import * as echarts from 'echarts'
-
+// ==================== 图表相关 ====================
 // 图表实例
-const chartRef = ref(null)
-let myChart: any= null
+const chartRef = ref<HTMLElement | null>(null)
+let myChart: echarts.ECharts | null = null
 
-// 初始化图表
+// 初始化/更新图表
 const initChart = () => {
   if (!chartRef.value) return
-  // 从你的 drillHoles 自动提取数据
-  const xData = store.drillHoles.map((d: any) => d.name || d.hole_id)
-  const yData = store.drillHoles.map((d: any) => d.total_depth || 0)
-  console.log('store:',store.drillHoles)
-  console.log('钻孔数据:', drillHoles.value)
-  console.log('xData:', xData)
-  console.log('yData:', yData)
-  // 初始化
+  
+  // 确保钻孔数据已加载
+  if (drillHoles.value.length === 0) {
+    console.log('等待钻孔数据加载...')
+    return
+  }
+  
+  // 销毁旧实例
+  if (myChart) {
+    myChart.dispose()
+    myChart = null
+  }
+  
+  // 从 drillHoles 获取动态数据
+  const xData = drillHoles.value.map((d: any) => d.hole_name || d.hole_id)
+  const yData = drillHoles.value.map((d: any) => d.total_depth || 0)
+  const yData2 = drillHoles.value.map((d: any) => d.elevation || 0)
+
+  // 初始化图表
   myChart = echarts.init(chartRef.value)
 
-  // 柱状图配置
+  // 多图表配置
   const option = {
     title: {
-      text: '钻孔数量统计',
+      text: '钻孔数据可视化',
       left: 'center'
     },
     tooltip: {
@@ -886,37 +896,57 @@ const initChart = () => {
         type: 'shadow'
       }
     },
+    legend: {
+      data: ['钻孔深度', '地面高程'],
+      top: 30
+    },
     grid: {
       left: '3%',
       right: '4%',
       bottom: '3%',
+      top: '80px',
       containLabel: true
     },
     xAxis: {
       type: 'category',
       data: xData,
       axisLabel: {
-        interval: 0
+        interval: 0,
+        rotate: 30
       }
     },
     yAxis: {
       type: 'value',
-      name: '深度(m)'
+      name: '数值'
     },
     series: [
       {
         name: '钻孔深度',
         type: 'bar',
         data: yData,
-        itemStyle: {
-          color: '#409EFF' // ElementPlus 主色
-        }
-         },
+        itemStyle: { color: '#409EFF' }
+      },
+      {
+        name: '地面高程',
+        type: 'bar',
+        data: yData2,
+        itemStyle: { color: '#67C23A' }
+      }
     ]
   }
 
   myChart.setOption(option)
 }
+
+// 监听 activeTab，切换到可视化时初始化图表
+watch(activeTab, (newTab) => {
+  if (newTab === 'visualization') {
+    // 等待 DOM 更新后再初始化图表
+    setTimeout(() => {
+      initChart()
+    }, 100)
+  }
+})
 
 // 窗口变化自适应
 const resizeChart = () => {
@@ -924,17 +954,16 @@ const resizeChart = () => {
 }
 
 onMounted(() => {
-  initChart()
+  loadDrillHoles()
   window.addEventListener('resize', resizeChart)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', resizeChart)
-})
-
-// ==================== 初始化 ====================
-onMounted(() => {
-  loadDrillHoles()
+  if (myChart) {
+    myChart.dispose()
+    myChart = null
+  }
 })
 </script>
 
@@ -1099,14 +1128,12 @@ onMounted(() => {
           </div>
         </el-tab-pane>
 
-<!--        数据可视化-->
+        <!-- 数据可视化 -->
         <el-tab-pane label="数据可视化" name="visualization">
           <div class="card">
             <h3 class="card-title">钻孔数据可视化</h3>
             <!-- 柱状图容器 -->
-           <div ref="chartRef" style="width: 600%; height: 450px;">
-
-           </div>
+           <div ref="chartRef" class="chart-container"></div>
           </div>
         </el-tab-pane>
       </el-tabs>
