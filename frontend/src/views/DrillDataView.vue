@@ -1336,17 +1336,17 @@ onUnmounted(() => {
             <el-row :gutter="20">
               <el-col :span="8">
                 <el-form-item label="X坐标(m)" required>
-                  <el-input-number v-model="form.location_x" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                  <el-input-number v-model="form.location_x" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="Y坐标(m)" required>
-                  <el-input-number v-model="form.location_y" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                  <el-input-number v-model="form.location_y" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="地面高程(m)">
-                  <el-input-number v-model="form.elevation" :controls="false" :precision="2" size="large" style="width: 100%" />
+                  <el-input-number v-model="form.elevation" :controls="false" :precision="4" size="large" style="width: 100%" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -1354,12 +1354,12 @@ onUnmounted(() => {
             <el-row :gutter="20">
               <el-col :span="8">
                 <el-form-item label="总深度(m)">
-                  <el-input-number v-model="form.total_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                  <el-input-number v-model="form.total_depth" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="终孔深度(m)">
-                  <el-input-number v-model="form.final_depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+                  <el-input-number v-model="form.final_depth" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -1429,12 +1429,12 @@ onUnmounted(() => {
               </el-table-column>
               <el-table-column label="顶深(m)" width="90">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.depth_top" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.depth_top" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="底深(m)" width="90">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.depth_bottom" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.depth_bottom" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="岩性" width="120">
@@ -1444,12 +1444,12 @@ onUnmounted(() => {
               </el-table-column>
               <el-table-column label="孔隙度" width="90">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.porosity" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.porosity" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="渗透率" width="90">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.permeability" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.permeability" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="操作" width="70">
@@ -1471,17 +1471,17 @@ onUnmounted(() => {
             <el-table :data="form.temperature_curves" border stripe size="small" max-height="400">
               <el-table-column label="深度(m)" width="100">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.depth" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.depth" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="温度(°C)" width="100">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.temperature" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.temperature" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="梯度" width="100">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.gradient" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.gradient" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="测量类型" width="120">
@@ -1531,12 +1531,12 @@ onUnmounted(() => {
               </el-table-column>
               <el-table-column label="流量" width="100">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.flow_rate" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.flow_rate" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="动水位" width="100">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.water_level" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.water_level" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="操作" width="70">
@@ -1563,7 +1563,7 @@ onUnmounted(() => {
               </el-table-column>
               <el-table-column label="深度(m)" width="90">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.depth" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.depth" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="岩性" width="120">
@@ -1573,12 +1573,12 @@ onUnmounted(() => {
               </el-table-column>
               <el-table-column label="总孔隙度(%)" width="110">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.porosity_total" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.porosity_total" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="渗透率" width="100">
                 <template #default="{ row }">
-                  <el-input-number v-model="row.permeability" :controls="false" :precision="2" size="small" style="width: 100%" />
+                  <el-input-number v-model="row.permeability" :controls="false" :precision="4" size="small" style="width: 100%" />
                 </template>
               </el-table-column>
               <el-table-column label="操作" width="70">
@@ -1600,10 +1600,10 @@ onUnmounted(() => {
     <el-dialog v-model="tempDialogVisible" title="添加测温数据" width="450px">
       <el-form :model="tempForm" label-width="100px">
         <el-form-item label="深度(m)">
-          <el-input-number v-model="tempForm.depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+          <el-input-number v-model="tempForm.depth" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
         </el-form-item>
         <el-form-item label="温度(°C)">
-          <el-input-number v-model="tempForm.temperature" :min="0" :max="400" :controls="false" :precision="2" size="large" style="width: 100%" />
+          <el-input-number v-model="tempForm.temperature" :min="0" :max="400" :controls="false" :precision="4" size="large" style="width: 100%" />
         </el-form-item>
         <el-form-item label="地温梯度">
           <el-input-number v-model="tempForm.gradient" :min="0" :max="20" :precision="1" :controls="false" size="large" style="width: 100%" />
@@ -1641,12 +1641,12 @@ onUnmounted(() => {
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="顶深(m)">
-              <el-input-number v-model="layerForm.depth_top" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="layerForm.depth_top" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="底深(m)">
-              <el-input-number v-model="layerForm.depth_bottom" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="layerForm.depth_bottom" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1661,7 +1661,7 @@ onUnmounted(() => {
           </el-col>
           <el-col :span="12">
             <el-form-item label="渗透率(mD)">
-              <el-input-number v-model="layerForm.permeability" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="layerForm.permeability" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1714,12 +1714,12 @@ onUnmounted(() => {
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="流量(m³/h)">
-              <el-input-number v-model="pressureForm.flow_rate" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="pressureForm.flow_rate" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="动水位(m)">
-              <el-input-number v-model="pressureForm.water_level" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="pressureForm.water_level" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1754,34 +1754,34 @@ onUnmounted(() => {
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="取样深度(m)">
-              <el-input-number v-model="porosityForm.depth" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="porosityForm.depth" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="总孔隙度(%)">
-              <el-input-number v-model="porosityForm.porosity_total" :min="0" :max="100" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="porosityForm.porosity_total" :min="0" :max="100" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="有效孔隙度(%)">
-              <el-input-number v-model="porosityForm.porosity_effective" :min="0" :max="100" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="porosityForm.porosity_effective" :min="0" :max="100" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="渗透率(mD)">
-              <el-input-number v-model="porosityForm.permeability" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="porosityForm.permeability" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="水平渗透率(mD)">
-              <el-input-number v-model="porosityForm.permeability_horizontal" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="porosityForm.permeability_horizontal" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="垂直渗透率(mD)">
-              <el-input-number v-model="porosityForm.permeability_vertical" :min="0" :controls="false" :precision="2" size="large" style="width: 100%" />
+              <el-input-number v-model="porosityForm.permeability_vertical" :min="0" :controls="false" :precision="4" size="large" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
