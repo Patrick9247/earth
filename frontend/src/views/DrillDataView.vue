@@ -345,20 +345,11 @@ const handleSubmit = async () => {
         porosity_data: form.value.porosity_data.length > 0 ? form.value.porosity_data : undefined
       }
       
-      // 提交到新 API 端点
-      const response = await fetch('http://localhost:5000/api/drill-holes/with-details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submitData)
-      })
-      
-      if (response.ok) {
-        ElMessage.success('钻孔及其关联数据创建成功')
-        dialogVisible.value = false
-        loadDrillHoles()
-      } else {
-        throw new Error('创建失败')
-      }
+      // 提交数据
+      await drillHolesApi.createWithDetails(submitData)
+      ElMessage.success('钻孔及其关联数据创建成功')
+      dialogVisible.value = false
+      loadDrillHoles()
     } else {
       // 编辑钻孔只更新基本信息
       await drillHolesApi.update(editingItem.value.id, form.value)

@@ -35,7 +35,8 @@ export const drillHolesApi = {
   create: (data: any) => api.post('/drill-holes/', data),
   batchCreate: (data: any[]) => api.post('/drill-holes/batch', data),
   update: (id: number, data: any) => api.put(`/drill-holes/${id}`, data),
-  delete: (id: number) => api.delete(`/drill-holes/${id}`)
+  delete: (id: number) => api.delete(`/drill-holes/${id}`),
+  createWithDetails: (data: any) => api.post('/drill-holes/with-details', data)
 }
 
 // ==================== 模型配置 API ====================
