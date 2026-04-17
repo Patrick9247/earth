@@ -13,6 +13,9 @@ let loadingInstance: any = null
 const chartRef = ref<HTMLElement | null>(null)
 let myChart: echarts.ECharts | null = null
 
+// 页签状态
+const activeTab = ref('calculation')
+
 // 当前编辑的表单ID
 const currentFormId = ref<number | null>(null)
 const currentFormName = ref('未命名')
@@ -247,10 +250,12 @@ const initChart = () => {
   myChart.setOption(option)
 }
 
-// 监听网格数据变化，更新图表
-watch(gridData, () => {
-  setTimeout(() => initChart(), 100)
-}, { deep: true })
+// 监听页签切换，更新图表
+watch(activeTab, (newTab) => {
+  if (newTab === 'visualization') {
+    setTimeout(() => initChart(), 100)
+  }
+})
 
 // 窗口变化自适应
 const resizeChart = () => {
@@ -388,156 +393,166 @@ onMounted(async () => {
 <template>
   <div class="calculation-view">
     <h1 class="page-title">地热资源计算</h1>
-    
-    <!-- 网格资源计算 -->
-    <div class="card">
-      <h3 class="card-title">网格资源计算</h3>
-      <p class="description">
-        基于一种不规则热储层多相态地热流体资源量计算方法，对每个网格进行相态判定后分别计算资源量。
-      </p>
-      
-      <div class="grid-toolbar">
-        <el-button type="primary" @click="addGrid">
-          <el-icon><Plus /></el-icon>
-          添加网格
-        </el-button>
-        <el-button type="success" @click="handleGridCalculate" :loading="loading">
-          <el-icon><Cpu /></el-icon>
-          计算网格资源
-        </el-button>
-      </div>
 
-      <el-table :data="gridData" border stripe>
-        <el-table-column label="编号" type="index" width="60" />
-        <el-table-column label="网格数" width="150">
-          <template #default="{ row, $index }">
-            <el-input-number v-model="row.grid_count" :min="1" :max="1000" :step="1" size="small" @change="updateGridData($index)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="孔隙度" width="150">
-          <template #default="{ row, $index }">
-            <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.01" :precision="4" size="small" @change="updateGridData($index)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="体积(m³)" width="150">
-          <template #default="{ row, $index }">
-            <el-input-number v-model="row.volume" size="small" @change="updateGridData($index)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="温度(°C)" width="150">
-          <template #default="{ row, $index }">
-            <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" @change="updateGridData($index)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="压力(MPa)" width="150">
-          <template #default="{ row, $index }">
-            <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" @change="updateGridData($index)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="沸点温度(°C)" width="120">
-          <template #default="{ row }">
-            {{ calculateBoilingPoint(row.pressure || 0.1).toFixed(1) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="相态" width="120">
-          <template #default="{ row }">
-            <el-tag :type="determinePhase(row.temperature || 0, row.pressure || 0.1) === 'liquid' ? 'success' : 'warning'" size="small">
-              {{ determinePhase(row.temperature || 0, row.pressure || 0.1) === 'liquid' ? '液态水' : '气液共存' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="80">
-          <template #default="{ $index }">
-            <el-button type="danger" link @click="removeGrid($index)">
-              <el-icon><Delete /></el-icon>
+    <el-tabs v-model="activeTab" class="main-tabs">
+      <!-- 网格资源计算 -->
+      <el-tab-pane label="网格资源计算" name="calculation">
+        <div class="card">
+          <h3 class="card-title">网格资源计算</h3>
+          <p class="description">
+            基于一种不规则热储层多相态地热流体资源量计算方法，对每个网格进行相态判定后分别计算资源量。
+          </p>
+          
+          <div class="grid-toolbar">
+            <el-button type="primary" @click="addGrid">
+              <el-icon><Plus /></el-icon>
+              添加网格
             </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+            <el-button type="success" @click="handleGridCalculate" :loading="loading">
+              <el-icon><Cpu /></el-icon>
+              计算网格资源
+            </el-button>
+          </div>
 
-      <!-- 网格数量图表 -->
-      <div class="chart-section" v-if="gridData.length > 0">
-        <div ref="chartRef" class="grid-chart"></div>
-      </div>
-    </div>
+          <el-table :data="gridData" border stripe>
+            <el-table-column label="编号" type="index" width="60" />
+            <el-table-column label="网格数" width="150">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.grid_count" :min="1" :max="1000" :step="1" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="孔隙度" width="150">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.01" :precision="4" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="体积(m³)" width="150">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.volume" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="温度(°C)" width="150">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="压力(MPa)" width="150">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="沸点温度(°C)" width="120">
+              <template #default="{ row }">
+                {{ calculateBoilingPoint(row.pressure || 0.1).toFixed(1) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="相态" width="120">
+              <template #default="{ row }">
+                <el-tag :type="determinePhase(row.temperature || 0, row.pressure || 0.1) === 'liquid' ? 'success' : 'warning'" size="small">
+                  {{ determinePhase(row.temperature || 0, row.pressure || 0.1) === 'liquid' ? '液态水' : '气液共存' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="80">
+              <template #default="{ $index }">
+                <el-button type="danger" link @click="removeGrid($index)">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
 
-    <!-- 计算结果 -->
-    <div class="card" v-if="result">
-      <h3 class="card-title">✅ 计算结果</h3>
-      
-      <!-- 网格计算结果 -->
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <div class="result-item highlight">
-            <div class="result-label">发电潜力</div>
-            <div class="result-value">{{ formatPower(result.power_potential_mw) }}</div>
+        <!-- 计算结果 -->
+        <div class="card" v-if="result">
+          <h3 class="card-title">✅ 计算结果</h3>
+          
+          <!-- 网格计算结果 -->
+          <el-row :gutter="20">
+            <el-col :span="6">
+              <div class="result-item highlight">
+                <div class="result-label">发电潜力</div>
+                <div class="result-value">{{ formatPower(result.power_potential_mw) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="result-item">
+                <div class="result-label">地热资源总量 Q₄</div>
+                <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="result-item">
+                <div class="result-label">可采热量</div>
+                <div class="result-value">{{ formatNumber(result.extractable_heat) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="result-item">
+                <div class="result-label">总网格数</div>
+                <div class="result-value">{{ result.total_grid_count || 0 }} 个</div>
+              </div>
+            </el-col>
+          </el-row>
+          
+          <el-divider />
+          
+          <!-- 资源量分类 -->
+          <h4 style="margin: 16px 0 12px;">资源量分类</h4>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <div class="result-item">
+                <div class="result-label">液态资源量 Q₁</div>
+                <div class="result-value">{{ formatNumber(result.liquid_resource_joules) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="result-item">
+                <div class="result-label">气液共存液态资源量 Q₂</div>
+                <div class="result-value">{{ formatNumber(result.two_phase_liquid_resource_joules) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="result-item">
+                <div class="result-label">蒸汽资源量 Q₃</div>
+                <div class="result-value">{{ formatNumber(result.steam_resource_joules) }}</div>
+              </div>
+            </el-col>
+          </el-row>
+          
+          <el-divider />
+          
+          <!-- 网格分类统计 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-statistic title="液态水网格" :value="result.liquid_grid_count || 0">
+                <template #suffix>
+                  <span style="font-size: 14px; color: #67c23a;">个</span>
+                </template>
+              </el-statistic>
+            </el-col>
+            <el-col :span="12">
+              <el-statistic title="气液共存网格" :value="result.two_phase_grid_count || 0">
+                <template #suffix>
+                  <span style="font-size: 14px; color: #e6a23c;">个</span>
+                </template>
+              </el-statistic>
+            </el-col>
+          </el-row>
+        </div>
+      </el-tab-pane>
+
+      <!-- 数据可视化 -->
+      <el-tab-pane label="数据可视化" name="visualization">
+        <div class="card">
+          <h3 class="card-title">网格数据可视化</h3>
+          <div class="chart-section" v-if="gridData.length > 0">
+            <div ref="chartRef" class="grid-chart"></div>
           </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="result-item">
-            <div class="result-label">地热资源总量 Q₄</div>
-            <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="result-item">
-            <div class="result-label">可采热量</div>
-            <div class="result-value">{{ formatNumber(result.extractable_heat) }}</div>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="result-item">
-            <div class="result-label">总网格数</div>
-            <div class="result-value">{{ result.total_grid_count || 0 }} 个</div>
-          </div>
-        </el-col>
-      </el-row>
-      
-      <el-divider />
-      
-      <!-- 资源量分类 -->
-      <h4 style="margin: 16px 0 12px;">资源量分类</h4>
-      <el-row :gutter="20">
-        <el-col :span="8">
-          <div class="result-item">
-            <div class="result-label">液态资源量 Q₁</div>
-            <div class="result-value">{{ formatNumber(result.liquid_resource_joules) }}</div>
-          </div>
-        </el-col>
-        <el-col :span="8">
-          <div class="result-item">
-            <div class="result-label">气液共存液态资源量 Q₂</div>
-            <div class="result-value">{{ formatNumber(result.two_phase_liquid_resource_joules) }}</div>
-          </div>
-        </el-col>
-        <el-col :span="8">
-          <div class="result-item">
-            <div class="result-label">蒸汽资源量 Q₃</div>
-            <div class="result-value">{{ formatNumber(result.steam_resource_joules) }}</div>
-          </div>
-        </el-col>
-      </el-row>
-      
-      <el-divider />
-      
-      <!-- 网格分类统计 -->
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-statistic title="液态水网格" :value="result.liquid_grid_count || 0">
-            <template #suffix>
-              <span style="font-size: 14px; color: #67c23a;">个</span>
-            </template>
-          </el-statistic>
-        </el-col>
-        <el-col :span="12">
-          <el-statistic title="气液共存网格" :value="result.two_phase_grid_count || 0">
-            <template #suffix>
-              <span style="font-size: 14px; color: #e6a23c;">个</span>
-            </template>
-          </el-statistic>
-        </el-col>
-      </el-row>
-    </div>
+          <el-empty v-else description="暂无网格数据，请先添加网格" />
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
