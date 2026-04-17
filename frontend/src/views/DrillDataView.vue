@@ -8,6 +8,22 @@ import type { UploadFile } from 'element-plus'
 
 const store = useGeothermalStore()
 
+// ==================== 工具函数 ====================
+// 格式化日期为 yyyy-MM-dd
+const formatDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return '-'
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  } catch {
+    return '-'
+  }
+}
+
 // ==================== 页面状态 ====================
 const loading = ref(false)
 const activeTab = ref('list')
@@ -1007,8 +1023,12 @@ onUnmounted(() => {
               </el-table-column>
               <el-table-column label="施工信息" align="center">
                 <el-table-column prop="drill_company" label="施工单位" width="130" show-overflow-tooltip />
-                <el-table-column prop="drill_start_date" label="开孔日期" width="100" />
-                <el-table-column prop="drill_end_date" label="终孔日期" width="100" />
+                <el-table-column prop="drill_start_date" label="开孔日期" width="110">
+                  <template #default="{ row }">{{ formatDate(row.drill_start_date) }}</template>
+                </el-table-column>
+                <el-table-column prop="drill_end_date" label="终孔日期" width="110">
+                  <template #default="{ row }">{{ formatDate(row.drill_end_date) }}</template>
+                </el-table-column>
               </el-table-column>
               <el-table-column prop="status" label="状态" width="80">
                 <template #default="{ row }">
@@ -1165,8 +1185,9 @@ onUnmounted(() => {
           <el-descriptions-item label="终孔深度">{{ selectedDrillHole.final_depth || '-' }} m</el-descriptions-item>
           <el-descriptions-item label="孔径">{{ selectedDrillHole.diameter || '-' }} mm</el-descriptions-item>
           <el-descriptions-item label="施工单位">{{ selectedDrillHole.drill_company || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="开孔日期">{{ selectedDrillHole.drill_start_date || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="终孔日期">{{ selectedDrillHole.drill_end_date || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="开孔日期">{{ formatDate(selectedDrillHole.drill_start_date) }}</el-descriptions-item>
+          <el-descriptions-item label="终孔日期">{{ formatDate(selectedDrillHole.drill_end_date) }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ formatDate(selectedDrillHole.created_at) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="selectedDrillHole.status === '完成' ? 'success' : 'warning'">{{ selectedDrillHole.status }}</el-tag>
           </el-descriptions-item>
