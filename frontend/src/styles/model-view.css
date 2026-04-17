@@ -1,0 +1,60 @@
+.model-view {
+  max-width: 1400px;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.viewer-header .card-title {
+  margin-bottom: 0;
+}
+
+.viewer-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.viewer-tabs {
+  margin-top: -10px;
+}
+
+.viewer-tabs :deep(.el-tabs__header) {
+  margin-bottom: 16px;
+}
+
+.model-viewer {
+  height: 600px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.legend-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.legend-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.legend-info h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.legend-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #909399;
+}

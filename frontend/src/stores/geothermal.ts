@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { layersApi, drillHolesApi, gempyApi } from '@/api'
+import { layersApi, drillHolesApi, gempyApi } from '@/api/get-api.ts'
 
 export const useGeothermalStore = defineStore('geothermal', () => {
   // State

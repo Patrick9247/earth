@@ -356,17 +356,14 @@ class GeothermalCalculator:
     ) -> Dict[str, float]:
         """
         计算气液共存时的地热资源量
-        
         根据专利公式:
         Q₂ = Σ(φᵢ × Vᵢ × (1 - ρᵢ × vg) / (vp - vg) × Cw × (T_boil - T₀))
         Q₃ = Σ(φᵢ × Vᵢ × (ρᵢ - (1 - ρᵢ × vg) / (vp - vg)) × [Cw × (T_boil - T₀) + Lv + Cv × (Tᵢ - T_boil)])
-        
-        Args:
-            porosity: 孔隙度
-            volume: 网格体积 (m³)
-            temperature: 温度 (°C)
-            pressure_mpa: 压力 (MPa)
-            reference_temp: 参考温度 (°C)
+        porosity: 孔隙度
+        volume: 网格体积 (m³)
+        temperature: 温度 (°C)
+        pressure_mpa: 压力 (MPa)
+        reference_temp: 参考温度 (°C)
             
         Returns:
             包含Q₂、Q₃和总资源量的字典
@@ -486,7 +483,6 @@ class GeothermalCalculator:
             total_two_phase_liquid + 
             total_steam_resource
         )
-        
         # 热储层资源量 (Q₄)
         reservoir_resource = total_two_phase_liquid + total_steam_resource
         
@@ -512,12 +508,11 @@ class GeothermalCalculator:
     ) -> Dict[str, float]:
         """
         计算发电潜力
-        
-        Args:
-            total_heat: 总热含量 (J)
-            recovery_factor: 采收率
-            utilization_efficiency: 利用效率
-            lifetime_years: 开采年限
+
+        total_heat: 总热含量 (J)
+        recovery_factor: 采收率
+        utilization_efficiency: 利用效率
+        lifetime_years: 开采年限
             
         Returns:
             发电潜力计算结果
@@ -650,7 +645,6 @@ class GeothermalCalculator:
                 'rock_density': rock_density
             }
         }
-    
     def calculate_heat_content(
         self,
         reservoir_volume: float,

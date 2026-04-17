@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { drillHolesApi, importApi, drillHoleDetailApi } from '@/api'
+import { drillHolesApi, importApi, drillHoleDetailApi } from '@/api/get-api.ts'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -854,6 +854,84 @@ const handleSizeChange = (size: number) => {
   currentPage.value = 1
 }
 
+import {onUnmounted } from 'vue'
+import * as echarts from 'echarts'
+
+// 图表实例
+const chartRef = ref(null)
+let myChart: any= null
+
+// 初始化图表
+const initChart = () => {
+  if (!chartRef.value) return
+  // 从你的 drillHoles 自动提取数据
+  const xData = store.drillHoles.map((d: any) => d.name || d.hole_id)
+  const yData = store.drillHoles.map((d: any) => d.total_depth || 0)
+  console.log('store:',store.drillHoles)
+  console.log('钻孔数据:', drillHoles.value)
+  console.log('xData:', xData)
+  console.log('yData:', yData)
+  // 初始化
+  myChart = echarts.init(chartRef.value)
+
+  // 柱状图配置
+  const option = {
+    title: {
+      text: '钻孔数量统计',
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: xData,
+      axisLabel: {
+        interval: 0
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: '深度(m)'
+    },
+    series: [
+      {
+        name: '钻孔深度',
+        type: 'bar',
+        data: yData,
+        itemStyle: {
+          color: '#409EFF' // ElementPlus 主色
+        }
+         },
+    ]
+  }
+
+  myChart.setOption(option)
+}
+
+// 窗口变化自适应
+const resizeChart = () => {
+  myChart?.resize()
+}
+
+onMounted(() => {
+  initChart()
+  window.addEventListener('resize', resizeChart)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', resizeChart)
+})
+
 // ==================== 初始化 ====================
 onMounted(() => {
   loadDrillHoles()
@@ -1020,7 +1098,20 @@ onMounted(() => {
             </div>
           </div>
         </el-tab-pane>
+
+<!--        数据可视化-->
+        <el-tab-pane label="数据可视化" name="visualization">
+          <div class="card">
+            <h3 class="card-title">钻孔数据可视化</h3>
+            <!-- 柱状图容器 -->
+           <div ref="chartRef" style="width: 600%; height: 450px;">
+
+           </div>
+          </div>
+        </el-tab-pane>
       </el-tabs>
+
+
     </template>
 
     <!-- 钻孔详情视图 -->
@@ -1682,175 +1773,5 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.drill-data-view {
-  padding: 0;
-}
-
-.main-tabs {
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.toolbar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.map-section {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #ebeef5;
-}
-
-.map-section h3 {
-  margin-bottom: 16px;
-  color: #606266;
-}
-
-.map-container {
-  height: 300px;
-  background: linear-gradient(135deg, #e8f4f8 0%, #d1e8e0 100%);
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.drill-marker {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.drill-marker:hover {
-  transform: translate(-50%, -50%) scale(1.3);
-}
-
-.type-radio-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.type-radio-group :deep(.el-radio-button__inner) {
-  padding: 12px 20px;
-  border-radius: 6px !important;
-}
-
-.type-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.type-option .el-icon {
-  font-size: 20px;
-}
-
-.upload-section {
-  margin-top: 24px;
-}
-
-.upload-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.upload-header h3 {
-  margin: 0;
-}
-
-.upload-area {
-  width: 100%;
-}
-
-.upload-area :deep(.el-upload-dragger) {
-  width: 100%;
-  height: 180px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.preview-section,
-.result-section {
-  margin-top: 24px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.detail-card {
-  min-height: 600px;
-}
-
-.detail-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.detail-header h2 {
-  margin: 0;
-  color: #303133;
-}
-
-.detail-tabs {
-  margin-top: 24px;
-}
-
-.sub-toolbar {
-  margin-bottom: 12px;
-}
-
-/* 分页样式 */
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-  padding: 20px 0;
-}
-
-/* 表单tabs样式 */
-.form-tabs {
-  margin-top: -10px;
-}
-
-.tab-toolbar {
-  margin-bottom: 12px;
-  display: flex;
-  gap: 10px;
-}
-
-/* 数字输入框样式优化 */
-:deep(.el-input-number) {
-  font-size: 16px;
-}
-
-:deep(.el-input-number .el-input__inner) {
-  font-size: 16px;
-  font-weight: 500;
-  text-align: center;
-}
-
-:deep(.el-input-number--large .el-input__inner) {
-  font-size: 18px;
-  font-weight: 500;
-}
-
-:deep(.el-form-item__label) {
-  font-weight: 500;
-}
+@import "@/styles/drill-data-view.css";
 </style>

@@ -13,7 +13,7 @@ const navItems = [
 <template>
   <header class="app-header">
     <div class="logo">
-      <el-icon :size="28" color="#409eff"><DataAnalysis /></el-icon>
+      <el-icon :size="28" color="#409eff"><Histogram /></el-icon>
       <span class="title">地热流体资源建模系统</span>
     </div>
     <nav class="nav-menu">
@@ -32,54 +32,5 @@ const navItems = [
 </template>
 
 <style scoped>
-.app-header {
-  height: 60px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.nav-menu {
-  display: flex;
-  margin-left: 40px;
-  gap: 4px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  text-decoration: none;
-  color: #606266;
-  transition: all 0.3s;
-}
-
-.nav-item:hover {
-  background: #ecf5ff;
-  color: #409eff;
-}
-
-.nav-item.active {
-  background: #409eff;
-  color: #fff;
-}
+@import "@/styles/app-header.css";
 </style>

@@ -3,8 +3,6 @@
 """
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
-
 
 class Settings(BaseSettings):
     """应用配置类"""
@@ -36,15 +34,15 @@ class Settings(BaseSettings):
     GRID_RESOLUTION: int = 50  # 网格分辨率
     
     # 环境变量（显式定义避免验证错误）
-    COZE_WORKSPACE_PATH: str = ""
-    COZE_PROJECT_ENV: str = "DEV"
+    WORKSPACE_PATH: str = ""
+    PROJECT_ENV: str = "DEV"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # 动态设置 SQLite 数据库路径
         if not self.SQLITE_DB_PATH:
-            workspace = self.COZE_WORKSPACE_PATH or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            if self.COZE_PROJECT_ENV == "DEV":
+            workspace = self.WORKSPACE_PATH or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            if self.PROJECT_ENV == "DEV":
                 self.SQLITE_DB_PATH = f"{workspace}/data/geothermal.db"
             else:
                 self.SQLITE_DB_PATH = "/tmp/geothermal.db"

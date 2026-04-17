@@ -1,6 +1,6 @@
 """
 地热流体资源计算模块
-基于专利文献中的公式实现
+基于公式
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel

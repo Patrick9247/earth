@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { gempyApi } from '@/api'
+import { gempyApi } from '@/api/get-api.ts'
 import { ElMessage } from 'element-plus'
 
 const results = ref<any[]>([])

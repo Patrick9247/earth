@@ -1,0 +1,40 @@
+.calculation-view {
+  max-width: 1400px;
+}
+
+.description {
+  color: #606266;
+  margin-bottom: 16px;
+}
+
+.grid-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.result-item {
+  text-align: center;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.result-item.highlight {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.result-label {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.result-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.param-info {
+  margin-top: 16px;
+}

@@ -17,22 +17,5 @@ import AppSidebar from './components/AppSidebar.vue'
 </template>
 
 <style scoped>
-.app-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fa;
-}
-
-.main-wrapper {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-.content-area {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
+@import "@/styles/app.css";
 </style>

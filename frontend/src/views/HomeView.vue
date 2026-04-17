@@ -57,7 +57,7 @@ onMounted(async () => {
     <el-row :gutter="20">
       <el-col :span="12">
         <div class="card" style="margin-bottom: 0;">
-          <h2 class="card-title">📖 系统功能</h2>
+          <h2 class="card-title">系统功能</h2>
           <div class="feature-card clickable" @click="navigateTo('/modeling')">
             <el-icon :size="40" color="#409eff"><DataAnalysis /></el-icon>
             <h3>三维地质建模</h3>
@@ -98,73 +98,5 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.home-view {
-  max-width: 1400px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.feature-card {
-  text-align: center;
-  padding: 20px;
-  border-radius: 8px;
-  background: #f5f7fa;
-  transition: all 0.3s;
-  margin-bottom: 16px;
-}
-
-.feature-card.clickable {
-  cursor: pointer;
-}
-
-.feature-card.clickable:hover {
-  background: #e8f4ff;
-  border: 1px solid #409eff;
-}
-
-.feature-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.feature-card h3 {
-  margin: 12px 0 6px;
-  font-size: 15px;
-}
-
-.feature-card p {
-  color: #909399;
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.sync-status {
-  margin-top: 16px;
-  padding: 12px;
-  background: #f0f9ff;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.sync-hint {
-  font-size: 13px;
-  color: #606266;
-}
-
-.sync-hint a {
-  color: #409eff;
-  text-decoration: none;
-}
-
-.sync-hint a:hover {
-  text-decoration: underline;
-}
+@import "@/styles/home-view.css";
 </style>

@@ -66,7 +66,7 @@ onMounted(() => {
     
     <!-- 计算参数设置 -->
     <div class="card">
-      <h3 class="card-title">⚙️ 默认计算参数</h3>
+      <h3 class="card-title">默认计算参数</h3>
       <el-form :model="settings" label-width="160px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -95,19 +95,9 @@ onMounted(() => {
       </el-form>
     </div>
 
-    <!-- 模型配置 -->
-    <div class="card">
-      <h3 class="card-title">📊 模型配置</h3>
-      <el-form :model="settings" label-width="160px">
-        <el-form-item label="默认网格分辨率">
-          <el-slider v-model="settings.default_grid_resolution" :min="20" :max="100" show-input />
-        </el-form-item>
-      </el-form>
-    </div>
-
     <!-- 物理常数 -->
     <div class="card">
-      <h3 class="card-title">🔬 物理常数</h3>
+      <h3 class="card-title">物理常数</h3>
       <el-form :model="settings" label-width="160px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -148,11 +138,6 @@ onMounted(() => {
       </el-button>
     </div>
 
-    <!-- 数据导出 -->
-    <div class="card">
-      <h3 class="card-title">📤 数据导出</h3>
-      <ExportData />
-    </div>
   </div>
 </template>
 

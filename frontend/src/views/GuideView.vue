@@ -4,7 +4,7 @@
 
 <template>
   <div class="guide-view">
-    <h1 class="page-title">📖 使用指南</h1>
+    <h1 class="page-title">使用指南</h1>
     
     <div class="guide-content">
       <!-- 系统概述 -->
@@ -155,9 +155,6 @@
             <li>基于地层序列构建三维模型</li>
             <li>使用 Three.js 进行实时渲染</li>
           </ol>
-          <div class="tip-box">
-            <strong>💡 提示：</strong>网格分辨率越高，模型精度越好，但计算时间也会增加。建议先用低分辨率预览，确认无误后再提高分辨率。
-          </div>
         </div>
 
         <h3>3.4 资源计算</h3>
@@ -186,7 +183,7 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <div class="viz-card">
-                <h4>🎮 视图控制</h4>
+                <h4>视图控制</h4>
                 <ul>
                   <li><strong>旋转</strong>：按住左键拖拽</li>
                   <li><strong>平移</strong>：按住右键拖拽</li>
@@ -197,7 +194,7 @@
             </el-col>
             <el-col :span="12">
               <div class="viz-card">
-                <h4>📊 坐标系统</h4>
+                <h4>坐标系统</h4>
                 <ul>
                   <li><span style="color:#ff4444">●</span> <strong>X轴（红色）</strong>：西向</li>
                   <li><span style="color:#4488ff">●</span> <strong>Y轴（蓝色）</strong>：深度（向下为正）</li>
@@ -209,7 +206,7 @@
           <el-row :gutter="20" style="margin-top: 16px;">
             <el-col :span="12">
               <div class="viz-card">
-                <h4>🎨 图例说明</h4>
+                <h4>图例说明</h4>
                 <div class="legend-demo">
                   <span class="legend-item"><span class="color-box" style="background:#4CAF50"></span> 地表层</span>
                   <span class="legend-item"><span class="color-box" style="background:#FFC107"></span> 沉积层</span>
@@ -220,7 +217,7 @@
             </el-col>
             <el-col :span="12">
               <div class="viz-card">
-                <h4>🌡️ 温度图例</h4>
+                <h4>温度图例</h4>
                 <div class="legend-demo">
                   <span class="legend-item"><span class="color-box" style="background:#4CAF50"></span> &lt;100°C</span>
                   <span class="legend-item"><span class="color-box" style="background:#FFC107"></span> 100-150°C</span>
@@ -245,39 +242,10 @@
         </ul>
       </section>
 
-      <!-- 常见问题 -->
-      <section class="guide-section">
-        <h2>六、常见问题</h2>
-        <el-collapse>
-          <el-collapse-item title="Q: 为什么地质模型显示不正确？" name="1">
-            <p>A: 请检查以下内容：</p>
-            <ul>
-              <li>确保已添加地质层和钻孔数据</li>
-              <li>检查钻孔深度是否在建模范围内</li>
-              <li>尝试调整网格分辨率</li>
-              <li>刷新页面重新加载</li>
-            </ul>
-          </el-collapse-item>
-          <el-collapse-item title="Q: 计算结果为 0 是什么原因？" name="2">
-            <p>A: 可能的原因：</p>
-            <ul>
-              <li>输入的温度值过低（接近基准温度 25°C）</li>
-              <li>储层体积过小</li>
-              <li>孔隙度设置为 0</li>
-            </ul>
-          </el-collapse-item>
-          <el-collapse-item title="Q: 如何导出计算结果？" name="3">
-            <p>A: 在计算结果页面，点击操作列的"详情"按钮可查看详细数据，或在系统设置页面使用"数据导出"功能导出所有数据。</p>
-          </el-collapse-item>
-          <el-collapse-item title="Q: 数据存储在哪里？" name="4">
-            <p>A: 系统使用 MySQL 数据库存储数据，同时也支持本地存储（LocalStorage）保存用户设置。首次使用时需确保数据库连接正常。</p>
-          </el-collapse-item>
-        </el-collapse>
-      </section>
 
       <!-- 技术支持 -->
       <section class="guide-section">
-        <h2>七、技术支持</h2>
+        <h2>六、技术支持</h2>
         <div class="support-info">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="系统版本">v1.0.0</el-descriptions-item>
@@ -316,173 +284,5 @@ export default {
 </script>
 
 <style scoped>
-.guide-view {
-  max-width: 1200px;
-}
-
-.guide-content {
-  background: #fff;
-  border-radius: 8px;
-  padding: 24px;
-}
-
-.guide-section {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.guide-section:last-child {
-  border-bottom: none;
-}
-
-.guide-section h2 {
-  color: #303133;
-  font-size: 20px;
-  margin-bottom: 16px;
-  padding-left: 12px;
-  border-left: 4px solid #409eff;
-}
-
-.guide-section h3 {
-  color: #303133;
-  font-size: 16px;
-  margin: 20px 0 12px;
-}
-
-.intro {
-  line-height: 1.8;
-  color: #606266;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.feature-item {
-  text-align: center;
-  padding: 20px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  transition: all 0.3s;
-}
-
-.feature-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.feature-item h4 {
-  margin: 12px 0 8px;
-  font-size: 14px;
-}
-
-.feature-item p {
-  color: #909399;
-  font-size: 12px;
-  margin: 0;
-}
-
-.step-content {
-  padding: 8px 0;
-}
-
-.step-content ul, .step-content ol {
-  padding-left: 20px;
-  margin: 8px 0;
-}
-
-.step-content li {
-  margin: 6px 0;
-  color: #606266;
-}
-
-.step-content a {
-  color: #409eff;
-  text-decoration: none;
-}
-
-.step-content a:hover {
-  text-decoration: underline;
-}
-
-.module-desc {
-  margin: 12px 0;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 8px;
-}
-
-.formula {
-  font-family: 'Times New Roman', serif;
-  font-size: 20px;
-  text-align: center;
-  padding: 16px;
-  background: #f0f9ff;
-  border-radius: 8px;
-  margin: 16px 0;
-  color: #409eff;
-}
-
-.tip-box {
-  padding: 12px 16px;
-  background: #fdf6ec;
-  border-left: 4px solid #e6a23c;
-  border-radius: 4px;
-  margin-top: 12px;
-}
-
-.viz-guide {
-  margin-top: 16px;
-}
-
-.viz-card {
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  height: 100%;
-}
-
-.viz-card h4 {
-  margin: 0 0 12px;
-  font-size: 14px;
-}
-
-.viz-card ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.viz-card li {
-  padding: 6px 0;
-  font-size: 13px;
-  color: #606266;
-}
-
-.legend-demo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.color-box {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-}
-
-.support-info {
-  max-width: 500px;
-}
+@import "@/styles/guide-view.css";
 </style>

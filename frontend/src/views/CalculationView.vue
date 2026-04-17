@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ElLoading } from 'element-plus'
-import { gempyApi, gridCalcApi } from '@/api'
+import { gempyApi, gridCalcApi } from '@/api/get-api.ts'
 
 const loading = ref(false)
 const result = ref<any>(null)
@@ -270,9 +270,9 @@ onMounted(async () => {
     
     <!-- 网格资源计算 -->
     <div class="card">
-      <h3 class="card-title">🔬 网格资源计算（专利方法）</h3>
+      <h3 class="card-title">网格资源计算</h3>
       <p class="description">
-        基于专利《一种不规则热储层多相态地热流体资源量计算方法》，对每个网格进行相态判定后分别计算资源量。
+        基于一种不规则热储层多相态地热流体资源量计算方法，对每个网格进行相态判定后分别计算资源量。
       </p>
       
       <div class="grid-toolbar">
@@ -288,27 +288,27 @@ onMounted(async () => {
 
       <el-table :data="gridData" border stripe>
         <el-table-column label="编号" type="index" width="60" />
-        <el-table-column label="网格数" width="100">
+        <el-table-column label="网格数" width="150">
           <template #default="{ row, $index }">
             <el-input-number v-model="row.grid_count" :min="1" :max="1000" :step="1" size="small" @change="updateGridData($index)" />
           </template>
         </el-table-column>
-        <el-table-column label="孔隙度" width="130">
+        <el-table-column label="孔隙度" width="150">
           <template #default="{ row, $index }">
             <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.01" :precision="4" size="small" @change="updateGridData($index)" />
           </template>
         </el-table-column>
-        <el-table-column label="体积(m³)" width="140">
+        <el-table-column label="体积(m³)" width="150">
           <template #default="{ row, $index }">
             <el-input-number v-model="row.volume" size="small" @change="updateGridData($index)" />
           </template>
         </el-table-column>
-        <el-table-column label="温度(°C)" width="110">
+        <el-table-column label="温度(°C)" width="150">
           <template #default="{ row, $index }">
             <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" @change="updateGridData($index)" />
           </template>
         </el-table-column>
-        <el-table-column label="压力(MPa)" width="110">
+        <el-table-column label="压力(MPa)" width="150">
           <template #default="{ row, $index }">
             <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" @change="updateGridData($index)" />
           </template>
@@ -411,60 +411,10 @@ onMounted(async () => {
           </el-statistic>
         </el-col>
       </el-row>
-      
-      <!-- 参数说明 -->
-      <el-divider />
-      <div class="param-info">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="参考温度">{{ gridForm.reference_temperature }} °C</el-descriptions-item>
-          <el-descriptions-item label="采收率">{{ (gridForm.recovery_factor * 100).toFixed(0) }}%</el-descriptions-item>
-          <el-descriptions-item label="利用效率">{{ (gridForm.utilization_efficiency * 100).toFixed(0) }}%</el-descriptions-item>
-          <el-descriptions-item label="开采年限">{{ gridForm.lifetime_years }} 年</el-descriptions-item>
-        </el-descriptions>
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.calculation-view {
-  max-width: 1400px;
-}
-
-.description {
-  color: #606266;
-  margin-bottom: 16px;
-}
-
-.grid-toolbar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.result-item {
-  text-align: center;
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 8px;
-}
-
-.result-item.highlight {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-}
-
-.result-label {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.result-value {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.param-info {
-  margin-top: 16px;
-}
+@import "@/styles/calculation-view.css";
 </style>

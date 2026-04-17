@@ -138,33 +138,26 @@ class DrillPressureData(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     drill_hole_id = Column(Integer, ForeignKey("drill_holes.id"), nullable=False, comment="钻孔ID")
-    
     # 测量信息
     measure_no = Column(Integer, comment="测点序号")
     measure_date = Column(String(20), comment="测量日期")
     measure_time = Column(String(20), comment="测量时间")
-    
     # 压力数据
     wellhead_pressure = Column(Float, comment="井口压力(MPa)")
     reservoir_pressure = Column(Float, comment="储层压力(MPa)")
     flowing_pressure = Column(Float, comment="流动压力(MPa)")
     shut_in_pressure = Column(Float, comment="关井压力(MPa)")
-    
     # 压力梯度
     pressure_gradient = Column(Float, comment="压力梯度(MPa/100m)")
-    
     # 深度信息
     measure_depth = Column(Float, comment="测量深度(m)")
-    
     # 流量相关
     flow_rate = Column(Float, comment="流量(m³/h)")
     water_level = Column(Float, comment="动水位(m)")
-    
     # 其他
     instrument = Column(String(100), comment="测量仪器")
     description = Column(Text, comment="备注")
     created_at = Column(DateTime, server_default=func.now())
-    
     # 关联
     drill_hole = relationship("DrillHole", back_populates="pressure_data")
 
@@ -172,7 +165,6 @@ class DrillPressureData(Base):
 class DrillPorosityData(Base):
     """岩石孔隙度数据表"""
     __tablename__ = "drill_porosity_data"
-    
     id = Column(Integer, primary_key=True, index=True)
     drill_hole_id = Column(Integer, ForeignKey("drill_holes.id"), nullable=False, comment="钻孔ID")
     

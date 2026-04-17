@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { gempyApi } from '@/api'
+import { gempyApi } from '@/api/get-api.ts'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 import Geothermal3DViewer from '@/components/Geothermal3DViewer.vue'
@@ -102,7 +102,7 @@ onMounted(() => {
     
     <!-- 模型配置 -->
     <div class="card">
-      <h3 class="card-title">🔧 模型配置</h3>
+      <h3 class="card-title">模型配置</h3>
       <el-form :model="modelConfig" label-width="140px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -204,7 +204,7 @@ onMounted(() => {
     <!-- 模型可视化（3D/2D 标签页） -->
     <div class="card">
       <div class="viewer-header">
-        <h3 class="card-title">📊 地质模型可视化</h3>
+        <h3 class="card-title">地质模型可视化</h3>
         <div class="viewer-controls" v-if="activeTab === '3d'">
           <el-switch v-model="showLayers" active-text="地质层" @change="handleToggleLayers" />
           <el-switch v-model="showDrillHoles" active-text="钻孔" @change="handleToggleDrillHoles" />
@@ -246,7 +246,7 @@ onMounted(() => {
 
     <!-- 地质层图例 -->
     <div class="card" v-if="layers.length > 0">
-      <h3 class="card-title">📖 地质层图例</h3>
+      <h3 class="card-title">地质层图例</h3>
       <el-row :gutter="16">
         <el-col :span="6" v-for="layer in layers" :key="layer.id">
           <div class="legend-card">
@@ -261,90 +261,9 @@ onMounted(() => {
       </el-row>
     </div>
 
-    <!-- 钻孔数据表 -->
-    <div class="card" v-if="drillHoles.length > 0">
-      <h3 class="card-title">🎯 钻孔数据</h3>
-      <el-table :data="drillHoles" size="small" max-height="300">
-        <el-table-column prop="hole_id" label="钻孔编号" width="120" />
-        <el-table-column prop="hole_name" label="钻孔名称" width="120" />
-        <el-table-column prop="location_x" label="X坐标" width="100" />
-        <el-table-column prop="location_y" label="Y坐标" width="100" />
-        <el-table-column prop="total_depth" label="深度(m)" width="100" />
-      </el-table>
-    </div>
-
-    <!-- 建模说明 -->
-    <div class="card">
-      <h3 class="card-title">📖 建模流程说明</h3>
-      <el-steps :active="modelCreated ? 4 : 0" finish-status="success">
-        <el-step title="数据准备" description="配置地质层和钻孔数据" />
-        <el-step title="参数设置" description="设置网格分辨率和建模范围" />
-        <el-step title="模型生成" description="GemPy 计算地质界面" />
-        <el-step title="可视化分析" description="3D/2D 多视角查看" />
-      </el-steps>
-    </div>
   </div>
 </template>
 
 <style scoped>
-.model-view {
-  max-width: 1400px;
-}
-
-.viewer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.viewer-header .card-title {
-  margin-bottom: 0;
-}
-
-.viewer-controls {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.viewer-tabs {
-  margin-top: -10px;
-}
-
-.viewer-tabs :deep(.el-tabs__header) {
-  margin-bottom: 16px;
-}
-
-.model-viewer {
-  height: 600px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.legend-card {
-  display: flex;
-  gap: 12px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-}
-
-.legend-color {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.legend-info h4 {
-  margin: 0 0 4px;
-  font-size: 14px;
-}
-
-.legend-info p {
-  margin: 0;
-  font-size: 12px;
-  color: #909399;
-}
+@import '@/styles/model-view.css';
 </style>

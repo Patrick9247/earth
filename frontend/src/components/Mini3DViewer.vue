@@ -440,43 +440,5 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.mini-3d-viewer {
-  position: relative;
-  height: 400px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.viewer-container {
-  width: 100%;
-  height: 100%;
-}
-
-.viewer-label {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 20px;
-  color: white;
-  font-size: 14px;
-}
-
-.axis-hint {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  display: flex;
-  gap: 12px;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: bold;
-}
+@import "@/styles/mini-3d-viewer.css";
 </style>

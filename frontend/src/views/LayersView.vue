@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { layersApi } from '@/api'
+import { layersApi } from '@/api/get-api.ts'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 
