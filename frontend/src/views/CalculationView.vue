@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { ElLoading } from 'element-plus'
 import { gempyApi, gridCalcApi } from '@/api/get-api.ts'
@@ -7,6 +8,10 @@ import { gempyApi, gridCalcApi } from '@/api/get-api.ts'
 const loading = ref(false)
 const result = ref<any>(null)
 let loadingInstance: any = null
+
+// 图表相关
+const chartRef = ref<HTMLElement | null>(null)
+let myChart: echarts.ECharts | null = null
 
 // 当前编辑的表单ID
 const currentFormId = ref<number | null>(null)
@@ -147,6 +152,122 @@ const determinePhase = (temperature: number, pressure: number): string => {
   const boilingPoint = calculateBoilingPoint(pressure)
   return temperature >= boilingPoint ? 'two_phase' : 'liquid'
 }
+
+// 获取相态标签
+const getPhaseLabel = (phase: string): string => {
+  return phase === 'liquid' ? '液态水' : '气液共存'
+}
+
+// 初始化图表
+const initChart = () => {
+  if (!chartRef.value) return
+  if (gridData.value.length === 0) return
+
+  // 销毁旧实例
+  if (myChart) {
+    myChart.dispose()
+    myChart = null
+  }
+
+  // 准备图表数据
+  const xData = gridData.value.map((_, idx) => `网格${idx + 1}`)
+  const yData = gridData.value.map(d => d.grid_count || 1)
+
+  // 初始化图表
+  myChart = echarts.init(chartRef.value)
+
+  const option = {
+    title: {
+      text: '网格数量分布',
+      left: 'center'
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      },
+      formatter: (params: any) => {
+        const idx = params[0].dataIndex
+        const grid = gridData.value[idx]
+        if (!grid) return ''
+        const boilingPoint = calculateBoilingPoint(grid.pressure || 0.1)
+        const phase = determinePhase(grid.temperature || 0, grid.pressure || 0.1)
+        return `
+          <div style="font-weight:bold;margin-bottom:5px;">${params[0].axisValue}</div>
+          <div style="margin:3px 0;">孔隙度: <b>${(grid.porosity || 0).toFixed(4)}</b></div>
+          <div style="margin:3px 0;">体积: <b>${(grid.volume || 0).toFixed(2)}</b> m³</div>
+          <div style="margin:3px 0;">温度: <b>${(grid.temperature || 0).toFixed(2)}</b> °C</div>
+          <div style="margin:3px 0;">压力: <b>${(grid.pressure || 0).toFixed(4)}</b> MPa</div>
+          <div style="margin:3px 0;">沸点温度: <b>${boilingPoint.toFixed(2)}</b> °C</div>
+          <div style="margin:3px 0;">相态: <b>${getPhaseLabel(phase)}</b></div>
+        `
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '60px',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: xData,
+      axisLabel: {
+        interval: 0,
+        rotate: 30
+      },
+      name: '编号'
+    },
+    yAxis: {
+      type: 'value',
+      name: '网格数'
+    },
+    series: [
+      {
+        name: '网格数',
+        type: 'bar',
+        data: yData,
+        itemStyle: {
+          color: (params: any) => {
+            const grid = gridData.value[params.dataIndex]
+            const phase = determinePhase(grid?.temperature || 0, grid?.pressure || 0.1)
+            return phase === 'liquid' ? '#67C23A' : '#E6A23C'
+          }
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}'
+        }
+      }
+    ]
+  }
+
+  myChart.setOption(option)
+}
+
+// 监听网格数据变化，更新图表
+watch(gridData, () => {
+  setTimeout(() => initChart(), 100)
+}, { deep: true })
+
+// 窗口变化自适应
+const resizeChart = () => {
+  myChart?.resize()
+}
+
+onMounted(() => {
+  window.addEventListener('resize', resizeChart)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', resizeChart)
+  if (myChart) {
+    myChart.dispose()
+    myChart = null
+  }
+})
 
 // 网格计算
 const handleGridCalculate = async () => {
@@ -333,6 +454,11 @@ onMounted(async () => {
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 网格数量图表 -->
+      <div class="chart-section" v-if="gridData.length > 0">
+        <div ref="chartRef" class="grid-chart"></div>
+      </div>
     </div>
 
     <!-- 计算结果 -->

@@ -38,3 +38,14 @@
 .param-info {
   margin-top: 16px;
 }
+
+.chart-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #ebeef5;
+}
+
+.grid-chart {
+  width: 100%;
+  height: 350px;
+}
