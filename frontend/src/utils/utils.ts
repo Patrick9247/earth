@@ -1,8 +1,13 @@
 // 格式化日期为 yyyy-MM-dd
-export const formatDate = (dateStr: string | null | undefined): string => {
+export const formatDate = (dateStr: string | Date | null | undefined): string => {
   if (!dateStr) return '-'
   try {
-    const date = new Date(dateStr)
+    let date: Date
+    if (dateStr instanceof Date) {
+      date = dateStr
+    } else {
+      date = new Date(dateStr)
+    }
     if (isNaN(date.getTime())) return '-'
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
