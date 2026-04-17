@@ -418,12 +418,12 @@ onMounted(async () => {
             <el-table-column label="编号" type="index" width="60" />
             <el-table-column label="网格数" width="150">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.grid_count" :min="1" :max="1000" :step="1" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.grid_count" :min="1" :max="10000" :step="1" size="small" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="孔隙度" width="150">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.01" :precision="4" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.001" :precision="4" size="small" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="体积(m³)" width="150">
@@ -433,12 +433,12 @@ onMounted(async () => {
             </el-table-column>
             <el-table-column label="温度(°C)" width="150">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.temperature" :min="50" :max="400" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.temperature" :min="0" :max="1000" size="small" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="压力(MPa)" width="150">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.pressure" :min="0.1" :max="100" :step="0.5" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.pressure" :min="0.001" :max="500" :step="0.5" size="small" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="沸点温度(°C)" width="120">

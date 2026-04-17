@@ -1,28 +1,16 @@
-<script setup lang="ts">
+`<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import * as echarts from 'echarts'
 import { drillHolesApi, importApi, drillHoleDetailApi } from '@/api/get-api.ts'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
+import {formatDate} from "../utils/utils.ts";
+
 
 const store = useGeothermalStore()
 
-// ==================== 工具函数 ====================
-// 格式化日期为 yyyy-MM-dd
-const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-'
-  try {
-    const date = new Date(dateStr)
-    if (isNaN(date.getTime())) return '-'
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  } catch {
-    return '-'
-  }
-}
+
 
 // ==================== 页面状态 ====================
 const loading = ref(false)
@@ -1827,3 +1815,4 @@ onUnmounted(() => {
 <style scoped>
 @import "@/styles/drill-data-view.css";
 </style>
+`

@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { gempyApi } from '@/api/get-api.ts'
 import { ElMessage } from 'element-plus'
+import {formatDate} from "@/utils/utils.ts";
 
 const results = ref<any[]>([])
 const loading = ref(false)
@@ -222,7 +223,7 @@ onMounted(() => {
     <el-dialog v-model="dialogVisible" title="计算结果详情" width="900px" @close="selectedResult = null">
       <el-descriptions :column="2" border v-if="selectedResult">
         <el-descriptions-item label="名称">{{ selectedResult.name }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ selectedResult.created_at }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDate(selectedResult.created_at)}}</el-descriptions-item>
         <el-descriptions-item label="储层体积">{{ formatVolume(selectedResult.volume) }}</el-descriptions-item>
         <el-descriptions-item label="平均温度">{{ selectedResult.temperature_avg }} °C</el-descriptions-item>
         <el-descriptions-item label="热含量">{{ formatNumber(selectedResult.heat_content) }}</el-descriptions-item>
