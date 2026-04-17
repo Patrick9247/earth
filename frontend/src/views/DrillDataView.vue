@@ -894,21 +894,10 @@ const initChart = () => {
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
-      },
-      formatter: (params: any) => {
-        let result = `<div style="font-weight:bold;margin-bottom:5px;">${params[0].axisValue}</div>`
-        params.forEach((param: any) => {
-          result += `<div style="color:${param.color};margin:3px 0;">
-            ${param.marker} ${param.seriesName}: <b>${param.value}</b> m<br/>
-            <span style="color:#666;font-size:11px;">X坐标: ${drillHoles.value[param.dataIndex]?.location_x || '-'} m</span><br/>
-            <span style="color:#666;font-size:11px;">Y坐标: ${drillHoles.value[param.dataIndex]?.location_y || '-'} m</span>
-          </div>`
-        })
-        return result
       }
     },
     legend: {
-      data: ['钻孔深度', '地面高程'],
+      data: ['钻孔深度', '地面高程', 'X坐标', 'Y坐标'],
       top: 30
     },
     grid: {
@@ -942,6 +931,18 @@ const initChart = () => {
         type: 'bar',
         data: yData2,
         itemStyle: { color: '#67C23A' }
+      },
+      {
+        name: 'X坐标',
+        type: 'bar',
+        data: drillHoles.value.map((d: any) => d.location_x || 0),
+        itemStyle: { color: '#E6A23C' }
+      },
+      {
+        name: 'Y坐标',
+        type: 'bar',
+        data: drillHoles.value.map((d: any) => d.location_y || 0),
+        itemStyle: { color: '#F56C6C' }
       }
     ]
   }
