@@ -5,6 +5,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Text, JSON, For
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
+from datetime import datetime
 
 
 class GeologicalLayer(Base):
@@ -223,7 +224,7 @@ class GeothermalResource(Base):
     lifetime_years = Column(Integer, comment="开采年限(年)")
     parameters = Column(JSON, comment="计算参数")
     result_data = Column(JSON, comment="详细结果数据")
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, default=datetime.now())
 
 
 class ModelConfig(Base):
