@@ -894,6 +894,17 @@ const initChart = () => {
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
+      },
+      formatter: (params: any) => {
+        let result = `<div style="font-weight:bold;margin-bottom:5px;">${params[0].axisValue}</div>`
+        params.forEach((param: any) => {
+          result += `<div style="color:${param.color};margin:3px 0;">
+            ${param.marker} ${param.seriesName}: <b>${param.value}</b> m<br/>
+            <span style="color:#666;font-size:11px;">X坐标: ${drillHoles.value[param.dataIndex]?.location_x || '-'} m</span><br/>
+            <span style="color:#666;font-size:11px;">Y坐标: ${drillHoles.value[param.dataIndex]?.location_y || '-'} m</span>
+          </div>`
+        })
+        return result
       }
     },
     legend: {
