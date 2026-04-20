@@ -20,7 +20,6 @@ const loading = ref(false)
 
 // 选中的结果用于图表展示
 const selectedResults = ref<number[]>([])
-const selectionMode = ref(false)
 
 // 加载计算结果
 const loadResults = async () => {
@@ -36,17 +35,6 @@ const loadResults = async () => {
     loading.value = false
   }
 }
-
-// 切换选择模式
-const toggleSelectionMode = () => {
-  selectionMode.value = !selectionMode.value
-  if (!selectionMode.value) {
-    selectedResults.value = []
-  }
-}
-
-// 判断是否选中
-const isSelected = (id: number) => selectedResults.value.includes(id)
 
 // 清除选择
 const clearSelection = () => {
@@ -66,6 +54,9 @@ const toggleSelectAll = () => {
     selectAll()
   }
 }
+
+// 判断是否选中
+const isSelected = (id: number) => selectedResults.value.includes(id)
 
 // 生成图表数据
 const chartOption = computed(() => {
@@ -236,38 +227,14 @@ onMounted(() => {
         <h1 class="page-title">数据可视化</h1>
       </div>
       <div class="header-actions">
-        <el-button 
-          :type="selectionMode ? 'primary' : 'default'"
-          @click="toggleSelectionMode"
-        >
-          <el-icon><Select /></el-icon>
-          {{ selectionMode ? '退出选择' : '选择数据' }}
+        <el-button @click="selectAll">全选</el-button>
+        <el-button @click="toggleSelectAll">
+          {{ selectedResults.length === results.length ? '取消全选' : '反选' }}
         </el-button>
-        <template v-if="selectionMode">
-          <el-button @click="selectAll">全选</el-button>
-          <el-button @click="toggleSelectAll">
-            {{ selectedResults.length === results.length ? '取消全选' : '反选' }}
-          </el-button>
-          <el-button @click="clearSelection" :disabled="selectedResults.length === 0">
-            清除选择
-          </el-button>
-        </template>
+        <el-button @click="clearSelection" :disabled="selectedResults.length === 0">
+          清除选择
+        </el-button>
       </div>
-    </div>
-
-    <!-- 选择提示 -->
-    <div v-if="selectionMode" class="selection-tip">
-      <el-alert
-        title="选择模式已开启"
-        type="info"
-        :closable="false"
-        show-icon
-      >
-        <template #default>
-          请在下方表格中勾选要展示的数据（已选择 {{ selectedResults.length }} 条），
-          或点击「生成图表」按钮查看选中数据的可视化效果。
-        </template>
-      </el-alert>
     </div>
 
     <!-- 数据选择表格 -->
@@ -286,7 +253,7 @@ onMounted(() => {
         @selection-change="(val: any) => selectedResults = val.map((v: any) => v.id)"
         :row-class-name="({ row }: any) => isSelected(row.id) ? 'selected-row' : ''"
       >
-        <el-table-column v-if="selectionMode" type="selection" width="55" />
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="name" label="名称" width="180" />
         <el-table-column prop="volume" label="储层体积(m³)" width="150">
           <template #default="{ row }">
@@ -312,18 +279,6 @@ onMounted(() => {
             </span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!selectionMode" label="操作" width="100">
-          <template #default="{ row }">
-            <el-button 
-              type="primary" 
-              size="small" 
-              text
-              @click="selectedResults = [row.id]; selectionMode = true"
-            >
-              查看图表
-            </el-button>
-          </template>
-        </el-table-column>
       </el-table>
     </el-card>
 
@@ -347,10 +302,7 @@ onMounted(() => {
       </div>
       
       <div v-if="selectedResults.length === 0" class="chart-placeholder">
-        <el-empty description="请先选择要展示的数据">
-          <el-button type="primary" @click="toggleSelectionMode">
-            立即选择
-          </el-button>
+        <el-empty description="请在上方表格中勾选要展示的数据">
         </el-empty>
       </div>
     </el-card>
@@ -385,10 +337,6 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 10px;
-}
-
-.selection-tip {
-  margin-bottom: 20px;
 }
 
 .selection-card {
