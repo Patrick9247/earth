@@ -8,6 +8,7 @@ import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import type { ElTable } from 'element-plus'
 
 // 注册 ECharts 组件
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
@@ -15,6 +16,7 @@ use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent
 const results = ref<any[]>([])
 const loading = ref(false)
 const selectedResult = ref<any>(null)
+const tableRef = ref<InstanceType<typeof ElTable>>()
 const dialogVisible = computed({
   get: () => selectedResult.value !== null,
   set: () => { selectedResult.value = null }
@@ -62,15 +64,22 @@ const viewDetail = async (row: any) => {
 // 全选/取消全选图表数据
 const toggleSelectAll = () => {
   if (selectedChartData.value.length === results.value.length) {
-    selectedChartData.value = []
+    tableRef.value?.clearSelection()
   } else {
-    selectedChartData.value = results.value.map(r => r.id)
+    results.value.forEach(row => {
+      tableRef.value?.toggleRowSelection(row, true)
+    })
   }
 }
 
 // 清除选择
 const clearSelection = () => {
-  selectedChartData.value = []
+  tableRef.value?.clearSelection()
+}
+
+// 监听表格选择变化
+const handleSelectionChange = (val: any[]) => {
+  selectedChartData.value = val.map(v => v.id)
 }
 
 // 格式化数字显示
@@ -299,10 +308,12 @@ onMounted(() => {
       </div>
 
       <el-table 
+        ref="tableRef"
         :data="results" 
         v-loading="loading" 
         stripe 
-        @selection-change="(val: any) => selectedChartData = val.map((v: any) => v.id)"
+        row-key="id"
+        @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
         <el-table-column prop="name" label="名称" width="200" />
