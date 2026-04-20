@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { gempyApi } from '@/api/get-api.ts'
 import { ElMessage } from 'element-plus'
-import {formatDate} from "@/utils/utils.ts";
+import { formatDate } from '@/utils/utils.ts'
+import VChart from 'vue-echarts'
+import { use } from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 
-const router = useRouter()
+// 注册 ECharts 组件
+use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
+
 const results = ref<any[]>([])
 const loading = ref(false)
 const selectedResult = ref<any>(null)
@@ -13,6 +19,9 @@ const dialogVisible = computed({
   get: () => selectedResult.value !== null,
   set: () => { selectedResult.value = null }
 })
+
+// 选中的用于图表展示的数据
+const selectedChartData = ref<number[]>([])
 
 const loadResults = async () => {
   loading.value = true
@@ -23,14 +32,13 @@ const loadResults = async () => {
   } catch (error) {
     console.error('加载失败:', error)
     ElMessage.error('加载计算结果失败，请检查网络连接')
-    results.value = []  // 不要显示预置数据
+    results.value = []
   } finally {
     loading.value = false
   }
 }
 
 const handleDelete = async (id: number) => {
-  // 先从本地删除（确保即使API失败也能删除）
   const index = results.value.findIndex(r => r.id === id)
   if (index !== -1) {
     results.value.splice(index, 1)
@@ -41,21 +49,28 @@ const handleDelete = async (id: number) => {
     ElMessage.success('删除成功')
   } catch (error) {
     console.error('API删除失败，但已从本地删除:', error)
-    // 不显示错误，因为本地已删除
   }
 }
 
 const viewDetail = async (row: any) => {
   selectedResult.value = row
-  // 如果有网格数据，从parameters中获取
   if (row.parameters && row.parameters.original_grids) {
     selectedResult.value.grids = row.parameters.original_grids
   }
 }
 
-// 跳转到可视化页面
-const goToChart = () => {
-  router.push('/results/chart')
+// 全选/取消全选图表数据
+const toggleSelectAll = () => {
+  if (selectedChartData.value.length === results.value.length) {
+    selectedChartData.value = []
+  } else {
+    selectedChartData.value = results.value.map(r => r.id)
+  }
+}
+
+// 清除选择
+const clearSelection = () => {
+  selectedChartData.value = []
 }
 
 // 格式化数字显示
@@ -93,6 +108,16 @@ const formatVolume = (vol: number | null | undefined): string => {
   return vol.toFixed(2) + ' m³'
 }
 
+// 格式化热量
+const formatHeat = (heat: number | null | undefined): string => {
+  if (!heat) return '0 J'
+  if (heat >= 1e18) return (heat / 1e18).toFixed(2) + ' EJ'
+  if (heat >= 1e15) return (heat / 1e15).toFixed(2) + ' PJ'
+  if (heat >= 1e12) return (heat / 1e12).toFixed(2) + ' TJ'
+  if (heat >= 1e9) return (heat / 1e9).toFixed(2) + ' GJ'
+  return heat.toExponential(2) + ' J'
+}
+
 // 导出为 CSV
 const exportToCSV = () => {
   if (results.value.length === 0) {
@@ -100,10 +125,8 @@ const exportToCSV = () => {
     return
   }
 
-  // CSV 表头
   const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(J)', '可采热量(J)', '发电潜力(MW)', '创建时间']
   
-  // CSV 数据行
   const rows = results.value.map(row => [
     row.name,
     row.volume?.toFixed(2) || '0.00',
@@ -114,17 +137,14 @@ const exportToCSV = () => {
     row.created_at
   ])
 
-  // 组合 CSV 内容
   const csvContent = [
     headers.join(','),
     ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
   ].join('\n')
 
-  // 添加 BOM 以支持中文
   const BOM = '\uFEFF'
   const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
   
-  // 创建下载链接
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   link.setAttribute('href', url)
@@ -136,6 +156,120 @@ const exportToCSV = () => {
   
   ElMessage.success('导出成功')
 }
+
+// 图表配置
+const chartOption = computed(() => {
+  if (selectedChartData.value.length === 0) {
+    return {
+      title: {
+        text: '请勾选表格中的数据进行图表展示',
+        left: 'center',
+        top: 'center',
+        textStyle: { color: '#999', fontSize: 14 }
+      },
+      xAxis: { type: 'category', data: [] },
+      yAxis: { type: 'value', name: '发电潜力 (MW)' },
+      series: []
+    }
+  }
+
+  const selectedData = results.value.filter(r => selectedChartData.value.includes(r.id))
+  const xAxisData = selectedData.map((r, index) => `${index + 1}. ${r.name}`)
+  const powerData = selectedData.map(r => r.power_potential || 0)
+
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      formatter: (params: any) => {
+        if (!params || params.length === 0) return ''
+        const param = params[0]
+        const dataIndex = param.dataIndex
+        const data = selectedData[dataIndex]
+        
+        return `
+          <div style="font-weight: bold; margin-bottom: 5px;">${data.name}</div>
+          <div>储层体积: ${formatVolume(data.volume)}</div>
+          <div>平均温度: ${data.temperature_avg?.toFixed(4) || '0'} °C</div>
+          <div>可采热量: ${formatHeat(data.extractable_heat)}</div>
+          <div style="color: #67c23a; font-weight: bold;">发电潜力: ${formatPower(data.power_potential)}</div>
+        `
+      }
+    },
+    legend: {
+      data: ['发电潜力'],
+      top: 10
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: xAxisData,
+      name: '计算结果',
+      nameLocation: 'middle',
+      nameGap: 30,
+      axisLabel: {
+        rotate: 0,
+        fontSize: 11,
+        interval: 0
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: '发电潜力 (MW)',
+      nameLocation: 'middle',
+      nameGap: 50,
+      axisLabel: {
+        formatter: (value: number) => formatPower(value)
+      }
+    },
+    series: [
+      {
+        name: '发电潜力',
+        type: 'line',
+        data: powerData,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: {
+          width: 3,
+          color: '#409eff'
+        },
+        itemStyle: {
+          color: '#409eff',
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        emphasis: {
+          scale: true,
+          scaleSize: 12
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
+              { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
+            ]
+          }
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: (params: any) => formatPower(params.value),
+          fontSize: 10
+        }
+      }
+    ],
+    animationDuration: 1000,
+    animationEasing: 'cubicOut' as const
+  }
+})
 
 onMounted(() => {
   loadResults()
@@ -152,9 +286,11 @@ onMounted(() => {
           <el-icon><Refresh /></el-icon>
           刷新
         </el-button>
-        <el-button type="primary" @click="goToChart">
-          <el-icon><DataLine /></el-icon>
-          数据可视化
+        <el-button type="primary" @click="toggleSelectAll">
+          {{ selectedChartData.length === results.length ? '取消全选' : '全选图表' }}
+        </el-button>
+        <el-button @click="clearSelection" :disabled="selectedChartData.length === 0">
+          清除选择
         </el-button>
         <el-button type="success" @click="exportToCSV">
           <el-icon><Download /></el-icon>
@@ -162,7 +298,13 @@ onMounted(() => {
         </el-button>
       </div>
 
-      <el-table :data="results" v-loading="loading" stripe>
+      <el-table 
+        :data="results" 
+        v-loading="loading" 
+        stripe 
+        @selection-change="(val: any) => selectedChartData = val.map((v: any) => v.id)"
+      >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="name" label="名称" width="200" />
         <el-table-column prop="volume" label="储层体积(m³)" width="150">
           <template #default="{ row }">
@@ -232,6 +374,25 @@ onMounted(() => {
       </el-col>
     </el-row>
 
+    <!-- 图表区域 -->
+    <el-card class="chart-card">
+      <template #header>
+        <div class="card-header">
+          <span>发电潜力折线图</span>
+          <el-tag v-if="selectedChartData.length > 0" type="primary">
+            已选择 {{ selectedChartData.length }} 条数据
+          </el-tag>
+        </div>
+      </template>
+      <div class="chart-container">
+        <v-chart 
+          :option="chartOption" 
+          autoresize 
+          style="height: 400px; width: 100%;"
+        />
+      </div>
+    </el-card>
+
     <!-- 详情对话框 -->
     <el-dialog v-model="dialogVisible" title="计算结果详情" width="900px" @close="selectedResult = null">
       <el-descriptions :column="2" border v-if="selectedResult">
@@ -278,5 +439,19 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.chart-card {
+  margin-top: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-container {
+  min-height: 400px;
 }
 </style>
