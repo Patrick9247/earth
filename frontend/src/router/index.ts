@@ -45,6 +45,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '计算结果' }
   },
   {
+    path: '/results/chart',
+    name: 'results-chart',
+    component: () => import('@/views/ResultsChartView.vue'),
+    meta: { title: '数据可视化' }
+  },
+  {
     path: '/users',
     name: 'users',
     component: () => import('@/views/UserManagementView.vue'),

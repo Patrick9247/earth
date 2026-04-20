@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { gempyApi } from '@/api/get-api.ts'
 import { ElMessage } from 'element-plus'
 import {formatDate} from "@/utils/utils.ts";
 
+const router = useRouter()
 const results = ref<any[]>([])
 const loading = ref(false)
 const selectedResult = ref<any>(null)
@@ -49,6 +51,11 @@ const viewDetail = async (row: any) => {
   if (row.parameters && row.parameters.original_grids) {
     selectedResult.value.grids = row.parameters.original_grids
   }
+}
+
+// 跳转到可视化页面
+const goToChart = () => {
+  router.push('/results/chart')
 }
 
 // 格式化数字显示
@@ -144,6 +151,10 @@ onMounted(() => {
         <el-button @click="loadResults">
           <el-icon><Refresh /></el-icon>
           刷新
+        </el-button>
+        <el-button type="primary" @click="goToChart">
+          <el-icon><DataLine /></el-icon>
+          数据可视化
         </el-button>
         <el-button type="success" @click="exportToCSV">
           <el-icon><Download /></el-icon>
