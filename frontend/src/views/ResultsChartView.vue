@@ -5,12 +5,12 @@ import { ElMessage } from 'element-plus'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { gempyApi } from '@/api/get-api.ts'
 
 // 注册 ECharts 组件
-use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
+use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
 
 const router = useRouter()
 
