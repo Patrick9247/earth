@@ -22,6 +22,29 @@ const dialogVisible = computed({
   set: () => { selectedResult.value = null }
 })
 
+// 分页配置
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = computed(() => results.value.length)
+
+// 分页后的数据
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return results.value.slice(start, end)
+})
+
+// 分页变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+}
+
+// 每页条数变化
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+}
+
 // 选中的用于图表展示的数据
 const selectedChartData = ref<number[]>([])
 
@@ -31,6 +54,9 @@ const loadResults = async () => {
     const res = await gempyApi.getResults()
     console.log('API返回数据:', res.data)
     results.value = res.data || []
+    currentPage.value = 1 // 重置分页
+    selectedChartData.value = [] // 清空选择
+    tableRef.value?.clearSelection() // 清空表格选择
   } catch (error) {
     console.error('加载失败:', error)
     ElMessage.error('加载计算结果失败，请检查网络连接')
@@ -309,7 +335,7 @@ onMounted(() => {
 
       <el-table 
         ref="tableRef"
-        :data="results" 
+        :data="paginatedData" 
         v-loading="loading" 
         stripe 
         row-key="id"
@@ -355,6 +381,19 @@ onMounted(() => {
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[5, 10, 20, 50]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </div>
     </div>
 
     <!-- 结果统计 -->
@@ -454,6 +493,14 @@ onMounted(() => {
 
 .chart-card {
   margin-top: 20px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ebeef5;
 }
 
 .card-header {
