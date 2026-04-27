@@ -257,7 +257,7 @@ const chartOption = computed(() => {
       type: 'value',
       name: '发电潜力 (MW)',
       nameLocation: 'middle',
-      nameGap: 50,
+      nameGap: 65,
       axisLabel: {
         formatter: (value: number) => formatPower(value)
       }
