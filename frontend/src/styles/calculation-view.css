@@ -25,14 +25,21 @@
   color: #fff;
 }
 
+.result-item.highlight .result-label,
+.result-item.highlight .result-value {
+  color: #fff;
+}
+
 .result-label {
   font-size: 14px;
   margin-bottom: 8px;
+  color: #303133;
 }
 
 .result-value {
   font-size: 18px;
   font-weight: 600;
+  color: #303133;
 }
 
 .param-info {
