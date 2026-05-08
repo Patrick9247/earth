@@ -7,6 +7,54 @@
     <h1 class="page-title">使用指南</h1>
     
     <div class="guide-content">
+      <!-- 相态判别 -->
+      <section class="guide-section">
+        <h2>相态判别</h2>
+        <p class="intro">
+          地热流体相态根据温度和压力条件确定，主要依据饱和水蒸气曲线进行判别：
+        </p>
+        
+        <div class="formula-section">
+          <h4>相态判别原则</h4>
+          <ul>
+            <li><strong>液态（热水型）</strong>：T &lt; T<sub>饱</sub>（温度低于当前压力下的饱和温度）</li>
+            <li><strong>气态（蒸汽型）</strong>：T ≥ T<sub>饱</sub>（温度高于或等于当前压力下的饱和温度）</li>
+            <li><strong>两相态</strong>：介于临界点附近，流体以汽液混合物形式存在</li>
+          </ul>
+          
+          <h4>饱和温度计算（近似公式）</h4>
+          <div class="formula">
+            T<sub>饱</sub> = 100 × P<sup>0.25</sup> + 3.5 × P + 0.02 × P²
+          </div>
+          <p>其中：</p>
+          <ul>
+            <li><strong>T<sub>饱</sub></strong>：饱和温度（°C）</li>
+            <li><strong>P</strong>：绝对压力（bar），P = ρgh/10⁵ + P<sub>地表</sub></li>
+            <li><strong>ρ</strong>：上覆岩层平均密度（kg/m³），约 2500-2700 kg/m³</li>
+            <li><strong>g</strong>：重力加速度，9.81 m/s²</li>
+            <li><strong>h</strong>：储层埋深（m）</li>
+          </ul>
+          
+          <h4>临界点参考</h4>
+          <el-table :data="criticalParams" size="small" border>
+            <el-table-column prop="param" label="参数" width="120" />
+            <el-table-column prop="value" label="数值" width="120" />
+            <el-table-column prop="unit" label="单位" width="100" />
+          </el-table>
+          
+          <h4>简易判别方法</h4>
+          <ul>
+            <li><strong>埋深 &lt; 1000m</strong>：通常为液态，温度 &lt; 180°C</li>
+            <li><strong>埋深 1000-3000m</strong>：可为液态或两相态，温度 150-250°C</li>
+            <li><strong>埋深 &gt; 3000m</strong>：可为气态或两相态，温度 &gt; 200°C</li>
+          </ul>
+          <el-alert type="tip" :closable="false" show-icon style="margin-top: 12px;">
+            <template #title>实际判别建议</template>
+            建议结合地质构造、温压测试数据，综合确定相态类型。
+          </el-alert>
+        </div>
+      </section>
+
       <!-- 资源计算公式 -->
       <section class="guide-section">
         <h2>资源计算公式</h2>
@@ -129,6 +177,13 @@ export default {
         { temp: '220', pressure: '2.318', enthalpy: '2804.3', density: '11.61' },
         { temp: '250', pressure: '3.976', enthalpy: '2820.7', density: '19.78' },
         { temp: '300', pressure: '8.581', enthalpy: '2748.7', density: '46.46' },
+      ],
+      criticalParams: [
+        { param: '临界温度', value: '374.15', unit: '°C' },
+        { param: '临界压力', value: '22.06', unit: 'MPa' },
+        { param: '临界密度', value: '322', unit: 'kg/m³' },
+        { param: '三相点温度', value: '0.01', unit: '°C' },
+        { param: '三相点压力', value: '0.0006', unit: 'MPa' },
       ]
     }
   }
