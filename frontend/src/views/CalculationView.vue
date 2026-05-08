@@ -477,12 +477,6 @@ onMounted(async () => {
             </el-col>
             <el-col :span="6">
               <div class="result-item">
-                <div class="result-label">地热资源总量 Q₄</div>
-                <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="result-item">
                 <div class="result-label">可采热量</div>
                 <div class="result-value">{{ formatNumber(result.extractable_heat) }}</div>
               </div>
@@ -493,28 +487,65 @@ onMounted(async () => {
                 <div class="result-value">{{ result.total_grid_count || 0 }} 个</div>
               </div>
             </el-col>
+            <el-col :span="6">
+              <div class="result-item">
+                <div class="result-label">总网格体积</div>
+                <div class="result-value">{{ formatNumber(result.total_resource_joules + result.rock_heat_joules) }}</div>
+              </div>
+            </el-col>
+          </el-row>
+          
+          <el-divider />
+          
+          <!-- 总热量构成 -->
+          <h4 style="margin: 16px 0 12px;">热量构成</h4>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <div class="result-item">
+                <div class="result-label">地热流体热量</div>
+                <div class="result-value">{{ formatNumber(result.fluid_resource_joules) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="result-item">
+                <div class="result-label">岩石热量</div>
+                <div class="result-value">{{ formatNumber(result.rock_heat_joules) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="result-item highlight">
+                <div class="result-label">总地热资源量 Q<sub>总</sub></div>
+                <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
+              </div>
+            </el-col>
           </el-row>
           
           <el-divider />
           
           <!-- 资源量分类 -->
-          <h4 style="margin: 16px 0 12px;">资源量分类</h4>
+          <h4 style="margin: 16px 0 12px;">流体资源量分类（按相态）</h4>
           <el-row :gutter="20">
-            <el-col :span="8">
+            <el-col :span="6">
               <div class="result-item">
-                <div class="result-label">液态资源量 Q₁</div>
+                <div class="result-label">液态资源量 Q<sub>1</sub></div>
                 <div class="result-value">{{ formatNumber(result.liquid_resource_joules) }}</div>
               </div>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <div class="result-item">
-                <div class="result-label">气液共存液态资源量 Q₂</div>
+                <div class="result-label">气液共存资源量 Q<sub>4</sub></div>
+                <div class="result-value">{{ formatNumber(result.reservoir_resource_joules) }}</div>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="result-item">
+                <div class="result-label">├ 气液共存液态 Q<sub>2</sub></div>
                 <div class="result-value">{{ formatNumber(result.two_phase_liquid_resource_joules) }}</div>
               </div>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <div class="result-item">
-                <div class="result-label">蒸汽资源量 Q₃</div>
+                <div class="result-label">├ 气液共存蒸汽 Q<sub>3</sub></div>
                 <div class="result-value">{{ formatNumber(result.steam_resource_joules) }}</div>
               </div>
             </el-col>

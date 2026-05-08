@@ -413,7 +413,9 @@ class GeothermalCalculator:
     def calculate_grid_resources(
         self,
         grid_data: List[Dict[str, float]],
-        reference_temp: float = 25.0
+        reference_temp: float = 25.0,
+        rock_density: float = ROCK_DENSITY,
+        rock_specific_heat: float = ROCK_SPECIFIC_HEAT
     ) -> Dict[str, Any]:
         """
         批量计算多网格资源量
@@ -427,16 +429,19 @@ class GeothermalCalculator:
                 - temperature: 温度 (°C)
                 - pressure: 压力 (MPa)
             reference_temp: 参考温度 (°C)
+            rock_density: 岩石密度 (kg/m³)
+            rock_specific_heat: 岩石比热容 (J/(kg·K))
             
         Returns:
-            计算结果汇总，包含Q₁、Q₂、Q₃、Q₄
+            计算结果汇总，包含Q₁、Q₂、Q₃、Q₄及岩石热量
         """
         liquid_grids = []
         two_phase_grids = []
         
-        total_liquid_resource = 0.0  # Q₁
-        total_two_phase_liquid = 0.0  # Q₂
-        total_steam_resource = 0.0   # Q₃
+        total_liquid_resource = 0.0  # Q₁ (液态水网格集)
+        total_two_phase_liquid = 0.0  # Q₂ (气液共存中液态部分)
+        total_steam_resource = 0.0   # Q₃ (气液共存中蒸汽部分)
+        total_rock_heat = 0.0        # 岩石热量
         
         for i, grid in enumerate(grid_data):
             porosity = grid.get('porosity', 0.15)
@@ -447,22 +452,35 @@ class GeothermalCalculator:
             if volume <= 0:
                 continue
             
+            # 计算岩石热量 (每个网格都计算)
+            rock_volume = volume * (1 - porosity)
+            rock_mass = rock_volume * rock_density
+            delta_T = temperature - reference_temp
+            rock_heat = rock_mass * rock_specific_heat * delta_T
+            total_rock_heat += rock_heat
+            
             # 相态判定
             phase = self.determine_phase(temperature, pressure)
             
             if phase == 'liquid':
-                resource = self.calculate_liquid_resource(
-                    porosity, volume, temperature, pressure, reference_temp
-                )
-                total_liquid_resource += resource
+                # 液态水网格集 Q₁
+                water_density = self.calculate_water_density(temperature, pressure * 1000)
+                water_volume = volume * porosity
+                water_mass = water_volume * water_density
+                water_heat = water_mass * self.WATER_SPECIFIC_HEAT * delta_T
+                total_liquid_resource += water_heat
                 liquid_grids.append({
                     'index': i,
                     'temperature': temperature,
                     'pressure': pressure,
+                    'porosity': porosity,
+                    'volume': volume,
                     'phase': phase,
-                    'resource': resource
+                    'resource': water_heat,
+                    'rock_heat': rock_heat
                 })
             else:
+                # 气液共存网格集
                 result = self.calculate_two_phase_resource(
                     porosity, volume, temperature, pressure, reference_temp
                 )
@@ -472,31 +490,40 @@ class GeothermalCalculator:
                     'index': i,
                     'temperature': temperature,
                     'pressure': pressure,
+                    'porosity': porosity,
+                    'volume': volume,
                     'phase': phase,
-                    **result
+                    **result,
+                    'rock_heat': rock_heat
                 })
         
-        # 总资源量 Q₄ = Q₂ + Q₃ (气液共存部分)
-        # 注意：Q₄是热储层的地热资源总量，根据专利不包含纯液态部分
-        total_resource = (
-            total_liquid_resource + 
-            total_two_phase_liquid + 
-            total_steam_resource
-        )
-        # 热储层资源量 (Q₄)
+        # 热储层资源量 (气液共存部分 Q₄ = Q₂ + Q₃)
         reservoir_resource = total_two_phase_liquid + total_steam_resource
         
+        # 总地热资源量 = 液态水资源量(Q₁) + 气液共存资源量(Q₄) + 岩石热量
+        # 根据专利说明：Q总 = Q₁ + Q₄
+        # 但实际工程中通常包含岩石热量，这里按 full_calculation 方法加上岩石热量
+        fluid_resource = total_liquid_resource + reservoir_resource
+        total_resource = fluid_resource + total_rock_heat
+        
         return {
-            'total_resource_joules': total_resource,
-            'liquid_resource_joules': total_liquid_resource,        # Q₁
+            'total_resource_joules': total_resource,              # 总热量(含岩石)
+            'fluid_resource_joules': fluid_resource,               # 流体热量(不含岩石)
+            'liquid_resource_joules': total_liquid_resource,      # Q₁ 液态水
             'two_phase_liquid_resource_joules': total_two_phase_liquid,  # Q₂
-            'steam_resource_joules': total_steam_resource,          # Q₃
-            'reservoir_resource_joules': reservoir_resource,        # Q₄
+            'steam_resource_joules': total_steam_resource,        # Q₃
+            'reservoir_resource_joules': reservoir_resource,      # Q₄ = Q₂ + Q₃
+            'rock_heat_joules': total_rock_heat,                  # 岩石热量
             'liquid_grid_count': len(liquid_grids),
             'two_phase_grid_count': len(two_phase_grids),
             'total_grid_count': len(liquid_grids) + len(two_phase_grids),
             'liquid_grids': liquid_grids,
-            'two_phase_grids': two_phase_grids
+            'two_phase_grids': two_phase_grids,
+            'parameters': {
+                'rock_density': rock_density,
+                'rock_specific_heat': rock_specific_heat,
+                'water_specific_heat': self.WATER_SPECIFIC_HEAT
+            }
         }
     
     def calculate_power_potential(
