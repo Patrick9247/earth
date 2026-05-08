@@ -1,168 +1,141 @@
-<script setup lang="ts">
-// 使用指南页面 - 资源计算公式
-</script>
-
 <template>
-  <div class="guide-view">
+  <div class="guide-container">
     <h1 class="page-title">使用指南</h1>
-    
-    <div class="guide-content">
-      <!-- 相态判别 -->
-      <section class="guide-section">
-        <h2>相态判别</h2>
-        <p class="intro">
-          地热流体相态根据温度和压力条件确定，主要依据饱和水蒸气曲线进行判别：
-        </p>
-        
-        <div class="formula-section">
-          <h4>相态判别原则</h4>
-          <ul>
-            <li><strong>液态（热水型）</strong>：T &lt; T<sub>饱</sub>（温度低于当前压力下的饱和温度）</li>
-            <li><strong>气态（蒸汽型）</strong>：T ≥ T<sub>饱</sub>（温度高于或等于当前压力下的饱和温度）</li>
-            <li><strong>两相态</strong>：介于临界点附近，流体以汽液混合物形式存在</li>
-          </ul>
-          
-          <h4>饱和温度计算（近似公式）</h4>
-          <div class="formula">
-            T<sub>饱</sub> = 100 × P<sup>0.25</sup> + 3.5 × P + 0.02 × P²
-          </div>
-          <p>其中：</p>
-          <ul>
-            <li><strong>T<sub>饱</sub></strong>：饱和温度（°C）</li>
-            <li><strong>P</strong>：绝对压力（bar），P = ρgh/10⁵ + P<sub>地表</sub></li>
-            <li><strong>ρ</strong>：上覆岩层平均密度（kg/m³），约 2500-2700 kg/m³</li>
-            <li><strong>g</strong>：重力加速度，9.81 m/s²</li>
-            <li><strong>h</strong>：储层埋深（m）</li>
-          </ul>
-          
-          <h4>临界点参考</h4>
-          <el-table :data="criticalParams" size="small" border>
-            <el-table-column prop="param" label="参数" width="120" />
-            <el-table-column prop="value" label="数值" width="120" />
-            <el-table-column prop="unit" label="单位" width="100" />
-          </el-table>
-          
-          <h4>简易判别方法</h4>
-          <ul>
-            <li><strong>埋深 &lt; 1000m</strong>：通常为液态，温度 &lt; 180°C</li>
-            <li><strong>埋深 1000-3000m</strong>：可为液态或两相态，温度 150-250°C</li>
-            <li><strong>埋深 &gt; 3000m</strong>：可为气态或两相态，温度 &gt; 200°C</li>
-          </ul>
-          <el-alert type="tip" :closable="false" show-icon style="margin-top: 12px;">
-            <template #title>实际判别建议</template>
-            建议结合地质构造、温压测试数据，综合确定相态类型。
-          </el-alert>
-        </div>
-      </section>
 
-      <!-- 资源计算公式 -->
-      <section class="guide-section">
-        <h2>资源计算公式</h2>
-        <p class="intro">
-          系统采用体积法计算地热资源量，根据相态不同采用不同的计算公式：
-        </p>
-        
-        <el-tabs type="border-card" class="formula-tabs">
-          <el-tab-pane label="液态（热水型）">
-            <div class="formula-section">
-              <h4>热含量计算</h4>
-              <div class="formula">
-                Q = V × φ × ρw × cw × (T - T₀)
-              </div>
-              <p>其中：</p>
-              <ul>
-                <li><strong>Q</strong>：热含量（J）</li>
-                <li><strong>V</strong>：储层体积（m³）</li>
-                <li><strong>φ</strong>：孔隙度</li>
-                <li><strong>ρw</strong>：水的密度（kg/m³），常温下约 1000 kg/m³</li>
-                <li><strong>cw</strong>：水的比热容（J/kg·K），约 4186 J/kg·K</li>
-                <li><strong>T</strong>：储层平均温度（°C）</li>
-                <li><strong>T₀</strong>：基准温度（通常取 25°C，即排放温度）</li>
-              </ul>
-              <h4>发电潜力计算</h4>
-              <div class="formula">
-                E = Q × R × η / (L × 10⁶)
-              </div>
-              <p>其中：</p>
-              <ul>
-                <li><strong>E</strong>：发电潜力（MW）</li>
-                <li><strong>Q</strong>：可采热量（J）= Q总 × 采收率</li>
-                <li><strong>R</strong>：采收率（通常 0.05-0.25）</li>
-                <li><strong>η</strong>：地热发电效率（通常 0.10-0.18）</li>
-                <li><strong>L</strong>：开采年限（秒），通常取 30 年</li>
-              </ul>
-            </div>
-          </el-tab-pane>
-          
-          <el-tab-pane label="气态（蒸汽型）">
-            <div class="formula-section">
-              <h4>热含量计算</h4>
-              <div class="formula">
-                Q = V × φ × ρs × (hs - h₂)
-              </div>
-              <p>其中：</p>
-              <ul>
-                <li><strong>Q</strong>：热含量（J）</li>
-                <li><strong>V</strong>：储层体积（m³）</li>
-                <li><strong>φ</strong>：孔隙度</li>
-                <li><strong>ρs</strong>：蒸汽密度（kg/m³），随温度压力变化</li>
-                <li><strong>hs</strong>：饱和蒸汽比焓（kJ/kg），查 IAPWS-IF97 表</li>
-                <li><strong>h₂</strong>：排放状态下蒸汽比焓（kJ/kg）</li>
-              </ul>
-              <h4>常用蒸汽参数（参考）</h4>
-              <el-table :data="steamParams" size="small" border>
-                <el-table-column prop="temp" label="温度(°C)" width="100" />
-                <el-table-column prop="pressure" label="压力(MPa)" width="100" />
-                <el-table-column prop="enthalpy" label="比焓(kJ/kg)" width="120" />
-                <el-table-column prop="density" label="密度(kg/m³)" width="120" />
-              </el-table>
-            </div>
-          </el-tab-pane>
-          
-          <el-tab-pane label="干热岩型">
-            <div class="formula-section">
-              <h4>热含量计算</h4>
-              <div class="formula">
-                Q = V × ρr × cr × (T - T₀)
-              </div>
-              <p>其中：</p>
-              <ul>
-                <li><strong>Q</strong>：热含量（J）</li>
-                <li><strong>V</strong>：热储体积（m³）</li>
-                <li><strong>ρr</strong>：岩石密度（kg/m³），花岗岩约 2700 kg/m³</li>
-                <li><strong>cr</strong>：岩石比热容（J/kg·K），约 800-1000 J/kg·K</li>
-                <li><strong>T</strong>：岩体平均温度（°C）</li>
-                <li><strong>T₀</strong>：冷却后温度（°C），通常取 50-80°C</li>
-              </ul>
-              <h4>增强型地热系统(EGS)</h4>
-              <div class="formula">
-                Q = V × [(1-φ)ρr·cr + φ·ρw·cw] × (T - T₀)
-              </div>
-              <p>此公式综合考虑了岩石骨架和孔隙流体的热容。</p>
-            </div>
-          </el-tab-pane>
-        </el-tabs>
-        
-        <el-alert type="info" :closable="false" style="margin-top: 16px;">
-          <template #title>单位换算提示</template>
-          1 EJ = 10¹⁸ J | 1 TJ = 10¹² J | 1 PJ = 10¹⁵ J<br/>
-          发电潜力(MW) = 可采热量(J) / (开采年限×365×24×3600)
-        </el-alert>
-      </section>
+    <!-- 计算方法 -->
+    <section class="guide-section">
+      <h2 class="section-title">地热流体资源量计算方法</h2>
+      <p class="section-desc">本系统采用一种不规则热储层多相态地热流体资源量计算方法。</p>
 
-      <!-- 技术支持 -->
-      <section class="guide-section">
-        <h2>技术支持</h2>
-        <div class="support-info">
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="系统版本">v1.0.0</el-descriptions-item>
-            <el-descriptions-item label="技术栈">Vue 3 + FastAPI + Three.js</el-descriptions-item>
-            <el-descriptions-item label="数据库">SQLite</el-descriptions-item>
-            <el-descriptions-item label="更新日期">2026年4月</el-descriptions-item>
-          </el-descriptions>
+      <div class="method-steps">
+        <el-steps :active="5" direction="vertical">
+          <el-step title="数据收集" description="收集研究区域的钻孔空间信息、热储层分层数据、钻孔测温曲线、孔口压力数据以及岩石孔隙度数据" />
+          <el-step title="模型构建" description="基于钻孔空间信息与热储层分层数据构建热储层的三维地质构造模型，并进行网格划分生成热储层三维地质构造网格模型" />
+          <el-step title="参数模型" description="建立孔隙度模型、压力模型、温度场模型，获得每个网格的孔隙度、压力和温度" />
+          <el-step title="相态判定与密度校正" description="引入相态判定曲线方程划分气液网格集，并确定每个网格中地热流体的密度" />
+          <el-step title="资源量计算" description="基于每个网格的孔隙度、温度以及地热流体的密度，带入资源量公式计算地热资源量" />
+        </el-steps>
+      </div>
+    </section>
+
+    <!-- 相态判定 -->
+    <section class="guide-section">
+      <h2 class="section-title">相态判定</h2>
+      <p class="section-desc">引入相态判定曲线方程，将每个网格的温度与对应的沸点温度进行比较，划分为气液共存网格集和液态水网格集。</p>
+
+      <div class="formula-block">
+        <h3>相态判定曲线方程</h3>
+        <div class="formula">
+          T<sub>iboil</sub> = 26.12 × ln(P<sub>i</sub>) - 8.97
         </div>
-      </section>
-    </div>
+        <p class="formula-desc">其中：T<sub>iboil</sub> 为第 i 个网格的沸点温度（°C），P<sub>i</sub> 为第 i 个网格的压力（kPa）</p>
+      </div>
+
+      <div class="formula-block">
+        <h3>密度校正公式</h3>
+        <div class="formula">
+          ρ<sub>i</sub> = 137.1358 × e<sup>(A)</sup> + 139.3560 × e<sup>(B)</sup> + 769.9024
+        </div>
+        <div class="formula-sub">
+          A = -(P<sub>i</sub> - 163278.7315)² / (6.613 × 10<sup>10</sup>)
+        </div>
+        <div class="formula-sub">
+          B = -(T<sub>i</sub> - 4.1171)² / 29947.659
+        </div>
+        <p class="formula-desc">其中：ρ<sub>i</sub> 为第 i 个网格中地热流体的密度（kg/m³），T<sub>i</sub> 为第 i 个网格的温度（°C），e 为自然常数</p>
+      </div>
+
+      <div class="formula-block">
+        <h3>相态判定规则</h3>
+        <ul class="rule-list">
+          <li><strong>液态水网格集：</strong>当网格中的温度小于沸点温度时（T<sub>i</sub> &lt; T<sub>iboil</sub>），网格中的地热流体视为液态水</li>
+          <li><strong>气液共存网格集：</strong>当网格中的温度大于等于沸点温度时（T<sub>i</sub> ≥ T<sub>iboil</sub>），网格中的地热流体视为气液共存</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 液态水网格集资源量计算 -->
+    <section class="guide-section">
+      <h2 class="section-title">液态水网格集资源量</h2>
+
+      <div class="formula-block">
+        <h3>液态地热流体资源量公式</h3>
+        <div class="formula">
+          Q<sub>1</sub> = Σ<sub>i=1</sub><sup>N</sup> [ φ<sub>i</sub> × V<sub>i</sub> × ρ<sub>i</sub> × C<sub>w</sub> × (T<sub>i</sub> - T<sub>0</sub>) ]
+        </div>
+        <p class="formula-desc">
+          其中：Q<sub>1</sub> 为液态地热流体的资源量（kJ），φ<sub>i</sub> 为第 i 网格的孔隙度，V<sub>i</sub> 为第 i 网格的体积（m³），ρ<sub>i</sub> 为第 i 网格的地热流体密度（kg/m³），C<sub>w</sub> 为地热水的比热容 [kJ/(kg·°C)]，T<sub>i</sub> 为第 i 网格的温度（°C），T<sub>0</sub> 为参考温度（°C），i ∈ [1, N]
+        </p>
+      </div>
+    </section>
+
+    <!-- 气液共存网格集资源量计算 -->
+    <section class="guide-section">
+      <h2 class="section-title">气液共存网格集资源量</h2>
+      <p class="section-desc">气液共存网格集中的地热资源总量 Q<sub>4</sub> 由液态资源量 Q<sub>2</sub> 和蒸汽资源量 Q<sub>3</sub> 组成。</p>
+
+      <div class="formula-block">
+        <h3>地热资源总量</h3>
+        <div class="formula">
+          Q<sub>4</sub> = Q<sub>2</sub> + Q<sub>3</sub>
+        </div>
+        <p class="formula-desc">其中：Q<sub>4</sub> 为热储层的地热资源总量，Q<sub>2</sub> 为气液共存时液态地热流体的资源量，Q<sub>3</sub> 为气液共存时水蒸汽的资源量</p>
+      </div>
+
+      <div class="formula-block">
+        <h3>液态地热流体资源量 Q<sub>2</sub></h3>
+        <div class="formula">
+          Q<sub>2</sub> = Σ<sub>i=1</sub><sup>N</sup> [ φ<sub>i</sub> × V<sub>i</sub> × (1 - ρ<sub>i</sub> × v<sub>g</sub>) / (v<sub>p</sub> - v<sub>g</sub>) × C<sub>w</sub> × (T<sub>iboil</sub> - T<sub>0</sub>) ]
+        </div>
+        <p class="formula-desc">其中：v<sub>g</sub> 为水蒸气比容（m³/kg），v<sub>p</sub> 为水的比容（m³/kg），i ∈ [1, N]</p>
+      </div>
+
+      <div class="formula-block">
+        <h3>水蒸汽资源量 Q<sub>3</sub></h3>
+        <div class="formula">
+          Q<sub>3</sub> = Σ<sub>i=1</sub><sup>N</sup> [ φ<sub>i</sub> × V<sub>i</sub> × (ρ<sub>i</sub> - (1 - ρ<sub>i</sub> × v<sub>g</sub>) / (v<sub>p</sub> - v<sub>g</sub>)) × [C<sub>w</sub> × (T<sub>iboil</sub> - T<sub>0</sub>) + L<sub>v</sub> + C<sub>v</sub> × (T<sub>i</sub> - T<sub>iboil</sub>)] ]
+        </div>
+        <p class="formula-desc">
+          其中：L<sub>v</sub> 为气化潜热（kJ/kg），C<sub>v</sub> 为气体的比热容 [kJ/(kg·°C)]，i ∈ [1, N]
+        </p>
+      </div>
+    </section>
+
+    <!-- 总资源量计算 -->
+    <section class="guide-section">
+      <h2 class="section-title">总地热资源量</h2>
+      <p class="section-desc">如果同时存在气液共存网格集和液态水网格集，则需将液态地热流体的资源量和热储层的地热资源总量进行加和得到总地热资源量。</p>
+
+      <div class="formula-block highlight">
+        <h3>总资源量公式</h3>
+        <div class="formula">
+          Q<sub>总</sub> = Q<sub>1</sub> + Q<sub>4</sub>
+        </div>
+        <p class="formula-desc">其中：Q<sub>1</sub> 为液态水网格集的资源量，Q<sub>4</sub> 为气液共存网格集的资源总量</p>
+      </div>
+    </section>
+
+    <!-- 参数说明 -->
+    <section class="guide-section">
+      <h2 class="section-title">参数说明</h2>
+      <el-table :data="paramTableData" border style="width: 100%">
+        <el-table-column prop="symbol" label="符号" width="100" />
+        <el-table-column prop="name" label="名称" width="150" />
+        <el-table-column prop="unit" label="单位" width="100" />
+        <el-table-column prop="description" label="说明" />
+      </el-table>
+    </section>
+
+    <!-- 技术支持 -->
+    <section class="guide-section">
+      <h2 class="section-title">技术支持</h2>
+      <ul class="tech-list">
+        <li><strong>数据库：</strong>SQLite</li>
+        <li><strong>建模库：</strong>GemPy</li>
+        <li><strong>开发团队：</strong>地热资源研究团队</li>
+        <li><strong>联系方式：</strong>请通过系统反馈功能联系管理员</li>
+      </ul>
+    </section>
   </div>
 </template>
 
@@ -170,20 +143,20 @@
 export default {
   data() {
     return {
-      steamParams: [
-        { temp: '150', pressure: '0.476', enthalpy: '2776.4', density: '2.547' },
-        { temp: '180', pressure: '1.002', enthalpy: '2776.6', density: '5.147' },
-        { temp: '200', pressure: '1.554', enthalpy: '2792.2', density: '7.865' },
-        { temp: '220', pressure: '2.318', enthalpy: '2804.3', density: '11.61' },
-        { temp: '250', pressure: '3.976', enthalpy: '2820.7', density: '19.78' },
-        { temp: '300', pressure: '8.581', enthalpy: '2748.7', density: '46.46' },
-      ],
-      criticalParams: [
-        { param: '临界温度', value: '374.15', unit: '°C' },
-        { param: '临界压力', value: '22.06', unit: 'MPa' },
-        { param: '临界密度', value: '322', unit: 'kg/m³' },
-        { param: '三相点温度', value: '0.01', unit: '°C' },
-        { param: '三相点压力', value: '0.0006', unit: 'MPa' },
+      paramTableData: [
+        { symbol: 'T<sub>iboil</sub>', name: '沸点温度', unit: '°C', description: '第i个网格对应的沸点温度' },
+        { symbol: 'P<sub>i</sub>', name: '压力', unit: 'kPa', description: '第i个网格的压力' },
+        { symbol: 'ρ<sub>i</sub>', name: '流体密度', unit: 'kg/m³', description: '第i个网格中地热流体的密度' },
+        { symbol: 'T<sub>i</sub>', name: '温度', unit: '°C', description: '第i个网格的温度' },
+        { symbol: 'φ<sub>i</sub>', name: '孔隙度', unit: '-', description: '第i个网格的孔隙度' },
+        { symbol: 'V<sub>i</sub>', name: '网格体积', unit: 'm³', description: '第i个网格的体积' },
+        { symbol: 'C<sub>w</sub>', name: '比热容', unit: 'kJ/(kg·°C)', description: '地热水的比热容' },
+        { symbol: 'C<sub>v</sub>', name: '气体比热容', unit: 'kJ/(kg·°C)', description: '气体的比热容' },
+        { symbol: 'T<sub>0</sub>', name: '参考温度', unit: '°C', description: '地热流体排放参考温度' },
+        { symbol: 'v<sub>g</sub>', name: '水蒸气比容', unit: 'm³/kg', description: '水蒸气比容' },
+        { symbol: 'v<sub>p</sub>', name: '水的比容', unit: 'm³/kg', description: '水的比容' },
+        { symbol: 'L<sub>v</sub>', name: '气化潜热', unit: 'kJ/kg', description: '气化潜热' },
+        { symbol: 'e', name: '自然常数', unit: '-', description: '自然对数的底数，约等于2.71828' },
       ]
     }
   }
@@ -191,5 +164,139 @@ export default {
 </script>
 
 <style scoped>
-@import "@/styles/guide-view.css";
+.guide-container {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 32px;
+}
+
+.guide-section {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.section-desc {
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.method-steps {
+  padding: 10px 0;
+}
+
+.formula-block {
+  background: #f8f9fa;
+  border-left: 4px solid var(--primary-color);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border-radius: 0 8px 8px 0;
+}
+
+.formula-block h3 {
+  font-size: 16px;
+  color: var(--text-color);
+  margin-bottom: 12px;
+}
+
+.formula-block.highlight {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.formula-block.highlight h3,
+.formula-block.highlight .formula,
+.formula-block.highlight .formula-desc {
+  color: white;
+}
+
+.formula {
+  font-size: 18px;
+  font-family: 'Times New Roman', serif;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin: 12px 0;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.formula-sub {
+  font-size: 15px;
+  font-family: 'Times New Roman', serif;
+  color: #666;
+  margin: 8px 0 8px 20px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.formula-desc {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+.rule-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rule-list li {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 6px;
+  line-height: 1.6;
+}
+
+.rule-list li:last-child {
+  margin-bottom: 0;
+}
+
+.tech-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tech-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  line-height: 1.6;
+}
+
+.tech-list li:last-child {
+  border-bottom: none;
+}
+
+:deep(.el-step__title) {
+  font-weight: 600;
+}
+
+:deep(.el-table) {
+  font-size: 14px;
+}
 </style>
