@@ -167,3 +167,46 @@
 .support-info {
   max-width: 500px;
 }
+
+.formula-section {
+  padding: 12px 0;
+}
+
+.formula-section h4 {
+  color: #409eff;
+  font-size: 14px;
+  margin: 16px 0 8px;
+  padding-left: 8px;
+  border-left: 3px solid #409eff;
+}
+
+.formula-section ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.formula-section li {
+  margin: 6px 0;
+  color: #606266;
+  font-size: 13px;
+}
+
+.formula-section .formula {
+  font-family: 'Times New Roman', serif;
+  font-size: 18px;
+  text-align: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 8px;
+  margin: 12px 0;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.formula-tabs {
+  margin-top: 12px;
+}
+
+.formula-tabs :deep(.el-tabs__content) {
+  padding: 16px;
+}
