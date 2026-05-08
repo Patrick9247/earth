@@ -227,7 +227,7 @@ export default {
 .formula-block.highlight .formula-desc,
 .formula-block.highlight .formula sub,
 .formula-block.highlight .formula sup {
-  color: white !important;
+  color: rgb(29, 6, 112) !important;
 }
 
 .formula {
