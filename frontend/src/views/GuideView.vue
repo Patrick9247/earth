@@ -224,8 +224,10 @@ export default {
 
 .formula-block.highlight h3,
 .formula-block.highlight .formula,
-.formula-block.highlight .formula-desc {
-  color: white;
+.formula-block.highlight .formula-desc,
+.formula-block.highlight .formula sub,
+.formula-block.highlight .formula sup {
+  color: white !important;
 }
 
 .formula {
