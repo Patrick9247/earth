@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 使用指南页面
+// 使用指南页面 - 资源计算公式
 </script>
 
 <template>
@@ -7,325 +7,110 @@
     <h1 class="page-title">使用指南</h1>
     
     <div class="guide-content">
-      <!-- 系统概述 -->
+      <!-- 资源计算公式 -->
       <section class="guide-section">
-        <h2>一、系统概述</h2>
+        <h2>资源计算公式</h2>
         <p class="intro">
-          地热流体资源建模系统是一个集三维地质建模、资源计算和数据管理于一体的综合性平台。
-          系统基于 <strong>GemPy</strong> 地质建模引擎和 <strong>Three.js</strong> 可视化技术，
-          为地热资源勘探开发提供专业的技术支撑。
+          系统采用体积法计算地热资源量，根据相态不同采用不同的计算公式：
         </p>
         
-        <div class="feature-grid">
-          <div class="feature-item">
-            <el-icon :size="32" color="#409eff"><DataAnalysis /></el-icon>
-            <h4>三维地质建模</h4>
-            <p>构建三维地质结构模型，可视化展示地层分布</p>
-          </div>
-          <div class="feature-item">
-            <el-icon :size="32" color="#67c23a"><Cpu /></el-icon>
-            <h4>资源计算</h4>
-            <p>精确计算地热储层的热含量和发电潜力</p>
-          </div>
-          <div class="feature-item">
-            <el-icon :size="32" color="#e6a23c"><TrendCharts /></el-icon>
-            <h4>数据管理</h4>
-            <p>管理钻孔、地质层数据，支持数据导出</p>
-          </div>
-          <div class="feature-item">
-            <el-icon :size="32" color="#f56c6c"><Document /></el-icon>
-            <h4>结果分析</h4>
-            <p>查看历史计算结果，生成分析报告</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 快速开始 -->
-      <section class="guide-section">
-        <h2>二、快速开始</h2>
-        <el-steps direction="vertical" :active="5">
-          <el-step title="准备地质数据">
-            <template #description>
-              <div class="step-content">
-                <p>在 <router-link to="/layers">地质层管理</router-link> 页面添加地质层信息，包括：</p>
-                <ul>
-                  <li>地层名称和类型（沉积层、储层、盖层、基岩等）</li>
-                  <li>顶底板深度（单位：米）</li>
-                  <li>孔隙度参数（0-0.5）</li>
-                  <li>地层颜色标识</li>
-                </ul>
+        <el-tabs type="border-card" class="formula-tabs">
+          <el-tab-pane label="液态（热水型）">
+            <div class="formula-section">
+              <h4>热含量计算</h4>
+              <div class="formula">
+                Q = V × φ × ρw × cw × (T - T₀)
               </div>
-            </template>
-          </el-step>
+              <p>其中：</p>
+              <ul>
+                <li><strong>Q</strong>：热含量（J）</li>
+                <li><strong>V</strong>：储层体积（m³）</li>
+                <li><strong>φ</strong>：孔隙度</li>
+                <li><strong>ρw</strong>：水的密度（kg/m³），常温下约 1000 kg/m³</li>
+                <li><strong>cw</strong>：水的比热容（J/kg·K），约 4186 J/kg·K</li>
+                <li><strong>T</strong>：储层平均温度（°C）</li>
+                <li><strong>T₀</strong>：基准温度（通常取 25°C，即排放温度）</li>
+              </ul>
+              <h4>发电潜力计算</h4>
+              <div class="formula">
+                E = Q × R × η / (L × 10⁶)
+              </div>
+              <p>其中：</p>
+              <ul>
+                <li><strong>E</strong>：发电潜力（MW）</li>
+                <li><strong>Q</strong>：可采热量（J）= Q总 × 采收率</li>
+                <li><strong>R</strong>：采收率（通常 0.05-0.25）</li>
+                <li><strong>η</strong>：地热发电效率（通常 0.10-0.18）</li>
+                <li><strong>L</strong>：开采年限（秒），通常取 30 年</li>
+              </ul>
+            </div>
+          </el-tab-pane>
           
-          <el-step title="录入钻孔数据">
-            <template #description>
-              <div class="step-content">
-                <p>在 <router-link to="/drill-holes">钻孔数据</router-link> 页面录入钻孔信息：</p>
-                <ul>
-                  <li>钻孔编号/名称</li>
-                  <li>地理位置坐标（X, Y）</li>
-                  <li>钻孔深度和温度测量值</li>
-                </ul>
+          <el-tab-pane label="气态（蒸汽型）">
+            <div class="formula-section">
+              <h4>热含量计算</h4>
+              <div class="formula">
+                Q = V × φ × ρs × (hs - h₂)
               </div>
-            </template>
-          </el-step>
+              <p>其中：</p>
+              <ul>
+                <li><strong>Q</strong>：热含量（J）</li>
+                <li><strong>V</strong>：储层体积（m³）</li>
+                <li><strong>φ</strong>：孔隙度</li>
+                <li><strong>ρs</strong>：蒸汽密度（kg/m³），随温度压力变化</li>
+                <li><strong>hs</strong>：饱和蒸汽比焓（kJ/kg），查 IAPWS-IF97 表</li>
+                <li><strong>h₂</strong>：排放状态下蒸汽比焓（kJ/kg）</li>
+              </ul>
+              <h4>常用蒸汽参数（参考）</h4>
+              <el-table :data="steamParams" size="small" border>
+                <el-table-column prop="temp" label="温度(°C)" width="100" />
+                <el-table-column prop="pressure" label="压力(MPa)" width="100" />
+                <el-table-column prop="enthalpy" label="比焓(kJ/kg)" width="120" />
+                <el-table-column prop="density" label="密度(kg/m³)" width="120" />
+              </el-table>
+            </div>
+          </el-tab-pane>
           
-          <el-step title="构建地质模型">
-            <template #description>
-              <div class="step-content">
-                <p>在 <router-link to="/model">地质建模</router-link> 页面：</p>
-                <ul>
-                  <li>设置建模范围（X、Y、Z 方向的边界）</li>
-                  <li>选择网格分辨率（20-100）</li>
-                  <li>点击"生成地质模型"按钮</li>
-                  <li>在 3D 视图中查看建模结果</li>
-                </ul>
-                <el-alert type="info" :closable="false" style="margin-top: 12px;">
-                  <template #title>3D 视图操作</template>
-                  左键拖拽旋转 | 右键拖拽平移 | 滚轮缩放
-                </el-alert>
+          <el-tab-pane label="干热岩型">
+            <div class="formula-section">
+              <h4>热含量计算</h4>
+              <div class="formula">
+                Q = V × ρr × cr × (T - T₀)
               </div>
-            </template>
-          </el-step>
-          
-          <el-step title="计算资源潜力">
-            <template #description>
-              <div class="step-content">
-                <p>在 <router-link to="/calculation">资源计算</router-link> 页面：</p>
-                <ul>
-                  <li><strong>快速计算</strong>：输入储层体积、温度、孔隙度快速估算</li>
-                  <li><strong>网格计算</strong>：将区域划分为网格，逐格计算后汇总</li>
-                </ul>
-                <p>计算结果包含：</p>
-                <ul>
-                  <li>总热含量（EJ，艾焦耳）</li>
-                  <li>可采热量（EJ）</li>
-                  <li>发电潜力（MW，兆瓦）</li>
-                  <li>开采年限</li>
-                </ul>
+              <p>其中：</p>
+              <ul>
+                <li><strong>Q</strong>：热含量（J）</li>
+                <li><strong>V</strong>：热储体积（m³）</li>
+                <li><strong>ρr</strong>：岩石密度（kg/m³），花岗岩约 2700 kg/m³</li>
+                <li><strong>cr</strong>：岩石比热容（J/kg·K），约 800-1000 J/kg·K</li>
+                <li><strong>T</strong>：岩体平均温度（°C）</li>
+                <li><strong>T₀</strong>：冷却后温度（°C），通常取 50-80°C</li>
+              </ul>
+              <h4>增强型地热系统(EGS)</h4>
+              <div class="formula">
+                Q = V × [(1-φ)ρr·cr + φ·ρw·cw] × (T - T₀)
               </div>
-            </template>
-          </el-step>
-          
-          <el-step title="分析计算结果">
-            <template #description>
-              <div class="step-content">
-                <p>在 <router-link to="/results">计算结果</router-link> 页面：</p>
-                <ul>
-                  <li>查看历史计算记录</li>
-                  <li>对比不同方案的计算结果</li>
-                  <li>导出数据报表</li>
-                </ul>
-              </div>
-            </template>
-          </el-step>
-        </el-steps>
-      </section>
-
-      <!-- 功能详解 -->
-      <section class="guide-section">
-        <h2>三、功能模块详解</h2>
+              <p>此公式综合考虑了岩石骨架和孔隙流体的热容。</p>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
         
-        <h3>3.1 地质层管理</h3>
-        <div class="module-desc">
-          <p>地质层是构建三维地质模型的基础数据。系统支持以下操作：</p>
-          <el-table :data="layerFields" size="small" border>
-            <el-table-column prop="field" label="字段名称" width="120" />
-            <el-table-column prop="desc" label="说明" />
-            <el-table-column prop="unit" label="单位" width="80" />
-          </el-table>
-        </div>
-
-        <h3>3.2 钻孔数据管理</h3>
-        <div class="module-desc">
-          <p>钻孔数据用于确定地质界面的空间位置，是建模的关键输入。</p>
-          <el-table :data="drillFields" size="small" border>
-            <el-table-column prop="field" label="字段名称" width="120" />
-            <el-table-column prop="desc" label="说明" />
-            <el-table-column prop="unit" label="单位" width="80" />
-          </el-table>
-        </div>
-
-        <h3>3.3 三维地质建模</h3>
-        <div class="module-desc">
-          <p>系统基于 GemPy 引擎进行三维地质建模，主要流程：</p>
-          <ol>
-            <li>根据钻孔数据插值生成地质界面</li>
-            <li>基于地层序列构建三维模型</li>
-            <li>使用 Three.js 进行实时渲染</li>
-          </ol>
-        </div>
-
-        <h3>3.4 资源计算</h3>
-        <div class="module-desc">
-          <p>系统采用体积法计算地热资源量，根据相态不同采用不同的计算公式：</p>
-          
-          <el-tabs type="border-card" class="formula-tabs">
-            <el-tab-pane label="液态（热水型）">
-              <div class="formula-section">
-                <h4>热含量计算</h4>
-                <div class="formula">
-                  Q = V × φ × ρw × cw × (T - T₀)
-                </div>
-                <p>其中：</p>
-                <ul>
-                  <li><strong>Q</strong>：热含量（J）</li>
-                  <li><strong>V</strong>：储层体积（m³）</li>
-                  <li><strong>φ</strong>：孔隙度</li>
-                  <li><strong>ρw</strong>：水的密度（kg/m³），常温下约 1000 kg/m³</li>
-                  <li><strong>cw</strong>：水的比热容（J/kg·K），约 4186 J/kg·K</li>
-                  <li><strong>T</strong>：储层平均温度（°C）</li>
-                  <li><strong>T₀</strong>：基准温度（通常取 25°C，即排放温度）</li>
-                </ul>
-                <h4>发电潜力计算</h4>
-                <div class="formula">
-                  E = Q × R × η / (L × 10⁶)
-                </div>
-                <p>其中：</p>
-                <ul>
-                  <li><strong>E</strong>：发电潜力（MW）</li>
-                  <li><strong>Q</strong>：可采热量（J）= Q总 × 采收率</li>
-                  <li><strong>R</strong>：采收率（通常 0.05-0.25）</li>
-                  <li><strong>η</strong>：地热发电效率（通常 0.10-0.18）</li>
-                  <li><strong>L</strong>：开采年限（秒），通常取 30 年</li>
-                </ul>
-              </div>
-            </el-tab-pane>
-            
-            <el-tab-pane label="气态（蒸汽型）">
-              <div class="formula-section">
-                <h4>热含量计算</h4>
-                <div class="formula">
-                  Q = V × φ × ρs × (hs - h₂)
-                </div>
-                <p>其中：</p>
-                <ul>
-                  <li><strong>Q</strong>：热含量（J）</li>
-                  <li><strong>V</strong>：储层体积（m³）</li>
-                  <li><strong>φ</strong>：孔隙度</li>
-                  <li><strong>ρs</strong>：蒸汽密度（kg/m³），随温度压力变化</li>
-                  <li><strong>hs</strong>：饱和蒸汽比焓（kJ/kg），查 IAPWS-IF97 表</li>
-                  <li><strong>h₂</strong>：排放状态下蒸汽比焓（kJ/kg）</li>
-                </ul>
-                <h4>常用蒸汽参数（参考）</h4>
-                <el-table :data="steamParams" size="small" border>
-                  <el-table-column prop="temp" label="温度(°C)" width="100" />
-                  <el-table-column prop="pressure" label="压力(MPa)" width="100" />
-                  <el-table-column prop="enthalpy" label="比焓(kJ/kg)" width="120" />
-                  <el-table-column prop="density" label="密度(kg/m³)" width="120" />
-                </el-table>
-              </div>
-            </el-tab-pane>
-            
-            <el-tab-pane label="干热岩型">
-              <div class="formula-section">
-                <h4>热含量计算</h4>
-                <div class="formula">
-                  Q = V × ρr × cr × (T - T₀)
-                </div>
-                <p>其中：</p>
-                <ul>
-                  <li><strong>Q</strong>：热含量（J）</li>
-                  <li><strong>V</strong>：热储体积（m³）</li>
-                  <li><strong>ρr</strong>：岩石密度（kg/m³），花岗岩约 2700 kg/m³</li>
-                  <li><strong>cr</strong>：岩石比热容（J/kg·K），约 800-1000 J/kg·K</li>
-                  <li><strong>T</strong>：岩体平均温度（°C）</li>
-                  <li><strong>T₀</strong>：冷却后温度（°C），通常取 50-80°C</li>
-                </ul>
-                <h4>增强型地热系统(EGS)</h4>
-                <div class="formula">
-                  Q = V × [(1-φ)ρr·cr + φ·ρw·cw] × (T - T₀)
-                </div>
-                <p>此公式综合考虑了岩石骨架和孔隙流体的热容。</p>
-              </div>
-            </el-tab-pane>
-          </el-tabs>
-          
-          <el-alert type="info" :closable="false" style="margin-top: 16px;">
-            <template #title>单位换算提示</template>
-            1 EJ = 10¹⁸ J | 1 TJ = 10¹² J | 1 PJ = 10¹⁵ J<br/>
-            发电潜力(MW) = 可采热量(J) / (开采年限×365×24×3600)
-          </el-alert>
-        </div>
+        <el-alert type="info" :closable="false" style="margin-top: 16px;">
+          <template #title>单位换算提示</template>
+          1 EJ = 10¹⁸ J | 1 TJ = 10¹² J | 1 PJ = 10¹⁵ J<br/>
+          发电潜力(MW) = 可采热量(J) / (开采年限×365×24×3600)
+        </el-alert>
       </section>
-
-      <!-- 3D 可视化 -->
-      <section class="guide-section">
-        <h2>四、3D 可视化操作</h2>
-        <div class="viz-guide">
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <div class="viz-card">
-                <h4>视图控制</h4>
-                <ul>
-                  <li><strong>旋转</strong>：按住左键拖拽</li>
-                  <li><strong>平移</strong>：按住右键拖拽</li>
-                  <li><strong>缩放</strong>：滚动鼠标滚轮</li>
-                  <li><strong>重置</strong>：点击"重置视图"按钮</li>
-                </ul>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="viz-card">
-                <h4>坐标系统</h4>
-                <ul>
-                  <li><span style="color:#ff4444">●</span> <strong>X轴（红色）</strong>：西向</li>
-                  <li><span style="color:#4488ff">●</span> <strong>Y轴（蓝色）</strong>：深度（向下为正）</li>
-                  <li><span style="color:#44ff44">●</span> <strong>Z轴（绿色）</strong>：北向</li>
-                </ul>
-              </div>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20" style="margin-top: 16px;">
-            <el-col :span="12">
-              <div class="viz-card">
-                <h4>图例说明</h4>
-                <div class="legend-demo">
-                  <span class="legend-item"><span class="color-box" style="background:#4CAF50"></span> 地表层</span>
-                  <span class="legend-item"><span class="color-box" style="background:#FFC107"></span> 沉积层</span>
-                  <span class="legend-item"><span class="color-box" style="background:#FF9800"></span> 储层</span>
-                  <span class="legend-item"><span class="color-box" style="background:#E91E63"></span> 基底</span>
-                </div>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="viz-card">
-                <h4>温度图例</h4>
-                <div class="legend-demo">
-                  <span class="legend-item"><span class="color-box" style="background:#4CAF50"></span> &lt;100°C</span>
-                  <span class="legend-item"><span class="color-box" style="background:#FFC107"></span> 100-150°C</span>
-                  <span class="legend-item"><span class="color-box" style="background:#FF9800"></span> 150-200°C</span>
-                  <span class="legend-item"><span class="color-box" style="background:#F44336"></span> &gt;200°C</span>
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-      </section>
-
-      <!-- 系统设置 -->
-      <section class="guide-section">
-        <h2>五、系统设置</h2>
-        <p>在 <router-link to="/settings">系统设置</router-link> 页面可以配置：</p>
-        <ul>
-          <li><strong>默认计算参数</strong>：孔隙度、采收率、利用效率、开采年限</li>
-          <li><strong>模型配置</strong>：默认网格分辨率</li>
-          <li><strong>物理常数</strong>：水密度、岩石密度、比热容等</li>
-          <li><strong>数据导出</strong>：导出系统数据为 JSON/CSV 格式</li>
-        </ul>
-      </section>
-
 
       <!-- 技术支持 -->
       <section class="guide-section">
-        <h2>六、技术支持</h2>
+        <h2>技术支持</h2>
         <div class="support-info">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="系统版本">v1.0.0</el-descriptions-item>
-            <el-descriptions-item label="技术栈">Vue 3 + FastAPI + GemPy + Three.js</el-descriptions-item>
-            <el-descriptions-item label="数据库">MySQL 8.0</el-descriptions-item>
-            <el-descriptions-item label="更新日期">2026年3月</el-descriptions-item>
+            <el-descriptions-item label="技术栈">Vue 3 + FastAPI + Three.js</el-descriptions-item>
+            <el-descriptions-item label="数据库">SQLite</el-descriptions-item>
+            <el-descriptions-item label="更新日期">2026年4月</el-descriptions-item>
           </el-descriptions>
         </div>
       </section>
@@ -337,21 +122,6 @@
 export default {
   data() {
     return {
-      layerFields: [
-        { field: '名称', desc: '地层名称，如"第四系覆盖层"', unit: '-' },
-        { field: '类型', desc: '地层类型（沉积层/储层/盖层/基岩）', unit: '-' },
-        { field: '顶板深度', desc: '地层顶部埋深', unit: 'm' },
-        { field: '底板深度', desc: '地层底部埋深', unit: 'm' },
-        { field: '孔隙度', desc: '岩石孔隙体积与总体积之比', unit: '-' },
-        { field: '颜色', desc: '可视化显示颜色', unit: '-' },
-      ],
-      drillFields: [
-        { field: '钻孔编号', desc: '唯一标识符，如 ZK-001', unit: '-' },
-        { field: 'X坐标', desc: '东西方向位置', unit: 'm' },
-        { field: 'Y坐标', desc: '南北方向位置', unit: 'm' },
-        { field: '深度', desc: '钻孔总深度', unit: 'm' },
-        { field: '温度', desc: '孔底测量温度', unit: '°C' },
-      ],
       steamParams: [
         { temp: '150', pressure: '0.476', enthalpy: '2776.4', density: '2.547' },
         { temp: '180', pressure: '1.002', enthalpy: '2776.6', density: '5.147' },
