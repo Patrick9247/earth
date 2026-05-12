@@ -50,12 +50,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/UserManagementView.vue'),
     meta: { title: '用户管理' }
   },
-  {
-    path: '/settings',
-    name: 'settings',
-    component: () => import('@/views/SettingsView.vue'),
-    meta: { title: '系统设置' }
-  },
+  // {
+  //   path: '/settings',
+  //   name: 'settings',
+  //   component: () => import('@/views/SettingsView.vue'),
+  //   meta: { title: '系统设置' }
+  // },
   {
     path: '/guide',
     name: 'guide',
@@ -71,11 +71,11 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   document.title = `${to.meta.title || '首页'} - 地热流体资源建模系统`
-  
+
   // 检查是否需要登录
   const token = localStorage.getItem('token')
   const requiresAuth = to.meta.requiresAuth !== false && to.name !== 'login'
-  
+
   if (requiresAuth && !token) {
     // 未登录，跳转到登录页面
     next({ name: 'login' })

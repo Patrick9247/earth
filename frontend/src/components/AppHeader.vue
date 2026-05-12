@@ -24,8 +24,8 @@ const navItems = [
   { path: '/model', icon: 'DataAnalysis', label: '地质建模' },
   { path: '/calculation', icon: 'Cpu', label: '资源计算' },
   { path: '/results', icon: 'TrendCharts', label: '计算结果' },
-  { path: '/users', icon: 'User', label: '用户管理' },
-  { path: '/settings', icon: 'Setting', label: '系统设置' }
+  { path: '/users', icon: 'User', label: '用户管理' }
+  // { path: '/settings', icon: 'Setting', label: '系统设置' }
 ]
 
 const handleCommand = (command: string) => {

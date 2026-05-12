@@ -371,6 +371,7 @@ onMounted(() => {
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+           <div style="display: flex; align-items: center; gap: 8px;">
             <el-button 
               type="primary" 
               size="small" 
@@ -397,6 +398,7 @@ onMounted(() => {
             >
               删除
             </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
