@@ -97,7 +97,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 配置 CORS
+# 配置 跨域
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 生产环境应配置具体域名
