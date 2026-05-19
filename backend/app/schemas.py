@@ -405,6 +405,9 @@ class GridItemBase(BaseModel):
     volume: Optional[float] = Field(None, gt=0, description="体积(m³)")
     temperature: Optional[float] = Field(None, description="温度(°C)")
     pressure: Optional[float] = Field(None, description="压力(MPa)")
+    gas_specific_heat: Optional[float] = Field(None, description="气体比热容(kJ/(kg·°C))")
+    latent_heat: Optional[float] = Field(None, description="气化潜热(kJ/kg)")
+    liquid_specific_heat: Optional[float] = Field(None, description="液体比热容(kJ/(kg·°C))")
     sort_order: Optional[int] = Field(0, description="排序顺序")
 
 
@@ -420,6 +423,9 @@ class GridItemUpdate(BaseModel):
     volume: Optional[float] = None
     temperature: Optional[float] = None
     pressure: Optional[float] = None
+    gas_specific_heat: Optional[float] = None
+    latent_heat: Optional[float] = None
+    liquid_specific_heat: Optional[float] = None
     sort_order: Optional[int] = None
 
 

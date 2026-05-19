@@ -101,6 +101,9 @@ const addGrid = async () => {
         volume: null,
         temperature: null,
         pressure: null,
+        liquid_specific_heat: 4.18,  // 默认液体比热容 kJ/(kg·°C)
+        gas_specific_heat: 2.0,      // 默认气体比热容 kJ/(kg·°C)
+        latent_heat: 2257,           // 默认气化潜热 kJ/kg
         sort_order: gridData.value.length
       })
       gridData.value.push(res.data)
@@ -452,6 +455,21 @@ onMounted(async () => {
             <el-table-column label="压力(MPa)" width="150">
               <template #default="{ row, $index }">
                 <el-input-number v-model="row.pressure" :min="0.001" :max="500" :step="0.5" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="液体比热容(kJ/(kg·°C))" width="180">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.liquid_specific_heat" :min="0.1" :max="10" :step="0.01" :precision="2" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="气体比热容(kJ/(kg·°C))" width="180">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.gas_specific_heat" :min="0.1" :max="5" :step="0.01" :precision="2" size="small" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="气化潜热(kJ/kg)" width="160">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.latent_heat" :min="100" :max="3000" :step="10" :precision="0" size="small" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="沸点温度(°C)" width="120">

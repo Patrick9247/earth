@@ -358,7 +358,10 @@ class GeothermalCalculator:
         volume: float,
         temperature: float,
         pressure_mpa: float,
-        reference_temp: float = 25.0
+        reference_temp: float = 25.0,
+        liquid_specific_heat: float = None,
+        gas_specific_heat: float = None,
+        latent_heat: float = None
     ) -> Dict[str, float]:
         """
         计算气液共存时的地热资源量
@@ -370,10 +373,18 @@ class GeothermalCalculator:
         temperature: 温度 (°C)
         pressure_mpa: 压力 (MPa)
         reference_temp: 参考温度 (°C)
+        liquid_specific_heat: 液体比热容 (kJ/(kg·°C))，默认使用标准值
+        gas_specific_heat: 气体比热容 (kJ/(kg·°C))，默认使用标准值
+        latent_heat: 气化潜热 (kJ/kg)，默认使用标准值
             
         Returns:
             包含Q₂、Q₃和总资源量的字典
         """
+        # 使用传入参数或默认值，并转换单位 kJ -> J
+        Cw = (liquid_specific_heat * 1000) if liquid_specific_heat else self.WATER_SPECIFIC_HEAT  # J/(kg·K)
+        Cv = (gas_specific_heat * 1000) if gas_specific_heat else 2000  # J/(kg·K)
+        Lv = (latent_heat * 1000) if latent_heat else self.LATENT_HEAT_VAPORIZATION  # J/kg
+        
         pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         density = self.calculate_water_density(temperature, pressure_kpa)
         
@@ -390,19 +401,17 @@ class GeothermalCalculator:
         
         Q2 = (
             porosity * volume * liquid_mass_fraction * 
-            self.WATER_SPECIFIC_HEAT * delta_T_boil
+            Cw * delta_T_boil
         )
         
         # Q₃: 气液共存蒸汽资源量
         # ρᵢ - (1 - ρᵢ × vg) / (vp - vg) 表示蒸汽质量分数
         steam_mass_fraction = density - liquid_mass_fraction
-        Lv = self.LATENT_HEAT_VAPORIZATION * 1000  # J/kg
-        Cv = self.STEAM_SPECIFIC_HEAT * 1000  # J/(kg·K)
         delta_T_excess = temperature - T_boil
         
         Q3 = (
             porosity * volume * steam_mass_fraction * 
-            (self.WATER_SPECIFIC_HEAT * delta_T_boil + Lv + Cv * delta_T_excess)
+            (Cw * delta_T_boil + Lv + Cv * delta_T_excess)
         )
         
         Q_total = Q2 + Q3
@@ -422,7 +431,10 @@ class GeothermalCalculator:
         volume: float,
         temperature: float,
         pressure_mpa: float,
-        reference_temp: float = 25.0
+        reference_temp: float = 25.0,
+        liquid_specific_heat: float = None,
+        gas_specific_heat: float = None,
+        latent_heat: float = None
     ) -> Dict[str, float]:
         """
         计算气态（过热蒸汽）地热资源量
@@ -437,10 +449,18 @@ class GeothermalCalculator:
             temperature: 温度 (°C)
             pressure_mpa: 压力 (MPa)
             reference_temp: 参考温度 (°C)
+            liquid_specific_heat: 液体比热容 (kJ/(kg·°C))，默认使用标准值
+            gas_specific_heat: 气体比热容 (kJ/(kg·°C))，默认使用标准值
+            latent_heat: 气化潜热 (kJ/kg)，默认使用标准值
             
         Returns:
             包含气态资源量的字典
         """
+        # 使用传入参数或默认值，并转换单位 kJ -> J
+        Cw = (liquid_specific_heat * 1000) if liquid_specific_heat else self.WATER_SPECIFIC_HEAT  # J/(kg·K)
+        Cv = (gas_specific_heat * 1000) if gas_specific_heat else 2000  # J/(kg·K)
+        Lv = (latent_heat * 1000) if latent_heat else self.LATENT_HEAT_VAPORIZATION  # J/kg
+        
         pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         T_sat = self.calculate_boiling_point(pressure_kpa)  # 饱和温度
         
@@ -458,13 +478,9 @@ class GeothermalCalculator:
         steam_volume = volume * porosity
         steam_mass = steam_volume * steam_density
         
-        # 气态资源量计算
-        Lv = self.LATENT_HEAT_VAPORIZATION * 1000  # 气化潜热 J/kg
-        Cv = self.STEAM_SPECIFIC_HEAT * 1000  # 蒸汽比热容 J/(kg·K)
-        
         # Q = m × [Cw × (T_sat - T₀) + Lv + Cv × (T - T_sat)]
         resource = steam_mass * (
-            self.WATER_SPECIFIC_HEAT * (T_sat - reference_temp) +
+            Cw * (T_sat - reference_temp) +
             Lv +
             Cv * (temperature - T_sat)
         )
@@ -517,6 +533,9 @@ class GeothermalCalculator:
             volume = grid.get('volume', 0)
             temperature = grid.get('temperature', 100)
             pressure = grid.get('pressure', 0.1)  # 默认0.1 MPa
+            liquid_specific_heat = grid.get('liquid_specific_heat')  # kJ/(kg·°C)
+            gas_specific_heat = grid.get('gas_specific_heat')  # kJ/(kg·°C)
+            latent_heat = grid.get('latent_heat')  # kJ/kg
             
             if volume <= 0:
                 continue
@@ -531,12 +550,15 @@ class GeothermalCalculator:
             # 相态判定
             phase = self.determine_phase(temperature, pressure)
             
+            # 使用自定义比热容或默认值（转换单位 kJ -> J）
+            Cw = (liquid_specific_heat * 1000) if liquid_specific_heat else self.WATER_SPECIFIC_HEAT
+            
             if phase == 'liquid':
                 # 液态水网格集 Q₁
                 water_density = self.calculate_water_density(temperature, pressure * 1000)
                 water_volume = volume * porosity
                 water_mass = water_volume * water_density
-                water_heat = water_mass * self.WATER_SPECIFIC_HEAT * delta_T
+                water_heat = water_mass * Cw * delta_T
                 total_liquid_resource += water_heat
                 liquid_grids.append({
                     'index': i,
@@ -551,7 +573,8 @@ class GeothermalCalculator:
             elif phase == 'two_phase':
                 # 气液共存网格集
                 result = self.calculate_two_phase_resource(
-                    porosity, volume, temperature, pressure, reference_temp
+                    porosity, volume, temperature, pressure, reference_temp,
+                    liquid_specific_heat, gas_specific_heat, latent_heat
                 )
                 total_two_phase_liquid += result['liquid_resource']
                 total_steam_resource += result['steam_resource']
@@ -568,7 +591,8 @@ class GeothermalCalculator:
             else:
                 # 气态网格集 (过热蒸汽)
                 result = self.calculate_gas_resource(
-                    porosity, volume, temperature, pressure, reference_temp
+                    porosity, volume, temperature, pressure, reference_temp,
+                    liquid_specific_heat, gas_specific_heat, latent_heat
                 )
                 total_gas_resource += result['gas_resource']
                 gas_grids.append({
