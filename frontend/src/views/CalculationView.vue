@@ -153,12 +153,18 @@ const calculateBoilingPoint = (pressure: number): number => {
 // 根据温度和压力自动判断相态
 const determinePhase = (temperature: number, pressure: number): string => {
   const boilingPoint = calculateBoilingPoint(pressure)
-  return temperature >= boilingPoint ? 'two_phase' : 'liquid'
+  if (temperature < boilingPoint) {
+    return 'liquid'  // 液态水
+  } else if (temperature >= boilingPoint && temperature < boilingPoint + 50) {
+    return 'two_phase'  // 气液共存
+  } else {
+    return 'gas'  // 气态
+  }
 }
 
 // 获取相态标签
 const getPhaseLabel = (phase: string): string => {
-  return phase === 'liquid' ? '液态水' : '气液共存'
+  return phase === 'liquid' ? '液态水' : phase === 'two_phase' ? '气液共存' : '气态'
 }
 
 // 初始化图表
@@ -235,7 +241,7 @@ const initChart = () => {
           color: (params: any) => {
             const grid = gridData.value[params.dataIndex]
             const phase = determinePhase(grid?.temperature || 0, grid?.pressure || 0.1)
-            return phase === 'liquid' ? '#67C23A' : '#E6A23C'
+            return phase === 'liquid' ? '#67C23A' : phase === 'two_phase' ? '#E6A23C' : '#F56565'
           }
         },
         label: {
