@@ -151,11 +151,13 @@ const calculateBoilingPoint = (pressure: number): number => {
 }
 
 // 根据温度和压力自动判断相态
+// T < T_sat: 液态水; T ≈ T_sat: 气液共存; T > T_sat: 气态
 const determinePhase = (temperature: number, pressure: number): string => {
   const boilingPoint = calculateBoilingPoint(pressure)
-  if (temperature < boilingPoint) {
+  const tolerance = 0.1  // 温度容差
+  if (temperature < boilingPoint - tolerance) {
     return 'liquid'  // 液态水
-  } else if (temperature >= boilingPoint && temperature < boilingPoint + 50) {
+  } else if (temperature >= boilingPoint - tolerance && temperature <= boilingPoint + tolerance) {
     return 'two_phase'  // 气液共存
   } else {
     return 'gas'  // 气态
@@ -165,6 +167,11 @@ const determinePhase = (temperature: number, pressure: number): string => {
 // 获取相态标签
 const getPhaseLabel = (phase: string): string => {
   return phase === 'liquid' ? '液态水' : phase === 'two_phase' ? '气液共存' : '气态'
+}
+
+// 获取相态标签类型
+const getPhaseTagType = (phase: string): string => {
+  return phase === 'liquid' ? 'success' : phase === 'two_phase' ? 'warning' : 'danger'
 }
 
 // 初始化图表
@@ -454,8 +461,8 @@ onMounted(async () => {
             </el-table-column>
             <el-table-column label="相态" width="120">
               <template #default="{ row }">
-                <el-tag :type="determinePhase(row.temperature || 0, row.pressure || 0.1) === 'liquid' ? 'success' : 'warning'" size="small">
-                  {{ determinePhase(row.temperature || 0, row.pressure || 0.1) === 'liquid' ? '液态水' : '气液共存' }}
+                <el-tag :type="getPhaseTagType(determinePhase(row.temperature || 0, row.pressure || 0.1))" size="small">
+                  {{ getPhaseLabel(determinePhase(row.temperature || 0, row.pressure || 0.1)) }}
                 </el-tag>
               </template>
             </el-table-column>
