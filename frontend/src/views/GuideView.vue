@@ -49,7 +49,8 @@
         <h3>相态判定规则</h3>
         <ul class="rule-list">
           <li><strong>液态水网格集：</strong>当网格中的温度小于沸点温度时（T<sub>i</sub> &lt; T<sub>iboil</sub>），网格中的地热流体视为液态水</li>
-          <li><strong>气液共存网格集：</strong>当网格中的温度大于等于沸点温度时（T<sub>i</sub> ≥ T<sub>iboil</sub>），网格中的地热流体视为气液共存</li>
+          <li><strong>气液共存网格集：</strong>当网格中的温度等于沸点温度时（T<sub>i</sub> = T<sub>iboil</sub>），网格中的地热流体视为气液共存</li>
+          <li><strong>气态网格集：</strong>当网格中的温度大于沸点温度时（T<sub>i</sub> &gt; T<sub>iboil</sub>），网格中的地热流体视为气态（过热蒸汽）</li>
         </ul>
       </div>
     </section>
@@ -101,17 +102,33 @@
       </div>
     </section>
 
+    <!-- 气态网格集资源量计算 -->
+    <section class="guide-section">
+      <h2 class="section-title">气态网格集资源量</h2>
+      <p class="section-desc">当网格温度大于饱和温度时，地热流体为过热蒸汽，按气态计算资源量。</p>
+
+      <div class="formula-block">
+        <h3>气态资源量公式</h3>
+        <div class="formula">
+          Q<sub>5</sub> = Σ<sub>i=1</sub><sup>N</sup> [ φ<sub>i</sub> × V<sub>i</sub> × ρ<sub>steam</sub> × (C<sub>w</sub> × (T<sub>iboil</sub> - T<sub>0</sub>) + L<sub>v</sub> + C<sub>v</sub> × (T<sub>i</sub> - T<sub>iboil</sub>)) ]
+        </div>
+        <p class="formula-desc">
+          其中：Q<sub>5</sub> 为气态地热流体的资源量（kJ），ρ<sub>steam</sub> 为过热蒸汽密度（kg/m³），根据理想气体状态方程 P = ρRT 计算，T<sub>iboil</sub> 为饱和温度（°C），T<sub>i</sub> - T<sub>iboil</sub> 为过热度（°C）
+        </p>
+      </div>
+    </section>
+
     <!-- 总资源量计算 -->
     <section class="guide-section">
       <h2 class="section-title">总地热资源量</h2>
-      <p class="section-desc">如果同时存在气液共存网格集和液态水网格集，则需将液态地热流体的资源量和热储层的地热资源总量进行加和得到总地热资源量。</p>
+      <p class="section-desc">总地热资源量为所有相态网格集资源量之和。</p>
 
       <div class="formula-block highlight">
         <h3>总资源量公式</h3>
         <div class="formula">
-          Q<sub>总</sub> = Q<sub>1</sub> + Q<sub>4</sub>
+          Q<sub>总</sub> = Q<sub>1</sub> + Q<sub>4</sub> + Q<sub>5</sub>
         </div>
-        <p class="formula-desc">其中：Q<sub>1</sub> 为液态水网格集的资源量，Q<sub>4</sub> 为气液共存网格集的资源总量</p>
+        <p class="formula-desc">其中：Q<sub>1</sub> 为液态水网格集的资源量，Q<sub>4</sub> 为气液共存网格集的资源总量，Q<sub>5</sub> 为气态网格集的资源量</p>
       </div>
     </section>
 

@@ -539,6 +539,15 @@ onMounted(async () => {
             </el-col>
             <el-col :span="6">
               <div class="result-item">
+                <div class="result-label">气态资源量 Q<sub>5</sub></div>
+                <div class="result-value">{{ formatNumber(result.gas_resource_joules || 0) }}</div>
+              </div>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20" style="margin-top: 12px;">
+            <el-col :span="6">
+              <div class="result-item">
                 <div class="result-label">├ 气液共存液态 Q<sub>2</sub></div>
                 <div class="result-value">{{ formatNumber(result.two_phase_liquid_resource_joules) }}</div>
               </div>
@@ -555,17 +564,24 @@ onMounted(async () => {
           
           <!-- 网格分类统计 -->
           <el-row :gutter="20">
-            <el-col :span="12">
+            <el-col :span="8">
               <el-statistic title="液态水网格" :value="result.liquid_grid_count || 0">
                 <template #suffix>
                   <span style="font-size: 14px; color: #67c23a;">个</span>
                 </template>
               </el-statistic>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="8">
               <el-statistic title="气液共存网格" :value="result.two_phase_grid_count || 0">
                 <template #suffix>
                   <span style="font-size: 14px; color: #e6a23c;">个</span>
+                </template>
+              </el-statistic>
+            </el-col>
+            <el-col :span="8">
+              <el-statistic title="气态网格" :value="result.gas_grid_count || 0">
+                <template #suffix>
+                  <span style="font-size: 14px; color: #f56c6c;">个</span>
                 </template>
               </el-statistic>
             </el-col>

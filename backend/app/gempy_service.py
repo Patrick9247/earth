@@ -267,22 +267,28 @@ class GeothermalCalculator:
         """
         相态判定
         
-        根据专利方法，比较网格温度与沸点温度：
-        - T < T_boil: 液态水
-        - T >= T_boil: 气液共存
+        根据专利方法，比较网格温度与饱和温度：
+        - T < T_sat: 液态水
+        - T == T_sat: 气液共存
+        - T > T_sat: 气态
         
         Args:
             temperature: 网格温度 (°C)
             pressure_mpa: 网格压力 (MPa)
             
         Returns:
-            相态类型: 'liquid' 或 'two_phase'
+            相态类型: 'liquid' 或 'two_phase' 或 'gas'
         """
         pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         T_boiling = self.calculate_boiling_point(pressure_kpa)
         
-        if temperature < T_boiling:
+        # 使用一个小的容差来判断"等于"
+        tolerance = 0.1  # 0.1°C 容差
+        
+        if temperature < T_boiling - tolerance:
             return 'liquid'
+        elif temperature > T_boiling + tolerance:
+            return 'gas'
         else:
             return 'two_phase'
     
@@ -410,6 +416,67 @@ class GeothermalCalculator:
             'steam_mass_fraction': steam_mass_fraction
         }
     
+    def calculate_gas_resource(
+        self,
+        porosity: float,
+        volume: float,
+        temperature: float,
+        pressure_mpa: float,
+        reference_temp: float = 25.0
+    ) -> Dict[str, float]:
+        """
+        计算气态（过热蒸汽）地热资源量
+        
+        当温度大于饱和温度时，地热流体为过热蒸汽
+        
+        Q_gas = φ × V × ρ_steam × [Cw × (T_sat - T₀) + Lv + Cv × (T - T_sat)]
+        
+        Args:
+            porosity: 孔隙度
+            volume: 网格体积 (m³)
+            temperature: 温度 (°C)
+            pressure_mpa: 压力 (MPa)
+            reference_temp: 参考温度 (°C)
+            
+        Returns:
+            包含气态资源量的字典
+        """
+        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
+        T_sat = self.calculate_boiling_point(pressure_kpa)  # 饱和温度
+        
+        # 过热蒸汽密度（使用理想气体状态方程近似）
+        # ρ = P / (R × T)，R_steam ≈ 461.5 J/(kg·K)
+        R_steam = 461.5  # J/(kg·K)
+        T_kelvin = temperature + 273.15
+        P_pa = pressure_kpa * 1000  # kPa 转 Pa
+        steam_density = P_pa / (R_steam * T_kelvin)  # kg/m³
+        
+        # 限制密度在合理范围内
+        steam_density = max(1.0, min(steam_density, 100.0))
+        
+        # 蒸汽质量
+        steam_volume = volume * porosity
+        steam_mass = steam_volume * steam_density
+        
+        # 气态资源量计算
+        Lv = self.LATENT_HEAT_VAPORIZATION * 1000  # 气化潜热 J/kg
+        Cv = self.STEAM_SPECIFIC_HEAT * 1000  # 蒸汽比热容 J/(kg·K)
+        
+        # Q = m × [Cw × (T_sat - T₀) + Lv + Cv × (T - T_sat)]
+        resource = steam_mass * (
+            self.WATER_SPECIFIC_HEAT * (T_sat - reference_temp) +
+            Lv +
+            Cv * (temperature - T_sat)
+        )
+        
+        return {
+            'gas_resource': resource,
+            'steam_density': steam_density,
+            'steam_mass': steam_mass,
+            'saturation_temp': T_sat,
+            'superheat': temperature - T_sat
+        }
+    
     def calculate_grid_resources(
         self,
         grid_data: List[Dict[str, float]],
@@ -437,10 +504,12 @@ class GeothermalCalculator:
         """
         liquid_grids = []
         two_phase_grids = []
+        gas_grids = []
         
         total_liquid_resource = 0.0  # Q₁ (液态水网格集)
         total_two_phase_liquid = 0.0  # Q₂ (气液共存中液态部分)
         total_steam_resource = 0.0   # Q₃ (气液共存中蒸汽部分)
+        total_gas_resource = 0.0     # Q₅ (气态网格集)
         total_rock_heat = 0.0        # 岩石热量
         
         for i, grid in enumerate(grid_data):
@@ -479,7 +548,7 @@ class GeothermalCalculator:
                     'resource': water_heat,
                     'rock_heat': rock_heat
                 })
-            else:
+            elif phase == 'two_phase':
                 # 气液共存网格集
                 result = self.calculate_two_phase_resource(
                     porosity, volume, temperature, pressure, reference_temp
@@ -496,14 +565,28 @@ class GeothermalCalculator:
                     **result,
                     'rock_heat': rock_heat
                 })
+            else:
+                # 气态网格集 (过热蒸汽)
+                result = self.calculate_gas_resource(
+                    porosity, volume, temperature, pressure, reference_temp
+                )
+                total_gas_resource += result['gas_resource']
+                gas_grids.append({
+                    'index': i,
+                    'temperature': temperature,
+                    'pressure': pressure,
+                    'porosity': porosity,
+                    'volume': volume,
+                    'phase': phase,
+                    **result,
+                    'rock_heat': rock_heat
+                })
         
         # 热储层资源量 (气液共存部分 Q₄ = Q₂ + Q₃)
         reservoir_resource = total_two_phase_liquid + total_steam_resource
         
-        # 总地热资源量 = 液态水资源量(Q₁) + 气液共存资源量(Q₄) + 岩石热量
-        # 根据专利说明：Q总 = Q₁ + Q₄
-        # 但实际工程中通常包含岩石热量，这里按 full_calculation 方法加上岩石热量
-        fluid_resource = total_liquid_resource + reservoir_resource
+        # 总地热资源量 = 液态水资源量(Q₁) + 气液共存资源量(Q₄) + 气态资源量(Q₅) + 岩石热量
+        fluid_resource = total_liquid_resource + reservoir_resource + total_gas_resource
         total_resource = fluid_resource + total_rock_heat
         
         return {
@@ -513,12 +596,15 @@ class GeothermalCalculator:
             'two_phase_liquid_resource_joules': total_two_phase_liquid,  # Q₂
             'steam_resource_joules': total_steam_resource,        # Q₃
             'reservoir_resource_joules': reservoir_resource,      # Q₄ = Q₂ + Q₃
+            'gas_resource_joules': total_gas_resource,            # Q₅ 气态
             'rock_heat_joules': total_rock_heat,                  # 岩石热量
             'liquid_grid_count': len(liquid_grids),
             'two_phase_grid_count': len(two_phase_grids),
-            'total_grid_count': len(liquid_grids) + len(two_phase_grids),
+            'gas_grid_count': len(gas_grids),
+            'total_grid_count': len(liquid_grids) + len(two_phase_grids) + len(gas_grids),
             'liquid_grids': liquid_grids,
             'two_phase_grids': two_phase_grids,
+            'gas_grids': gas_grids,
             'parameters': {
                 'rock_density': rock_density,
                 'rock_specific_heat': rock_specific_heat,
