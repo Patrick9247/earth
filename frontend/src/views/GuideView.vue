@@ -110,10 +110,10 @@
       <div class="formula-block">
         <h3>气态资源量公式</h3>
         <div class="formula">
-          Q<sub>5</sub> = Σ<sub>i=1</sub><sup>N</sup> [ φ<sub>i</sub> × V<sub>i</sub> × ρ<sub>steam</sub> × (C<sub>w</sub> × (T<sub>iboil</sub> - T<sub>0</sub>) + L<sub>v</sub> + C<sub>v</sub> × (T<sub>i</sub> - T<sub>iboil</sub>)) ]
+          Q<sub>5</sub> = Σ<sub>i=1</sub><sup>N</sup> [ φ<sub>i</sub> × V<sub>i</sub> × ρ<sub>i</sub> × (C<sub>w</sub> × (T<sub>isat</sub> - T<sub>0</sub>) + L<sub>v</sub> + C<sub>v</sub> × (T<sub>i</sub> - T<sub>isat</sub>)) ]
         </div>
         <p class="formula-desc">
-          其中：Q<sub>5</sub> 为气态地热流体的资源量（kJ），ρ<sub>steam</sub> 为过热蒸汽密度（kg/m³），根据理想气体状态方程 P = ρRT 计算，T<sub>iboil</sub> 为饱和温度（°C），T<sub>i</sub> - T<sub>iboil</sub> 为过热度（°C）
+          其中：Q<sub>5</sub> 为气态地热流体的资源量（kJ），ρ<sub>i</sub> 为第i个网格中地热流体的密度（kg/m³），T<sub>isat</sub> 为饱和温度（°C），T<sub>i</sub> - T<sub>isat</sub> 为过热度（°C）
         </p>
       </div>
     </section>

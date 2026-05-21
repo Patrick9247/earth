@@ -439,9 +439,9 @@ class GeothermalCalculator:
         """
         计算气态（过热蒸汽）地热资源量
         
-        当温度大于饱和温度时，地热流体为过热蒸汽
+        严格按照文档公式：Q₅ = Σ[φᵢ × Vᵢ × ρᵢ × [Cw(Tisat-T₀) + Lv + Cv(Ti-Tisat)]]
         
-        Q_gas = φ × V × ρ_steam × [Cw × (T_sat - T₀) + Lv + Cv × (T - T_sat)]
+        其中 ρᵢ 为地热流体密度（通过密度校正公式计算）
         
         Args:
             porosity: 孔隙度
@@ -462,31 +462,21 @@ class GeothermalCalculator:
         Lv = (latent_heat * 1000) if latent_heat else self.LATENT_HEAT_VAPORIZATION  # J/kg
         
         pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
-        T_sat = self.calculate_boiling_point(pressure_kpa)  # 饱和温度
+        T_sat = self.calculate_boiling_point(pressure_kpa)  # 饱和温度 Tisat
         
-        # 过热蒸汽密度（使用理想气体状态方程近似）
-        # ρ = P / (R × T)，R_steam ≈ 461.5 J/(kg·K)
-        R_steam = 461.5  # J/(kg·K)
-        T_kelvin = temperature + 273.15
-        P_pa = pressure_kpa * 1000  # kPa 转 Pa
-        steam_density = P_pa / (R_steam * T_kelvin)  # kg/m³
+        # 使用密度校正公式计算地热流体密度 ρᵢ（与文档一致）
+        rho_i = self.calculate_water_density(temperature, pressure_kpa)
         
-        # 限制密度在合理范围内
-        steam_density = max(1.0, min(steam_density, 100.0))
-        
-        # 蒸汽质量
-        steam_volume = volume * porosity
-        steam_mass = steam_volume * steam_density
-        
-        # Q = m × [Cw × (T_sat - T₀) + Lv + Cv × (T - T_sat)]
-        resource = steam_mass * (
+        # Q₅ = φ × V × ρᵢ × [Cw × (Tisat - T₀) + Lv + Cv × (Ti - Tisat)]
+        # 严格按照文档公式
+        Q5 = porosity * volume * rho_i * (
             Cw * (T_sat - reference_temp) +
             Lv +
             Cv * (temperature - T_sat)
         )
         
         return {
-            'gas_resource': resource,
+            'gas_resource': Q5,
             'steam_density': steam_density,
             'steam_mass': steam_mass,
             'saturation_temp': T_sat,
