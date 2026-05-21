@@ -475,10 +475,13 @@ class GeothermalCalculator:
             Cv * (temperature - T_sat)
         )
         
+        # 计算气态流体质量
+        gas_mass = porosity * volume * rho_i
+        
         return {
             'gas_resource': Q5,
-            'steam_density': steam_density,
-            'steam_mass': steam_mass,
+            'gas_density': rho_i,  # 地热流体密度 ρᵢ
+            'gas_mass': gas_mass,  # 气态流体质量
             'saturation_temp': T_sat,
             'superheat': temperature - T_sat
         }
