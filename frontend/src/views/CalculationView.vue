@@ -138,7 +138,10 @@ const updateGridData = async (index: number) => {
         porosity: item.porosity,
         volume: item.volume,
         temperature: item.temperature,
-        pressure: item.pressure
+        pressure: item.pressure,
+        liquid_specific_heat: item.liquid_specific_heat,
+        gas_specific_heat: item.gas_specific_heat,
+        latent_heat: item.latent_heat
       })
     } catch (error) {
       console.error('更新网格失败:', error)

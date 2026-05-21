@@ -127,6 +127,9 @@ async def create_grid_item(
         volume=request.volume,
         temperature=request.temperature,
         pressure=request.pressure,
+        liquid_specific_heat=request.liquid_specific_heat,
+        gas_specific_heat=request.gas_specific_heat,
+        latent_heat=request.latent_heat,
         sort_order=request.sort_order or 0
     )
     db.add(db_item)
@@ -157,6 +160,12 @@ async def update_grid_item(
         db_item.temperature = request.temperature
     if request.pressure is not None:
         db_item.pressure = request.pressure
+    if request.liquid_specific_heat is not None:
+        db_item.liquid_specific_heat = request.liquid_specific_heat
+    if request.gas_specific_heat is not None:
+        db_item.gas_specific_heat = request.gas_specific_heat
+    if request.latent_heat is not None:
+        db_item.latent_heat = request.latent_heat
     if request.sort_order is not None:
         db_item.sort_order = request.sort_order
     
