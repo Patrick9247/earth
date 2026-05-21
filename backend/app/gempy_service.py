@@ -263,7 +263,7 @@ class GeothermalCalculator:
         # 限制在合理范围内
         return max(0.0, min(T_boiling, 374.0))  # 水的临界温度约374°C
     
-    def determine_phase(self, temperature: float, pressure_mpa: float) -> str:
+    def determine_phase(self, temperature: float, pressure_kpa: float) -> str:
         """
         相态判定
         
@@ -274,12 +274,11 @@ class GeothermalCalculator:
         
         Args:
             temperature: 网格温度 (°C)
-            pressure_mpa: 网格压力 (MPa)
+            pressure_kpa: 网格压力 (kPa)
             
         Returns:
             相态类型: 'liquid' 或 'two_phase' 或 'gas'
         """
-        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         T_boiling = self.calculate_boiling_point(pressure_kpa)
         
         # 使用一个小的容差来判断"等于"
@@ -326,7 +325,7 @@ class GeothermalCalculator:
         porosity: float,
         volume: float,
         temperature: float,
-        pressure_mpa: float,
+        pressure_kpa: float,
         reference_temp: float = 25.0
     ) -> float:
         """
@@ -339,13 +338,12 @@ class GeothermalCalculator:
             porosity: 孔隙度
             volume: 网格体积 (m³)
             temperature: 温度 (°C)
-            pressure_mpa: 压力 (MPa)
+            pressure_kpa: 压力 (kPa)
             reference_temp: 参考温度 (°C)
             
         Returns:
             液态地热流体资源量 (J)
         """
-        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         density = self.calculate_water_density(temperature, pressure_kpa)
         delta_T = temperature - reference_temp
         
@@ -357,7 +355,7 @@ class GeothermalCalculator:
         porosity: float,
         volume: float,
         temperature: float,
-        pressure_mpa: float,
+        pressure_kpa: float,
         reference_temp: float = 25.0,
         liquid_specific_heat: float = None,
         gas_specific_heat: float = None,
@@ -371,7 +369,7 @@ class GeothermalCalculator:
         porosity: 孔隙度
         volume: 网格体积 (m³)
         temperature: 温度 (°C)
-        pressure_mpa: 压力 (MPa)
+        pressure_kpa: 压力 (kPa)
         reference_temp: 参考温度 (°C)
         liquid_specific_heat: 液体比热容 (kJ/(kg·°C))，默认使用标准值
         gas_specific_heat: 气体比热容 (kJ/(kg·°C))，默认使用标准值
@@ -385,7 +383,6 @@ class GeothermalCalculator:
         Cv = (gas_specific_heat * 1000) if gas_specific_heat else 2000  # J/(kg·K)
         Lv = (latent_heat * 1000) if latent_heat else self.LATENT_HEAT_VAPORIZATION  # J/kg
         
-        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         density = self.calculate_water_density(temperature, pressure_kpa)
         
         # 计算沸点温度
@@ -430,7 +427,7 @@ class GeothermalCalculator:
         porosity: float,
         volume: float,
         temperature: float,
-        pressure_mpa: float,
+        pressure_kpa: float,
         reference_temp: float = 25.0,
         liquid_specific_heat: float = None,
         gas_specific_heat: float = None,
@@ -447,7 +444,7 @@ class GeothermalCalculator:
             porosity: 孔隙度
             volume: 网格体积 (m³)
             temperature: 温度 (°C)
-            pressure_mpa: 压力 (MPa)
+            pressure_kpa: 压力 (kPa)
             reference_temp: 参考温度 (°C)
             liquid_specific_heat: 液体比热容 (kJ/(kg·°C))，默认使用标准值
             gas_specific_heat: 气体比热容 (kJ/(kg·°C))，默认使用标准值
@@ -461,7 +458,6 @@ class GeothermalCalculator:
         Cv = (gas_specific_heat * 1000) if gas_specific_heat else 2000  # J/(kg·K)
         Lv = (latent_heat * 1000) if latent_heat else self.LATENT_HEAT_VAPORIZATION  # J/kg
         
-        pressure_kpa = pressure_mpa * 1000  # MPa 转 kPa
         T_sat = self.calculate_boiling_point(pressure_kpa)  # 饱和温度 Tisat
         
         # 使用密度校正公式计算地热流体密度 ρᵢ（与文档一致）
@@ -503,7 +499,7 @@ class GeothermalCalculator:
                 - porosity: 孔隙度
                 - volume: 体积 (m³)
                 - temperature: 温度 (°C)
-                - pressure: 压力 (MPa)
+                - pressure: 压力 (kPa)
             reference_temp: 参考温度 (°C)
             rock_density: 岩石密度 (kg/m³)
             rock_specific_heat: 岩石比热容 (J/(kg·K))
@@ -525,7 +521,7 @@ class GeothermalCalculator:
             porosity = grid.get('porosity', 0.15)
             volume = grid.get('volume', 0)
             temperature = grid.get('temperature', 100)
-            pressure = grid.get('pressure', 0.1)  # 默认0.1 MPa
+            pressure = grid.get('pressure', 101.325)  # 默认101.325 kPa (大气压)
             liquid_specific_heat = grid.get('liquid_specific_heat')  # kJ/(kg·°C)
             gas_specific_heat = grid.get('gas_specific_heat')  # kJ/(kg·°C)
             latent_heat = grid.get('latent_heat')  # kJ/kg
@@ -548,7 +544,7 @@ class GeothermalCalculator:
             
             if phase == 'liquid':
                 # 液态水网格集 Q₁
-                water_density = self.calculate_water_density(temperature, pressure * 1000)
+                water_density = self.calculate_water_density(temperature, pressure)
                 water_volume = volume * porosity
                 water_mass = water_volume * water_density
                 water_heat = water_mass * Cw * delta_T
@@ -680,21 +676,22 @@ class GeothermalCalculator:
         rock_density: float = ROCK_DENSITY,
         water_specific_heat: float = WATER_SPECIFIC_HEAT,
         rock_specific_heat: float = ROCK_SPECIFIC_HEAT,
-        pressure: float = 0.1
+        pressure: float = 101.325  # kPa
     ) -> Dict[str, Any]:
         """
         完整的地热资源计算
         
         结合专利方法和传统方法进行综合计算
         
+        Args:
+            pressure: 压力 (kPa)
+        
         Returns:
             完整计算结果
         """
-        pressure_kpa = pressure * 1000  # MPa 转 kPa
-        
         # 使用密度校正公式计算实际水密度
         if water_density is None:
-            water_density = self.calculate_water_density(avg_temperature, pressure_kpa)
+            water_density = self.calculate_water_density(avg_temperature, pressure)
         
         # 相态判定
         phase = self.determine_phase(avg_temperature, pressure)
@@ -720,7 +717,7 @@ class GeothermalCalculator:
             phase_info = {
                 'phase_type': 'liquid',
                 'water_density': water_density,
-                'boiling_point': self.calculate_boiling_point(pressure_kpa)
+                'boiling_point': self.calculate_boiling_point(pressure)
             }
         else:
             # 气液共存计算
@@ -735,7 +732,7 @@ class GeothermalCalculator:
             phase_info = {
                 'phase_type': 'two_phase',
                 'water_density': water_density,
-                'boiling_point': self.calculate_boiling_point(pressure_kpa),
+                'boiling_point': self.calculate_boiling_point(pressure),
                 'liquid_fraction': result['liquid_fraction'],
                 'steam_fraction': result['steam_fraction'],
                 'liquid_resource': result['liquid_resource'],

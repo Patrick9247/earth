@@ -146,11 +146,10 @@ const updateGridData = async (index: number) => {
   }
 }
 
-// 计算沸点温度 T_boil = 26.12 * ln(P) - 8.97
+// 计算沸点温度 T_boil = 26.12 * ln(P) - 8.97 (P 单位: kPa)
 const calculateBoilingPoint = (pressure: number): number => {
-  const pressureKpa = pressure * 1000  // MPa 转 kPa
-  if (pressureKpa <= 0) return 100.0
-  return 26.12 * Math.log(pressureKpa) - 8.97
+  if (pressure <= 0) return 100.0
+  return 26.12 * Math.log(pressure) - 8.97
 }
 
 // 根据温度和压力自动判断相态
@@ -216,7 +215,7 @@ const initChart = () => {
           <div style="margin:3px 0;">孔隙度: <b>${(grid.porosity || 0).toFixed(4)}</b></div>
           <div style="margin:3px 0;">体积: <b>${(grid.volume || 0).toFixed(2)}</b> m³</div>
           <div style="margin:3px 0;">温度: <b>${(grid.temperature || 0).toFixed(2)}</b> °C</div>
-          <div style="margin:3px 0;">压力: <b>${(grid.pressure || 0).toFixed(4)}</b> MPa</div>
+          <div style="margin:3px 0;">压力: <b>${(grid.pressure || 0).toFixed(2)}</b> kPa</div>
           <div style="margin:3px 0;">沸点温度: <b>${boilingPoint.toFixed(2)}</b> °C</div>
           <div style="margin:3px 0;">相态: <b>${getPhaseLabel(phase)}</b></div>
         `
@@ -452,9 +451,9 @@ onMounted(async () => {
                 <el-input-number v-model="row.temperature" :min="0" :max="1000" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="压力(MPa)" min-width="110">
+            <el-table-column label="压力(kPa)" min-width="110">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.pressure" :min="0.001" :max="500" :step="0.5" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.pressure" :min="0.1" :max="500000" :step="100" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="液体比热容" min-width="100">

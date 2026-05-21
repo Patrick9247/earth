@@ -300,7 +300,7 @@ class GridItem(Base):
     porosity = Column(Float, comment="孔隙度")
     volume = Column(Float, comment="体积(m³)")
     temperature = Column(Float, comment="温度(°C)")
-    pressure = Column(Float, comment="压力(MPa)")
+    pressure = Column(Float, comment="压力(kPa)")
     gas_specific_heat = Column(Float, comment="气体比热容(kJ/(kg·°C))")
     latent_heat = Column(Float, comment="气化潜热(kJ/kg)")
     liquid_specific_heat = Column(Float, comment="液体比热容(kJ/(kg·°C))")

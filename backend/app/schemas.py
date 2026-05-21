@@ -336,7 +336,7 @@ class GridDataItem(BaseModel):
     porosity: float = Field(0.15, ge=0, le=1, description="孔隙度")
     volume: float = Field(..., gt=0, description="体积(m³)")
     temperature: float = Field(..., gt=0, description="温度(°C)")
-    pressure: float = Field(0.1, gt=0, description="压力(MPa)")
+    pressure: float = Field(101.325, gt=0, description="压力(kPa)")
 
 
 class GridCalculationRequest(BaseModel):
@@ -404,7 +404,7 @@ class GridItemBase(BaseModel):
     porosity: Optional[float] = Field(None, ge=0, le=1, description="孔隙度")
     volume: Optional[float] = Field(None, gt=0, description="体积(m³)")
     temperature: Optional[float] = Field(None, description="温度(°C)")
-    pressure: Optional[float] = Field(None, description="压力(MPa)")
+    pressure: Optional[float] = Field(None, description="压力(kPa)")
     gas_specific_heat: Optional[float] = Field(None, description="气体比热容(kJ/(kg·°C))")
     latent_heat: Optional[float] = Field(None, description="气化潜热(kJ/kg)")
     liquid_specific_heat: Optional[float] = Field(None, description="液体比热容(kJ/(kg·°C))")
