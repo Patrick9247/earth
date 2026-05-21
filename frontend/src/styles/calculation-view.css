@@ -2,6 +2,34 @@
   max-width: 1400px;
 }
 
+/* 网格表格样式 */
+.calculation-view .el-table {
+  width: 100% !important;
+}
+
+.calculation-view .el-table .el-input-number {
+  width: 100%;
+}
+
+.calculation-view .el-table .el-input-number .el-input__inner {
+  text-align: left;
+}
+
+/* 隐藏表格横向滚动条 */
+.calculation-view .el-table__body-wrapper {
+  overflow-x: hidden !important;
+}
+
+.calculation-view .el-table__header-wrapper {
+  overflow-x: hidden !important;
+}
+
+/* 表格单元格紧凑样式 */
+.calculation-view .el-table td,
+.calculation-view .el-table th {
+  padding: 8px 0;
+}
+
 .description {
   color: #606266;
   margin-bottom: 16px;

@@ -430,61 +430,61 @@ onMounted(async () => {
             </el-button>
           </div>
 
-          <el-table :data="gridData" border stripe>
-            <el-table-column label="编号" type="index" width="60" />
-            <el-table-column label="网格数" width="150">
+          <el-table :data="gridData" border stripe style="width: 100%" table-layout="auto">
+            <el-table-column label="编号" type="index" width="50" />
+            <el-table-column label="网格数" min-width="120">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.grid_count" :min="1" :max="10000" :step="1" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.grid_count" :min="1" :max="10000" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="孔隙度" width="150">
+            <el-table-column label="孔隙度" min-width="110">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.001" :precision="4" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.001" :precision="4" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="体积(m³)" width="150">
+            <el-table-column label="体积(m³)" min-width="120">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.volume" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.volume" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="温度(°C)" width="150">
+            <el-table-column label="温度(°C)" min-width="110">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.temperature" :min="0" :max="1000" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.temperature" :min="0" :max="1000" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="压力(MPa)" width="150">
+            <el-table-column label="压力(MPa)" min-width="110">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.pressure" :min="0.001" :max="500" :step="0.5" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.pressure" :min="0.001" :max="500" :step="0.5" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="液体比热容(kJ/(kg·°C))" width="180">
+            <el-table-column label="液体比热容" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.liquid_specific_heat" :min="0.1" :max="10" :step="0.01" :precision="2" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.liquid_specific_heat" :min="0.1" :max="10" :step="0.01" :precision="2" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="气体比热容(kJ/(kg·°C))" width="180">
+            <el-table-column label="气体比热容" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.gas_specific_heat" :min="0.1" :max="5" :step="0.01" :precision="2" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.gas_specific_heat" :min="0.1" :max="5" :step="0.01" :precision="2" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="气化潜热(kJ/kg)" width="160">
+            <el-table-column label="气化潜热" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.latent_heat" :min="100" :max="3000" :step="10" :precision="0" size="small" @change="updateGridData($index)" />
+                <el-input-number v-model="row.latent_heat" :min="100" :max="3000" :step="10" :precision="0" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="沸点温度(°C)" width="120">
+            <el-table-column label="沸点(°C)" min-width="80">
               <template #default="{ row }">
                 {{ calculateBoilingPoint(row.pressure || 0.1).toFixed(1) }}
               </template>
             </el-table-column>
-            <el-table-column label="相态" width="120">
+            <el-table-column label="相态" min-width="90">
               <template #default="{ row }">
                 <el-tag :type="getPhaseTagType(determinePhase(row.temperature || 0, row.pressure || 0.1))" size="small">
                   {{ getPhaseLabel(determinePhase(row.temperature || 0, row.pressure || 0.1)) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="80">
+            <el-table-column label="操作" width="60" fixed="right">
               <template #default="{ $index }">
                 <el-button type="danger" link @click="removeGrid($index)">
                   <el-icon><Delete /></el-icon>
