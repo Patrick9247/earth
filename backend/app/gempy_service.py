@@ -762,6 +762,11 @@ class GeothermalCalculator:
         fluid_resource = total_liquid_resource + reservoir_resource + total_gas_resource
         total_resource = fluid_resource + total_rock_heat
         
+        # 计算实际网格数量（考虑 grid_count）
+        liquid_grid_count = sum(g.get('grid_count', 1) for g in liquid_grids)
+        two_phase_grid_count = sum(g.get('grid_count', 1) for g in two_phase_grids)
+        gas_grid_count = sum(g.get('grid_count', 1) for g in gas_grids)
+        
         return {
             'total_resource_joules': total_resource,              # 总热量(含岩石)
             'fluid_resource_joules': fluid_resource,               # 流体热量(不含岩石)
@@ -771,10 +776,10 @@ class GeothermalCalculator:
             'reservoir_resource_joules': reservoir_resource,      # Q₄ = Q₂ + Q₃
             'gas_resource_joules': total_gas_resource,            # Q₅ 气态
             'rock_heat_joules': total_rock_heat,                  # 岩石热量
-            'liquid_grid_count': len(liquid_grids),
-            'two_phase_grid_count': len(two_phase_grids),
-            'gas_grid_count': len(gas_grids),
-            'total_grid_count': len(liquid_grids) + len(two_phase_grids) + len(gas_grids),
+            'liquid_grid_count': liquid_grid_count,
+            'two_phase_grid_count': two_phase_grid_count,
+            'gas_grid_count': gas_grid_count,
+            'total_grid_count': liquid_grid_count + two_phase_grid_count + gas_grid_count,
             'liquid_grids': liquid_grids,
             'two_phase_grids': two_phase_grids,
             'gas_grids': gas_grids,

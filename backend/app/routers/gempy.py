@@ -329,7 +329,7 @@ async def calculate_grid_resources(
         
         return GridCalculationResponse(
             success=True,
-            message=f"网格资源计算完成，共{len(request.grids)}个网格",
+            message=f"网格资源计算完成，共{results['total_grid_count']}个网格",
             data=final_results
         )
         
