@@ -109,6 +109,15 @@
   color: #409eff;
 }
 
+.formula-note {
+  font-size: 13px;
+  color: #e6a23c;
+  background: #fdf6ec;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
 .tip-box {
   padding: 12px 16px;
   background: #fdf6ec;

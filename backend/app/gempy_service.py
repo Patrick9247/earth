@@ -244,21 +244,25 @@ class GeothermalCalculator:
     
     def calculate_boiling_point(self, pressure_kpa: float) -> float:
         """
-        相态判定曲线方程 - 计算沸点温度
+        相态判定曲线方程 - 计算沸点温度（饱和温度）
         
-        根据专利公式: T_boil = 26.12 × ln(Pᵢ) - 8.97
+        根据专利公式: T_isat = 26.12 × ln(P_i) - 8.97
+        注意：公式中 P_i 的单位是 Pa（帕斯卡）
         
         Args:
             pressure_kpa: 压力 (kPa)
             
         Returns:
-            沸点温度 (°C)
+            饱和温度 (°C)
         """
         if pressure_kpa <= 0:
             return 100.0  # 默认常压沸点
         
-        # 专利公式: T_boil = 26.12 × ln(Pᵢ) - 8.97
-        T_boiling = 26.12 * math.log(pressure_kpa) - 8.97
+        # 将 kPa 转换为 Pa（公式要求压力单位为 Pa）
+        pressure_pa = pressure_kpa * 1000
+        
+        # 专利公式: T_isat = 26.12 × ln(P_i) - 8.97，P_i 单位为 Pa
+        T_boiling = 26.12 * math.log(pressure_pa) - 8.97
         
         # 限制在合理范围内
         return max(0.0, min(T_boiling, 374.0))  # 水的临界温度约374°C
@@ -293,12 +297,14 @@ class GeothermalCalculator:
     
     def calculate_water_density(self, temperature: float, pressure_kpa: float) -> float:
         """
-        密度校正公式 - 计算地热流体密度 (基于 IAPWS-IF97)
+        密度校正公式 - 计算地热流体密度
         
         根据专利公式:
-        ρᵢ = 137.1358 × e^(A) + 139.3560 × e^(B) + 769.9024
-        A = -(Pᵢ - 163278.7315)² / (6.613 × 10¹⁰)
-        B = -(Tᵢ - 4.1171)² / 29947.659
+        ρ_i = 137.1358 × e^(A) + 139.3560 × e^(B) + 769.9024
+        A = -(P_i - 163278.7315)² / (6.613 × 10¹⁰)
+        B = -(T_i - 4.1171)² / 29947.659
+        
+        注意：公式中 P_i 的单位是 Pa（帕斯卡）
         
         Args:
             temperature: 温度 (°C)
@@ -308,7 +314,8 @@ class GeothermalCalculator:
             水密度 (kg/m³)
         """
         Ti = temperature
-        Pi = pressure_kpa
+        # 将 kPa 转换为 Pa（公式要求压力单位为 Pa）
+        Pi = pressure_kpa * 1000
         
         # 参数A和B
         A = -math.pow(Pi - 163278.7315, 2) / (6.613e10)

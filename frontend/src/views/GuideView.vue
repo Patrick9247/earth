@@ -42,7 +42,8 @@
         <div class="formula-sub">
           B = -(T<sub>i</sub> - 4.1171)² / 29947.659
         </div>
-        <p class="formula-desc">其中：ρ<sub>i</sub> 为第 i 个网格中地热流体的密度（kg/m³），T<sub>i</sub> 为第 i 个网格的温度（°C），e 为自然常数</p>
+        <p class="formula-desc">其中：ρ<sub>i</sub> 为第 i 个网格中地热流体的密度（kg/m³），T<sub>i</sub> 为第 i 个网格的温度（°C），P<sub>i</sub> 为第 i 个网格的压力（Pa），e 为自然常数</p>
+        <p class="formula-note">注意：密度公式中压力单位为 Pa（帕斯卡），系统输入压力单位为 kPa，计算时需转换：1 kPa = 1000 Pa</p>
       </div>
 
       <div class="formula-block">
