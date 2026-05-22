@@ -324,13 +324,14 @@ const handleGridCalculate = async () => {
   })
   
   try {
-    // 直接传递网格数据，后端会根据 grid_count 计算
+    // 直接传递网格数据，后端会根据 phase 字段使用对应公式计算
     const grids = gridData.value.map((grid: any) => ({
       grid_count: grid.grid_count || 1,
       porosity: grid.porosity,
       volume: grid.volume,
       temperature: grid.temperature,
       pressure: grid.pressure,
+      phase: determinePhase(grid.temperature || 0, grid.pressure || 0.1),  // 根据温度压力计算相态
       liquid_specific_heat: grid.liquid_specific_heat,
       gas_specific_heat: grid.gas_specific_heat,
       latent_heat: grid.latent_heat

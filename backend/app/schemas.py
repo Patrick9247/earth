@@ -338,6 +338,7 @@ class GridDataItem(BaseModel):
     volume: float = Field(..., gt=0, description="体积(m³)")
     temperature: float = Field(..., gt=0, description="温度(°C)")
     pressure: float = Field(101.325, gt=0, description="压力(kPa)")
+    phase: str = Field("liquid", description="相态: liquid(液态), two_phase(气液共存), gas(气态)")
     liquid_specific_heat: Optional[float] = Field(None, description="液体比热容(kJ/(kg·°C))")
     gas_specific_heat: Optional[float] = Field(None, description="气体比热容(kJ/(kg·°C))")
     latent_heat: Optional[float] = Field(None, description="气化潜热(kJ/kg)")
