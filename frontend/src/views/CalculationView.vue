@@ -404,6 +404,15 @@ const formatPower = (mw: number): string => {
   return mw.toExponential(4) + ' W'                       // 科学计数法
 }
 
+// 格式化体积
+const formatVolume = (vol: number, decimals: number = 2): string => {
+  if (!vol && vol !== 0) return '0'
+  if (vol >= 1e9) return (vol / 1e9).toFixed(decimals) + ' km³'
+  if (vol >= 1e6) return (vol / 1e6).toFixed(decimals) + ' Mm³'
+  if (vol >= 1e3) return (vol / 1e3).toFixed(decimals) + ' 千m³'
+  return vol.toFixed(decimals) + ' m³'
+}
+
 // 页面加载时初始化
 onMounted(async () => {
   // 加载表单列表，如果有则加载最新的
@@ -532,7 +541,7 @@ onMounted(async () => {
             <el-col :span="6">
               <div class="result-item">
                 <div class="result-label">总网格体积</div>
-                <div class="result-value">{{ formatNumber(result.total_resource_joules + result.rock_heat_joules) }}</div>
+                <div class="result-value">{{ formatVolume(result.total_volume) }}</div>
               </div>
             </el-col>
           </el-row>
