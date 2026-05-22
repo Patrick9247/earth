@@ -232,7 +232,7 @@ class GeothermalCalculator:
     # 物理常数
     WATER_DENSITY_STANDARD = 1000  # kg/m³ 标准条件下水密度
     ROCK_DENSITY = 2600   # kg/m³
-    WATER_SPECIFIC_HEAT = 4186  # J/(kg·K)
+    WATER_SPECIFIC_HEAT = 4800  # J/(kg·K)
     ROCK_SPECIFIC_HEAT = 880    # J/(kg·K)
     SECONDS_PER_YEAR = 365.25 * 24 * 3600
     
@@ -240,7 +240,7 @@ class GeothermalCalculator:
     STEAM_SPECIFIC_VOLUME = 1.673  # m³/kg (100°C, 1atm)
     WATER_SPECIFIC_VOLUME = 0.001043  # m³/kg (100°C, 1atm)
     LATENT_HEAT_VAPORIZATION = 2257  # kJ/kg 气化潜热
-    STEAM_SPECIFIC_HEAT = 2.08  # kJ/(kg·K) 水蒸气比热容
+    STEAM_SPECIFIC_HEAT = 2  # kJ/(kg·K) 水蒸气比热容
     
     def calculate_boiling_point(self, pressure_kpa: float) -> float:
         """

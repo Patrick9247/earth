@@ -283,11 +283,11 @@ def calculate_resource_amount(
     - V: 网格体积 (m³)
     - φ: 孔隙度
     - ρ: 流体密度 (kg/m³)
-    - Cp: 比热容 (J/(kg·K))，水约为 4186
+    - Cp: 比热容 (J/(kg·K))，水约为 4800
     - T: 温度 (°C)
     - T0: 参考温度 (°C)
     """
-    Cp = 4186  # 水的比热容 J/(kg·K)
+    Cp = 4800  # 水的比热容 J/(kg·K)
     
     # 孔隙体积
     pore_volume = volume * porosity
