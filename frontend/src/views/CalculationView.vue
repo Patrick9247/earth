@@ -59,7 +59,13 @@ const loadForm = async (formId: number) => {
     
     // 加载网格数据
     const gridsRes = await gridCalcApi.getGrids(formId)
-    gridData.value = gridsRes.data || []
+    // 确保每个网格都有热力学参数，没有则设置默认值
+    gridData.value = (gridsRes.data || []).map((grid: any) => ({
+      ...grid,
+      liquid_specific_heat: grid.liquid_specific_heat ?? 4.18,
+      gas_specific_heat: grid.gas_specific_heat ?? 2.0,
+      latent_heat: grid.latent_heat ?? 2257
+    }))
   } catch (error) {
     console.error('加载表单失败:', error)
     ElMessage.error('加载表单失败')
