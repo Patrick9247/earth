@@ -621,15 +621,7 @@ class GeothermalCalculator:
             'liquid_grid_count': len(liquid_grids),
             'two_phase_grid_count': len(two_phase_grids),
             'gas_grid_count': len(gas_grids),
-            'total_grid_count': len(liquid_grids) + len(two_phase_grids) + len(gas_grids),
-            'liquid_grids': liquid_grids,
-            'two_phase_grids': two_phase_grids,
-            'gas_grids': gas_grids,
-            'parameters': {
-                'rock_density': rock_density,
-                'rock_specific_heat': rock_specific_heat,
-                'water_specific_heat': self.WATER_SPECIFIC_HEAT
-            }
+            'total_grid_count': len(liquid_grids) + len(two_phase_grids) + len(gas_grids)
         }
     
     def calculate_power_potential(
