@@ -281,7 +281,7 @@ async def calculate_grid_resources(
             **results,
             **power_results,
             'parameters': {
-                'grid_count': len(request.grids),
+                'grid_count': results['total_grid_count'],
                 'reference_temperature': request.reference_temperature,
                 'recovery_factor': request.recovery_factor,
                 'utilization_efficiency': request.utilization_efficiency,
@@ -293,7 +293,7 @@ async def calculate_grid_resources(
         try:
             # 构建包含原始网格数据的参数
             save_params = {
-                'grid_count': len(request.grids),
+                'grid_count': results['total_grid_count'],
                 'reference_temperature': request.reference_temperature,
                 'recovery_factor': request.recovery_factor,
                 'utilization_efficiency': request.utilization_efficiency,
@@ -309,9 +309,9 @@ async def calculate_grid_resources(
             }
             
             db_resource = GeothermalResource(
-                name=f"网格计算_{len(request.grids)}个网格",
+                name=f"网格计算_{results['total_grid_count']}个网格",
                 model_type="grid_calculation",
-                volume=sum(g.volume for g in request.grids),
+                volume=sum(g.volume * (g.grid_count or 1) for g in request.grids),
                 temperature_avg=sum(g.temperature for g in request.grids) / len(request.grids),
                 temperature_max=max(g.temperature for g in request.grids),
                 heat_content=results['total_resource_joules'],
@@ -329,7 +329,7 @@ async def calculate_grid_resources(
         
         return GridCalculationResponse(
             success=True,
-            message=f"网格资源计算完成，共{len(request.grids)}个网格",
+            message=f"网格资源计算完成，共{results['total_grid_count']}个网格",
             data=final_results
         )
         

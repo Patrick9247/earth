@@ -333,10 +333,14 @@ class GeothermalCalculationResponse(BaseModel):
 # ==================== 网格资源计算请求 Schemas ====================
 class GridDataItem(BaseModel):
     """单个网格数据"""
+    grid_count: int = Field(1, ge=1, description="网格数量")
     porosity: float = Field(0.15, ge=0, le=1, description="孔隙度")
     volume: float = Field(..., gt=0, description="体积(m³)")
     temperature: float = Field(..., gt=0, description="温度(°C)")
     pressure: float = Field(101.325, gt=0, description="压力(kPa)")
+    liquid_specific_heat: Optional[float] = Field(None, description="液体比热容(kJ/(kg·°C))")
+    gas_specific_heat: Optional[float] = Field(None, description="气体比热容(kJ/(kg·°C))")
+    latent_heat: Optional[float] = Field(None, description="气化潜热(kJ/kg)")
 
 
 class GridCalculationRequest(BaseModel):

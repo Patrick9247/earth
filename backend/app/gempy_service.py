@@ -247,7 +247,7 @@ class GeothermalCalculator:
         相态判定曲线方程 - 计算沸点温度（饱和温度）
         
         根据专利公式: T_isat = 26.12 × ln(P_i) - 8.97
-        注意：公式中 P_i 的单位是 Pa（帕斯卡）
+        注意：公式中 P_i 的单位是 kPa（千帕）
         
         Args:
             pressure_kpa: 压力 (kPa)
@@ -258,14 +258,58 @@ class GeothermalCalculator:
         if pressure_kpa <= 0:
             return 100.0  # 默认常压沸点
         
-        # 将 kPa 转换为 Pa（公式要求压力单位为 Pa）
-        pressure_pa = pressure_kpa * 1000
-        
-        # 专利公式: T_isat = 26.12 × ln(P_i) - 8.97，P_i 单位为 Pa
-        T_boiling = 26.12 * math.log(pressure_pa) - 8.97
+        # 专利公式: T_isat = 26.12 × ln(P_i) - 8.97，P_i 单位为 kPa
+        # 验证：标准大气压 101.325 kPa → T_sat ≈ 111.66°C（接近 100°C）
+        T_boiling = 26.12 * math.log(pressure_kpa) - 8.97
         
         # 限制在合理范围内
         return max(0.0, min(T_boiling, 374.0))  # 水的临界温度约374°C
+    
+    def calculate_saturation_properties(self, temperature: float) -> tuple:
+        """
+        计算饱和状态下的蒸汽比容和水比容
+        
+        使用 IAPWS-IF97 近似公式
+        
+        Args:
+            temperature: 饱和温度 (°C)
+            
+        Returns:
+            (蒸汽比容 vg, 水比容 vp) 单位 m³/kg
+        """
+        T = temperature
+        
+        # 饱和水比容 vp (m³/kg)
+        # 使用 IAPWS-IF97 近似公式
+        if T < 100:
+            vp = 0.001043 - 0.0000002 * (T - 100)  # 约 0.001043 m³/kg 在 100°C
+        elif T < 200:
+            vp = 0.001043 + 0.0000005 * (T - 100)  # 随温度略微增加
+        else:
+            vp = 0.001093 + 0.000001 * (T - 200)   # 高温下增加更快
+        
+        # 饱和蒸汽比容 vg (m³/kg)
+        # 根据理想气体状态方程近似: vg = R*T / P
+        # 先计算饱和压力
+        # 从沸点公式反推: P = exp((T + 8.97) / 26.12)
+        P_sat_kpa = math.exp((T + 8.97) / 26.12)  # 饱和压力 kPa
+        
+        # 饱和蒸汽比容: vg = R*T / (P*M)
+        # R = 8.314 J/(mol·K), M = 18 g/mol = 0.018 kg/mol
+        # vg = 8.314 * (T + 273.15) / (P_sat_kpa * 1000 * 0.018)
+        R = 8.314  # J/(mol·K)
+        M = 0.018  # kg/mol
+        T_kelvin = T + 273.15
+        P_sat_pa = P_sat_kpa * 1000
+        
+        vg = R * T_kelvin / (P_sat_pa * M)  # m³/kg
+        
+        # 修正系数（考虑非理想气体行为）
+        # 在高温下蒸汽更接近理想气体
+        correction = 0.9 + 0.0005 * (T - 100) if T > 100 else 0.9
+        vg = vg * correction
+        
+        return vg, vp
     
     def determine_phase(self, temperature: float, pressure_kpa: float) -> str:
         """
@@ -326,6 +370,73 @@ class GeothermalCalculator:
         
         # 确保密度在合理范围内
         return max(600.0, min(density, 1100.0))
+    
+    def calculate_saturation_properties(self, temperature: float) -> tuple:
+        """
+        计算饱和状态下的水和蒸汽性质
+        
+        使用简化的经验公式（基于IAPWS-IF97拟合）
+        
+        Args:
+            temperature: 饱和温度 (°C)
+            
+        Returns:
+            (饱和水密度 kg/m³, 饱和蒸汽密度 kg/m³, 饱和水比容 m³/kg, 饱和蒸汽比容 m³/kg)
+        """
+        T = temperature
+        
+        # 饱和水密度 (kg/m³) - 简化公式
+        # 在 0-374°C 范围内有效
+        if T < 100:
+            rho_liquid = 1000.0 - 0.088 * T - 0.0042 * T**1.5
+        elif T < 200:
+            rho_liquid = 958.0 - 0.87 * (T - 100) - 0.009 * (T - 100)**2
+        else:
+            rho_liquid = 864.0 - 1.45 * (T - 200) - 0.015 * (T - 200)**2
+        
+        # 饱和蒸汽密度 (kg/m³) - 简化公式
+        if T < 100:
+            rho_steam = 0.6 * math.exp(0.023 * T)
+        elif T < 200:
+            rho_steam = 0.6 * math.exp(2.3) * math.exp(0.016 * (T - 100))
+        else:
+            rho_steam = 3.9 * math.exp(0.013 * (T - 200))
+        
+        # 确保密度在合理范围内
+        rho_liquid = max(300.0, min(rho_liquid, 1000.0))
+        rho_steam = max(0.1, min(rho_steam, 100.0))
+        
+        # 比容 = 1/密度
+        vp = 1.0 / rho_liquid  # 饱和水比容
+        vg = 1.0 / rho_steam   # 饱和蒸汽比容
+        
+        return rho_liquid, rho_steam, vp, vg
+    
+    def calculate_steam_density(self, temperature: float, pressure_kpa: float) -> float:
+        """
+        计算过热蒸汽密度
+        
+        使用理想气体状态方程近似
+        
+        Args:
+            temperature: 温度 (°C)
+            pressure_kpa: 压力 (kPa)
+            
+        Returns:
+            蒸汽密度 (kg/m³)
+        """
+        # 将温度转换为开尔文
+        T_K = temperature + 273.15
+        # 将压力转换为 Pa
+        P_Pa = pressure_kpa * 1000
+        # 水蒸气的气体常数 R_specific = R / M = 8.314 / 0.018 = 461.5 J/(kg·K)
+        R_specific = 461.5
+        
+        # 理想气体状态方程: P = ρ × R × T
+        # ρ = P / (R × T)
+        density = P_Pa / (R_specific * T_K)
+        
+        return density
     
     def calculate_liquid_resource(
         self,
@@ -390,18 +501,41 @@ class GeothermalCalculator:
         Cv = (gas_specific_heat * 1000) if gas_specific_heat else 2000  # J/(kg·K)
         Lv = (latent_heat * 1000) if latent_heat else self.LATENT_HEAT_VAPORIZATION  # J/kg
         
+        # 计算沸点温度（饱和温度）
+        T_sat = self.calculate_boiling_point(pressure_kpa)
+        
+        # 获取饱和状态下的水和蒸汽性质
+        rho_liquid, rho_steam, vp, vg = self.calculate_saturation_properties(T_sat)
+        
+        # 在气液共存状态下，使用混合密度（介于饱和水和饱和蒸汽之间）
+        # 根据专利文档，ρᵢ 通过密度校正公式计算
         density = self.calculate_water_density(temperature, pressure_kpa)
         
-        # 计算沸点温度
-        T_boil = self.calculate_boiling_point(pressure_kpa)
-        
-        vg = self.STEAM_SPECIFIC_VOLUME  # m³/kg
-        vp = self.WATER_SPECIFIC_VOLUME  # m³/kg
-        
         # Q₂: 气液共存液态资源量
-        # (1 - ρᵢ × vg) / (vp - vg) 表示液态水质量分数
-        liquid_mass_fraction = (1 - density * vg) / (vp - vg)
-        delta_T_boil = T_boil - reference_temp
+        # 使用专利公式：(1 - ρᵢ × vg) / (vp - vg) 表示液态水质量密度
+        # 但专利公式中的推导基于特定的物理假设
+        # 这里采用更稳健的方法：基于密度值计算液相/气相比例
+        
+        # 在气液共存状态下，混合密度 = α × ρ_liquid + (1-α) × ρ_steam
+        # 其中 α 是液相体积分数
+        # 求解 α = (ρ_mixed - ρ_steam) / (ρ_liquid - ρ_steam)
+        
+        # 使用密度校正公式计算的密度作为混合密度
+        rho_mixed = density
+        
+        # 计算液相体积分数
+        if rho_liquid > rho_steam:
+            liquid_volume_fraction = (rho_mixed - rho_steam) / (rho_liquid - rho_steam)
+            liquid_volume_fraction = max(0, min(1, liquid_volume_fraction))
+        else:
+            liquid_volume_fraction = 1.0
+        
+        # 液态水质量 = 液相体积分数 × 饱和水密度
+        # 蒸汽质量 = (1 - 液相体积分数) × 饱和蒸汽密度
+        liquid_mass_fraction = liquid_volume_fraction * rho_liquid
+        steam_mass_fraction = (1 - liquid_volume_fraction) * rho_steam
+            
+        delta_T_boil = T_sat - reference_temp
         
         Q2 = (
             porosity * volume * liquid_mass_fraction * 
@@ -409,9 +543,7 @@ class GeothermalCalculator:
         )
         
         # Q₃: 气液共存蒸汽资源量
-        # ρᵢ - (1 - ρᵢ × vg) / (vp - vg) 表示蒸汽质量分数
-        steam_mass_fraction = density - liquid_mass_fraction
-        delta_T_excess = temperature - T_boil
+        delta_T_excess = max(0, temperature - T_sat)
         
         Q3 = (
             porosity * volume * steam_mass_fraction * 
@@ -424,9 +556,13 @@ class GeothermalCalculator:
             'liquid_resource': Q2,      # Q₂
             'steam_resource': Q3,       # Q₃
             'total_resource': Q_total,
-            'boiling_temp': T_boil,
+            'boiling_temp': T_sat,
             'liquid_mass_fraction': liquid_mass_fraction,
-            'steam_mass_fraction': steam_mass_fraction
+            'steam_mass_fraction': steam_mass_fraction,
+            'rho_liquid': rho_liquid,
+            'rho_steam': rho_steam,
+            'vg': vg,
+            'vp': vp
         }
     
     def calculate_gas_resource(
@@ -529,6 +665,7 @@ class GeothermalCalculator:
             volume = grid.get('volume', 0)
             temperature = grid.get('temperature', 100)
             pressure = grid.get('pressure', 101.325)  # 默认101.325 kPa (大气压)
+            grid_count = grid.get('grid_count', 1)  # 网格数量
             liquid_specific_heat = grid.get('liquid_specific_heat')  # kJ/(kg·°C)
             gas_specific_heat = grid.get('gas_specific_heat')  # kJ/(kg·°C)
             latent_heat = grid.get('latent_heat')  # kJ/kg
@@ -540,7 +677,15 @@ class GeothermalCalculator:
             rock_volume = volume * (1 - porosity)
             rock_mass = rock_volume * rock_density
             delta_T = temperature - reference_temp
-            rock_heat = rock_mass * rock_specific_heat * delta_T
+            
+            # 只有当温度高于参考温度时才有可利用的热量
+            if delta_T <= 0:
+                # 温度低于或等于参考温度，没有可利用的地热资源
+                rock_heat = 0.0
+                # 跳过此网格的后续计算
+                continue
+            
+            rock_heat = rock_mass * rock_specific_heat * delta_T * grid_count  # 乘以网格数量
             total_rock_heat += rock_heat
             
             # 相态判定
@@ -554,7 +699,7 @@ class GeothermalCalculator:
                 water_density = self.calculate_water_density(temperature, pressure)
                 water_volume = volume * porosity
                 water_mass = water_volume * water_density
-                water_heat = water_mass * Cw * delta_T
+                water_heat = water_mass * Cw * delta_T * grid_count  # 乘以网格数量
                 total_liquid_resource += water_heat
                 liquid_grids.append({
                     'index': i,
@@ -562,6 +707,7 @@ class GeothermalCalculator:
                     'pressure': pressure,
                     'porosity': porosity,
                     'volume': volume,
+                    'grid_count': grid_count,
                     'phase': phase,
                     'resource': water_heat,
                     'rock_heat': rock_heat
@@ -572,6 +718,9 @@ class GeothermalCalculator:
                     porosity, volume, temperature, pressure, reference_temp,
                     liquid_specific_heat, gas_specific_heat, latent_heat
                 )
+                # 乘以网格数量
+                result['liquid_resource'] *= grid_count
+                result['steam_resource'] *= grid_count
                 total_two_phase_liquid += result['liquid_resource']
                 total_steam_resource += result['steam_resource']
                 two_phase_grids.append({
@@ -580,6 +729,7 @@ class GeothermalCalculator:
                     'pressure': pressure,
                     'porosity': porosity,
                     'volume': volume,
+                    'grid_count': grid_count,
                     'phase': phase,
                     **result,
                     'rock_heat': rock_heat
@@ -590,6 +740,8 @@ class GeothermalCalculator:
                     porosity, volume, temperature, pressure, reference_temp,
                     liquid_specific_heat, gas_specific_heat, latent_heat
                 )
+                # 乘以网格数量
+                result['gas_resource'] *= grid_count
                 total_gas_resource += result['gas_resource']
                 gas_grids.append({
                     'index': i,
@@ -597,6 +749,7 @@ class GeothermalCalculator:
                     'pressure': pressure,
                     'porosity': porosity,
                     'volume': volume,
+                    'grid_count': grid_count,
                     'phase': phase,
                     **result,
                     'rock_heat': rock_heat
@@ -609,6 +762,11 @@ class GeothermalCalculator:
         fluid_resource = total_liquid_resource + reservoir_resource + total_gas_resource
         total_resource = fluid_resource + total_rock_heat
         
+        # 计算实际网格数量（考虑 grid_count）
+        liquid_grid_count = sum(g.get('grid_count', 1) for g in liquid_grids)
+        two_phase_grid_count = sum(g.get('grid_count', 1) for g in two_phase_grids)
+        gas_grid_count = sum(g.get('grid_count', 1) for g in gas_grids)
+        
         return {
             'total_resource_joules': total_resource,              # 总热量(含岩石)
             'fluid_resource_joules': fluid_resource,               # 流体热量(不含岩石)
@@ -618,10 +776,19 @@ class GeothermalCalculator:
             'reservoir_resource_joules': reservoir_resource,      # Q₄ = Q₂ + Q₃
             'gas_resource_joules': total_gas_resource,            # Q₅ 气态
             'rock_heat_joules': total_rock_heat,                  # 岩石热量
-            'liquid_grid_count': len(liquid_grids),
-            'two_phase_grid_count': len(two_phase_grids),
-            'gas_grid_count': len(gas_grids),
-            'total_grid_count': len(liquid_grids) + len(two_phase_grids) + len(gas_grids)
+            'liquid_grid_count': liquid_grid_count,
+            'two_phase_grid_count': two_phase_grid_count,
+            'gas_grid_count': gas_grid_count,
+            'total_grid_count': liquid_grid_count + two_phase_grid_count + gas_grid_count,
+            'total_volume': sum(g.get('volume', 0) * g.get('grid_count', 1) for g in grid_data),  # 总体积
+            'liquid_grids': liquid_grids,
+            'two_phase_grids': two_phase_grids,
+            'gas_grids': gas_grids,
+            'parameters': {
+                'rock_density': rock_density,
+                'rock_specific_heat': rock_specific_heat,
+                'water_specific_heat': self.WATER_SPECIFIC_HEAT
+            }
         }
     
     def calculate_power_potential(

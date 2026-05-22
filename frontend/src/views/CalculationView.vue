@@ -324,18 +324,21 @@ const handleGridCalculate = async () => {
   })
   
   try {
-    // 转换为后端API格式
-    const grids = gridData.value.flatMap((grid: any) => {
-      const count = grid.grid_count || 1
-      return Array.from({ length: count }, () => ({
-        porosity: grid.porosity,
-        volume: grid.volume / count, // 每个网格的体积
-        temperature: grid.temperature,
-        pressure: grid.pressure
-      }))
-    })
+    // 直接传递网格数据，后端会根据 grid_count 计算
+    const grids = gridData.value.map((grid: any) => ({
+      grid_count: grid.grid_count || 1,
+      porosity: grid.porosity,
+      volume: grid.volume,
+      temperature: grid.temperature,
+      pressure: grid.pressure,
+      liquid_specific_heat: grid.liquid_specific_heat,
+      gas_specific_heat: grid.gas_specific_heat,
+      latent_heat: grid.latent_heat
+    }))
     
-    console.log(`[网格计算] 准备计算 ${grids.length} 个网格...`)
+    // 计算总网格数用于显示
+    const totalGrids = grids.reduce((sum: number, g: any) => sum + (g.grid_count || 1), 0)
+    console.log(`[网格计算] 准备计算 ${grids.length} 条记录，共 ${totalGrids} 个网格...`)
     
     // 调用后端API计算并保存
     const res = await gempyApi.calculateGrid({
@@ -350,7 +353,7 @@ const handleGridCalculate = async () => {
     
     if (res.data.success) {
       result.value = res.data.data
-      ElMessage.success(`网格计算完成！共 ${grids.length} 个网格`)
+      ElMessage.success(`网格计算完成！共 ${totalGrids} 个网格`)
     } else {
       ElMessage.error(res.data.message || '计算失败')
     }
@@ -399,6 +402,15 @@ const formatPower = (mw: number): string => {
   if (mw >= 1e-12) return (mw * 1e12).toFixed(4) + ' μW'  // 微瓦
   if (mw >= 1e-15) return (mw * 1e15).toFixed(4) + ' nW'  // 纳瓦
   return mw.toExponential(4) + ' W'                       // 科学计数法
+}
+
+// 格式化体积
+const formatVolume = (vol: number, decimals: number = 2): string => {
+  if (!vol && vol !== 0) return '0'
+  if (vol >= 1e9) return (vol / 1e9).toFixed(decimals) + ' km³'
+  if (vol >= 1e6) return (vol / 1e6).toFixed(decimals) + ' Mm³'
+  if (vol >= 1e3) return (vol / 1e3).toFixed(decimals) + ' 千m³'
+  return vol.toFixed(decimals) + ' m³'
 }
 
 // 页面加载时初始化
@@ -529,7 +541,7 @@ onMounted(async () => {
             <el-col :span="6">
               <div class="result-item">
                 <div class="result-label">总网格体积</div>
-                <div class="result-value">{{ formatNumber(result.total_resource_joules + result.rock_heat_joules) }}</div>
+                <div class="result-value">{{ formatVolume(result.total_volume) }}</div>
               </div>
             </el-col>
           </el-row>
