@@ -665,6 +665,7 @@ class GeothermalCalculator:
             volume = grid.get('volume', 0)
             temperature = grid.get('temperature', 100)
             pressure = grid.get('pressure', 101.325)  # 默认101.325 kPa (大气压)
+            grid_count = grid.get('grid_count', 1)  # 网格数量
             liquid_specific_heat = grid.get('liquid_specific_heat')  # kJ/(kg·°C)
             gas_specific_heat = grid.get('gas_specific_heat')  # kJ/(kg·°C)
             latent_heat = grid.get('latent_heat')  # kJ/kg
@@ -684,7 +685,7 @@ class GeothermalCalculator:
                 # 跳过此网格的后续计算
                 continue
             
-            rock_heat = rock_mass * rock_specific_heat * delta_T
+            rock_heat = rock_mass * rock_specific_heat * delta_T * grid_count  # 乘以网格数量
             total_rock_heat += rock_heat
             
             # 相态判定
@@ -698,7 +699,7 @@ class GeothermalCalculator:
                 water_density = self.calculate_water_density(temperature, pressure)
                 water_volume = volume * porosity
                 water_mass = water_volume * water_density
-                water_heat = water_mass * Cw * delta_T
+                water_heat = water_mass * Cw * delta_T * grid_count  # 乘以网格数量
                 total_liquid_resource += water_heat
                 liquid_grids.append({
                     'index': i,
@@ -706,6 +707,7 @@ class GeothermalCalculator:
                     'pressure': pressure,
                     'porosity': porosity,
                     'volume': volume,
+                    'grid_count': grid_count,
                     'phase': phase,
                     'resource': water_heat,
                     'rock_heat': rock_heat
@@ -716,6 +718,9 @@ class GeothermalCalculator:
                     porosity, volume, temperature, pressure, reference_temp,
                     liquid_specific_heat, gas_specific_heat, latent_heat
                 )
+                # 乘以网格数量
+                result['liquid_resource'] *= grid_count
+                result['steam_resource'] *= grid_count
                 total_two_phase_liquid += result['liquid_resource']
                 total_steam_resource += result['steam_resource']
                 two_phase_grids.append({
@@ -724,6 +729,7 @@ class GeothermalCalculator:
                     'pressure': pressure,
                     'porosity': porosity,
                     'volume': volume,
+                    'grid_count': grid_count,
                     'phase': phase,
                     **result,
                     'rock_heat': rock_heat
@@ -734,6 +740,8 @@ class GeothermalCalculator:
                     porosity, volume, temperature, pressure, reference_temp,
                     liquid_specific_heat, gas_specific_heat, latent_heat
                 )
+                # 乘以网格数量
+                result['gas_resource'] *= grid_count
                 total_gas_resource += result['gas_resource']
                 gas_grids.append({
                     'index': i,
@@ -741,6 +749,7 @@ class GeothermalCalculator:
                     'pressure': pressure,
                     'porosity': porosity,
                     'volume': volume,
+                    'grid_count': grid_count,
                     'phase': phase,
                     **result,
                     'rock_heat': rock_heat

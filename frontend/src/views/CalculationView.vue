@@ -324,18 +324,21 @@ const handleGridCalculate = async () => {
   })
   
   try {
-    // 转换为后端API格式
-    const grids = gridData.value.flatMap((grid: any) => {
-      const count = grid.grid_count || 1
-      return Array.from({ length: count }, () => ({
-        porosity: grid.porosity,
-        volume: grid.volume / count, // 每个网格的体积
-        temperature: grid.temperature,
-        pressure: grid.pressure
-      }))
-    })
+    // 直接传递网格数据，后端会根据 grid_count 计算
+    const grids = gridData.value.map((grid: any) => ({
+      grid_count: grid.grid_count || 1,
+      porosity: grid.porosity,
+      volume: grid.volume,
+      temperature: grid.temperature,
+      pressure: grid.pressure,
+      liquid_specific_heat: grid.liquid_specific_heat,
+      gas_specific_heat: grid.gas_specific_heat,
+      latent_heat: grid.latent_heat
+    }))
     
-    console.log(`[网格计算] 准备计算 ${grids.length} 个网格...`)
+    // 计算总网格数用于显示
+    const totalGrids = grids.reduce((sum: number, g: any) => sum + (g.grid_count || 1), 0)
+    console.log(`[网格计算] 准备计算 ${grids.length} 条记录，共 ${totalGrids} 个网格...`)
     
     // 调用后端API计算并保存
     const res = await gempyApi.calculateGrid({
@@ -350,7 +353,7 @@ const handleGridCalculate = async () => {
     
     if (res.data.success) {
       result.value = res.data.data
-      ElMessage.success(`网格计算完成！共 ${grids.length} 个网格`)
+      ElMessage.success(`网格计算完成！共 ${totalGrids} 个网格`)
     } else {
       ElMessage.error(res.data.message || '计算失败')
     }
