@@ -256,7 +256,6 @@ const updateGridData = async (index: number) => {
   if (item && item.id && currentFormId.value) {
     try {
       await gridCalcApi.updateGrid(currentFormId.value, item.id, {
-        grid_count: item.grid_count,
         grid_count: item.grid_count || 1,
         porosity: item.porosity,
         volume: item.volume,
