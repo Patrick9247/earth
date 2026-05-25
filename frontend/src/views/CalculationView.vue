@@ -184,13 +184,20 @@ const handleCsvUpload = async (options: any) => {
         let successCount = 0
         let errorCount = 0
         
+        // 检查是否有有效的表单ID
+        if (!currentFormId.value) {
+          loading.close()
+          ElMessage.error('请先创建或选择一个计算表单')
+          return
+        }
+        
         for (const line of dataLines) {
           const values = parseCsvLine(line)
           
           if (values.length >= 5) {
             try {
-              const res = await gridCalcApi.addGrid(currentFormId.value, {
-                calc_id: currentFormId.value,
+              const res = await gridCalcApi.addGrid(currentFormId.value!, {
+                calc_id: currentFormId.value!,
                 grid_count: parseInt(values[0]) || 1,
                 porosity: parseFloat(values[1]) || null,
                 volume: parseFloat(values[2]) || null,
