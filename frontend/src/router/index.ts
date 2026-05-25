@@ -49,19 +49,19 @@ const routes: RouteRecordRaw[] = [
     name: 'users',
     component: () => import('@/views/UserManagementView.vue'),
     meta: { title: '用户管理' }
-  },
+  }
   // {
   //   path: '/settings',
   //   name: 'settings',
   //   component: () => import('@/views/SettingsView.vue'),
   //   meta: { title: '系统设置' }
   // },
-  {
-    path: '/guide',
-    name: 'guide',
-    component: () => import('@/views/GuideView.vue'),
-    meta: { title: '使用指南' }
-  }
+  // {
+  //   path: '/guide',
+  //   name: 'guide',
+  //   component: () => import('@/views/GuideView.vue'),
+  //   meta: { title: '使用指南' }
+  // }
 ]
 
 const router = createRouter({

@@ -332,7 +332,7 @@ const handleGridCalculate = async () => {
   try {
     // 直接传递网格数据，后端会根据 phase 字段使用对应公式计算
     const grids = gridData.value.map((grid: any) => ({
-      grid_count: grid.grid_count || 1,
+      grid_count: grid.grid_count || 0,
       porosity: grid.porosity,
       volume: grid.volume,
       temperature: grid.temperature,

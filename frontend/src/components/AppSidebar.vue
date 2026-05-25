@@ -13,10 +13,6 @@ const goToQuickCalc = () => {
   router.push('/calculation')
 }
 
-// 打开使用指南
-const openGuide = () => {
-  router.push('/guide')
-}
 </script>
 
 <template>
@@ -47,13 +43,6 @@ const openGuide = () => {
       </div>
     </div>
 
-    <div class="sidebar-section">
-      <h4 class="section-title">帮助文档</h4>
-      <el-link type="primary" :underline="false" class="guide-link" @click="openGuide">
-        <el-icon><Document /></el-icon>
-        使用指南
-      </el-link>
-    </div>
   </aside>
 </template>
 
