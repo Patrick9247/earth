@@ -164,8 +164,9 @@ const parseCsvLine = (line: string): string[] => {
 }
 
 // 导入CSV文件
-const handleCsvUpload = async (options: any) => {
-  const { file } = options
+const handleCsvUpload = async (file: File) => {
+  console.log('[CSV导入] 文件信息:', file.name, file.type, file.size)
+  
   const loading = ElLoading.service({ lock: true, text: '正在导入CSV文件...' })
   
   try {
@@ -173,65 +174,66 @@ const handleCsvUpload = async (options: any) => {
       await createNewForm()
     }
     
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      try {
-        const text = e.target?.result as string
-        const lines = text.split('\n').filter(line => line.trim())
-        
-        // 跳过表头行
-        const dataLines = lines.slice(1)
-        let successCount = 0
-        let errorCount = 0
-        
-        // 检查是否有有效的表单ID
-        if (!currentFormId.value) {
-          loading.close()
-          ElMessage.error('请先创建或选择一个计算表单')
-          return
+    // 直接读取File对象
+    const text = await file.text()
+    console.log('[CSV导入] 文件内容长度:', text.length)
+    
+    const lines = text.split(/\r?\n/).filter(line => line.trim() && !line.startsWith('#'))
+    console.log('[CSV导入] 有效行数:', lines.length)
+    
+    // 跳过表头行
+    const dataLines = lines.slice(1)
+    let successCount = 0
+    let errorCount = 0
+    
+    // 检查是否有有效的表单ID
+    if (!currentFormId.value) {
+      loading.close()
+      ElMessage.error('请先创建或选择一个计算表单')
+      return false
+    }
+    
+    for (const line of dataLines) {
+      if (!line.trim()) continue
+      
+      const values = parseCsvLine(line)
+      console.log('[CSV导入] 解析行:', values)
+      
+      if (values.length >= 5) {
+        try {
+          const res = await gridCalcApi.addGrid(currentFormId.value!, {
+            calc_id: currentFormId.value!,
+            grid_count: parseInt(values[0]) || 1,
+            porosity: parseFloat(values[1]) || null,
+            volume: parseFloat(values[2]) || null,
+            temperature: parseFloat(values[3]) || null,
+            pressure: parseFloat(values[4]) || null,
+            liquid_specific_heat: parseFloat(values[5]) || 4.18,
+            gas_specific_heat: parseFloat(values[6]) || 2.0,
+            latent_heat: parseFloat(values[7]) || 2257,
+            sort_order: gridData.value.length
+          })
+          gridData.value.push(res.data)
+          successCount++
+        } catch (e) {
+          console.error('[CSV导入] 添加网格失败:', e)
+          errorCount++
         }
-        
-        for (const line of dataLines) {
-          const values = parseCsvLine(line)
-          
-          if (values.length >= 5) {
-            try {
-              const res = await gridCalcApi.addGrid(currentFormId.value!, {
-                calc_id: currentFormId.value!,
-                grid_count: parseInt(values[0]) || 1,
-                porosity: parseFloat(values[1]) || null,
-                volume: parseFloat(values[2]) || null,
-                temperature: parseFloat(values[3]) || null,
-                pressure: parseFloat(values[4]) || null,
-                liquid_specific_heat: parseFloat(values[5]) || 4.18,
-                gas_specific_heat: parseFloat(values[6]) || 2.0,
-                latent_heat: parseFloat(values[7]) || 2257,
-                sort_order: gridData.value.length
-              })
-              gridData.value.push(res.data)
-              successCount++
-            } catch {
-              errorCount++
-            }
-          }
-        }
-        
-        loading.close()
-        if (successCount > 0) {
-          ElMessage.success(`成功导入 ${successCount} 条数据${errorCount > 0 ? `，${errorCount} 条失败` : ''}`)
-        } else {
-          ElMessage.warning('没有有效数据被导入')
-        }
-      } catch {
-        loading.close()
-        ElMessage.error('解析CSV文件失败')
+      } else {
+        errorCount++
       }
     }
     
-    reader.readAsText(file.raw || file, 'UTF-8')
-  } catch {
     loading.close()
-    ElMessage.error('读取文件失败')
+    if (successCount > 0) {
+      ElMessage.success(`成功导入 ${successCount} 条数据${errorCount > 0 ? `，${errorCount} 条失败` : ''}`)
+    } else {
+      ElMessage.warning('没有有效数据被导入')
+    }
+  } catch (error) {
+    console.error('[CSV导入] 读取文件失败:', error)
+    loading.close()
+    ElMessage.error('读取文件失败，请检查文件格式')
   }
   
   return false  // 阻止默认上传行为
