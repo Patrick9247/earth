@@ -155,10 +155,16 @@ const updateGridData = async (index: number) => {
   }
 }
 
-// 计算沸点温度 T_boil = 26.12 * ln(P) - 8.97 (P 单位: kPa)
+// 计算饱和温度（分段公式，P 单位: kPa）
+// P_i ≤ 101.325 kPa: T_isat = 0.95 × P_i + 26.44
+// P_i > 101.325 kPa: T_isat = 0.04 × P_i + 132.01
 const calculateBoilingPoint = (pressure: number): number => {
   if (pressure <= 0) return 100.0
-  return 26.12 * Math.log(pressure) - 8.97
+  if (pressure <= 101.325) {
+    return 0.95 * pressure + 26.44
+  } else {
+    return 0.04 * pressure + 132.01
+  }
 }
 
 // 根据温度和压力自动判断相态

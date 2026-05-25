@@ -24,11 +24,14 @@
       <p class="section-desc">引入相态判定曲线方程，将每个网格的温度与对应的沸点温度进行比较，划分为气液共存网格集和液态水网格集。</p>
 
       <div class="formula-block">
-        <h3>相态判定曲线方程</h3>
+        <h3>相态判定曲线方程（饱和温度）</h3>
         <div class="formula">
-          T<sub>iboil</sub> = 26.12 × ln(P<sub>i</sub>) - 8.97
+          T<sub>isat</sub> = 0.95 × P<sub>i</sub> + 26.44 <span class="formula-condition">（P<sub>i</sub> ≤ 101.325 kPa）</span>
         </div>
-        <p class="formula-desc">其中：T<sub>iboil</sub> 为第 i 个网格的沸点温度（°C），P<sub>i</sub> 为第 i 个网格的压力（kPa）</p>
+        <div class="formula">
+          T<sub>isat</sub> = 0.04 × P<sub>i</sub> + 132.01 <span class="formula-condition">（P<sub>i</sub> &gt; 101.325 kPa）</span>
+        </div>
+        <p class="formula-desc">其中：T<sub>isat</sub> 为第 i 个网格的饱和温度（°C），P<sub>i</sub> 为第 i 个网格的压力（kPa）</p>
       </div>
 
       <div class="formula-block">
