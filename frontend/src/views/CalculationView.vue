@@ -756,13 +756,13 @@ onMounted(async () => {
           <el-row :gutter="20" style="margin-top: 12px;">
             <el-col :span="6">
               <div class="result-item">
-                <div class="result-label">├ 气液共存液态 Q<sub>2</sub></div>
+                <div class="result-label">气液共存液态 Q<sub>2</sub></div>
                 <div class="result-value">{{ formatNumber(result.two_phase_liquid_resource_joules) }}</div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="result-item">
-                <div class="result-label">├ 气液共存蒸汽 Q<sub>3</sub></div>
+                <div class="result-label">气液共存蒸汽 Q<sub>3</sub></div>
                 <div class="result-value">{{ formatNumber(result.steam_resource_joules) }}</div>
               </div>
             </el-col>
