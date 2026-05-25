@@ -246,8 +246,9 @@ class GeothermalCalculator:
         """
         相态判定曲线方程 - 计算沸点温度（饱和温度）
         
-        根据专利公式: T_isat = 26.12 × ln(P_i) - 8.97
-        注意：公式中 P_i 的单位是 kPa（千帕）
+        分段公式：
+        - T_isat = 0.95 × P_i + 26.44（P_i ≤ 101.325 kPa）
+        - T_isat = 0.04 × P_i + 132.01（P_i > 101.325 kPa）
         
         Args:
             pressure_kpa: 压力 (kPa)
@@ -258,12 +259,16 @@ class GeothermalCalculator:
         if pressure_kpa <= 0:
             return 100.0  # 默认常压沸点
         
-        # 专利公式: T_isat = 26.12 × ln(P_i) - 8.97，P_i 单位为 kPa
-        # 验证：标准大气压 101.325 kPa → T_sat ≈ 111.66°C（接近 100°C）
-        T_boiling = 26.12 * math.log(pressure_kpa) - 8.97
+        # 分段公式计算饱和温度
+        if pressure_kpa <= 101.325:
+            # P_i ≤ 101.325 kPa: T_isat = 0.95 × P_i + 26.44
+            T_sat = 0.95 * pressure_kpa + 26.44
+        else:
+            # P_i > 101.325 kPa: T_isat = 0.04 × P_i + 132.01
+            T_sat = 0.04 * pressure_kpa + 132.01
         
         # 限制在合理范围内
-        return max(0.0, min(T_boiling, 374.0))  # 水的临界温度约374°C
+        return max(0.0, min(T_sat, 374.0))  # 水的临界温度约374°C
     
     def calculate_saturation_properties(self, temperature: float) -> tuple:
         """
