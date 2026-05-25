@@ -700,8 +700,8 @@ class GeothermalCalculator:
             rock_heat = rock_mass * rock_specific_heat * delta_T * grid_count  # 乘以网格数量
             total_rock_heat += rock_heat
             
-            # 相态判定
-            phase = self.determine_phase(temperature, pressure)
+            # 使用前端传来的相态，如果没有则自动判断
+            phase = grid.get('phase') or self.determine_phase(temperature, pressure)
             
             # 使用自定义比热容或默认值（转换单位 kJ -> J）
             Cw = (liquid_specific_heat * 1000) if liquid_specific_heat else self.WATER_SPECIFIC_HEAT

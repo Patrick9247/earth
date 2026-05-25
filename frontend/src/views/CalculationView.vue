@@ -62,6 +62,7 @@ const loadForm = async (formId: number) => {
     // 确保每个网格都有热力学参数，没有则设置默认值
     gridData.value = (gridsRes.data || []).map((grid: any) => ({
       ...grid,
+      grid_count: grid.grid_count ?? 1,  // 确保有网格数默认值
       liquid_specific_heat: grid.liquid_specific_heat ?? 4.18,
       gas_specific_heat: grid.gas_specific_heat ?? 2.0,
       latent_heat: grid.latent_heat ?? 2257
@@ -346,6 +347,7 @@ const handleGridCalculate = async () => {
     // 计算总网格数用于显示
     const totalGrids = grids.reduce((sum: number, g: any) => sum + (g.grid_count || 1), 0)
     console.log(`[网格计算] 准备计算 ${grids.length} 条记录，共 ${totalGrids} 个网格...`)
+    console.log('[网格计算] 发送的数据:', JSON.stringify(grids, null, 2))
     
     // 调用后端API计算并保存
     const res = await gempyApi.calculateGrid({
