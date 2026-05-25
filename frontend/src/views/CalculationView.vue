@@ -201,22 +201,37 @@ const handleCsvUpload = async (file: File) => {
       
       if (values.length >= 5) {
         try {
-          const res = await gridCalcApi.addGrid(currentFormId.value!, {
+          // 安全解析数值，空字符串返回 null
+          const safeParseFloat = (val: string): number | null => {
+            if (!val || val.trim() === '') return null
+            const num = parseFloat(val)
+            return isNaN(num) ? null : num
+          }
+          const safeParseInt = (val: string): number => {
+            if (!val || val.trim() === '') return 1
+            const num = parseInt(val)
+            return isNaN(num) ? 1 : num
+          }
+          
+          const gridItem = {
             calc_id: currentFormId.value!,
-            grid_count: parseInt(values[0]) || 1,
-            porosity: parseFloat(values[1]) || null,
-            volume: parseFloat(values[2]) || null,
-            temperature: parseFloat(values[3]) || null,
-            pressure: parseFloat(values[4]) || null,
-            liquid_specific_heat: parseFloat(values[5]) || 4.18,
-            gas_specific_heat: parseFloat(values[6]) || 2.0,
-            latent_heat: parseFloat(values[7]) || 2257,
+            grid_count: safeParseInt(values[0]),
+            porosity: safeParseFloat(values[1]),
+            volume: safeParseFloat(values[2]),
+            temperature: safeParseFloat(values[3]),
+            pressure: safeParseFloat(values[4]),
+            liquid_specific_heat: safeParseFloat(values[5]) ?? 4.18,
+            gas_specific_heat: safeParseFloat(values[6]) ?? 2.0,
+            latent_heat: safeParseFloat(values[7]) ?? 2257,
             sort_order: gridData.value.length
-          })
+          }
+          console.log('[CSV导入] 准备添加网格:', gridItem)
+          
+          const res = await gridCalcApi.addGrid(currentFormId.value!, gridItem)
           gridData.value.push(res.data)
           successCount++
-        } catch (e) {
-          console.error('[CSV导入] 添加网格失败:', e)
+        } catch (e: any) {
+          console.error('[CSV导入] 添加网格失败:', e.response?.data || e.message)
           errorCount++
         }
       } else {
