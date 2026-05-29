@@ -186,4 +186,5 @@ async def serve_spa(full_path: str):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("DEPLOY_RUN_PORT", "5000"))
+    os.system(f"cd {os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))} && pnpm build")
     uvicorn.run(app, host="0.0.0.0", port=port)
