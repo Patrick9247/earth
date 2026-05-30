@@ -37,10 +37,6 @@ const goToQuickCalc = () => {
         <span class="status-label">数据库</span>
         <el-tag type="success" size="small">正常</el-tag>
       </div>
-      <div class="status-item">
-        <span class="status-label">GemPy</span>
-        <el-tag type="success" size="small">就绪</el-tag>
-      </div>
     </div>
 
   </aside>

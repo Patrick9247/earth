@@ -136,7 +136,7 @@ const handleKeydown = (e: KeyboardEvent) => {
                   stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
-        <h1 class="title">地热流体资源建模系统</h1>
+        <h1 class="title">地热流体资源计算系统</h1>
         <p class="subtitle">Geothermal Resource Modeling System</p>
       </div>
       

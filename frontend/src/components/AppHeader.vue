@@ -21,7 +21,7 @@ const navItems = [
   { path: '/', icon: 'HomeFilled', label: '系统首页' },
   { path: '/layers', icon: 'Document', label: '地质层管理' },
   { path: '/drill-data', icon: 'Aim', label: '钻孔数据' },
-  { path: '/model', icon: 'DataAnalysis', label: '地质建模' },
+  // { path: '/model', icon: 'DataAnalysis', label: '地质建模' },
   { path: '/calculation', icon: 'Cpu', label: '资源计算' },
   { path: '/results', icon: 'TrendCharts', label: '计算结果' },
   { path: '/users', icon: 'User', label: '用户管理' }
@@ -52,7 +52,7 @@ const getRoleTagType = (role: string) => {
   <header class="app-header">
     <div class="logo">
       <el-icon :size="28" color="#409eff"><Histogram /></el-icon>
-      <span class="title">地热流体资源建模系统</span>
+      <span class="title">地热流体资源计算系统</span>
     </div>
     <nav class="nav-menu">
       <router-link 

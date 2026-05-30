@@ -70,7 +70,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  document.title = `${to.meta.title || '首页'} - 地热流体资源建模系统`
+  document.title = `${to.meta.title || '首页'} - 地热流体资源计算系统`
 
   // 检查是否需要登录
   const token = localStorage.getItem('token')
