@@ -531,6 +531,16 @@ const formatNumber = (num: number, decimals: number = 2): string => {
   return num.toFixed(decimals) + ' J'
 }
 
+// 科学计数法格式化kJ
+const formatScientificKJ = (num: number): string => {
+  if (!num && num !== 0) return '0 kJ'
+  const kj = num / 1000  // J转kJ
+  if (kj === 0) return '0 kJ'
+  const exponent = Math.floor(Math.log10(Math.abs(kj)))
+  const mantissa = kj / Math.pow(10, exponent)
+  return `${mantissa.toFixed(2)} × 10<sup>${exponent}</sup> kJ`
+}
+
 // 智能格式化功率单位
 const formatPower = (mw: number): string => {
   if (!mw && mw !== 0) return '0'
@@ -675,95 +685,48 @@ onMounted(async () => {
         <div class="card" v-if="result">
           <h3 class="card-title">✅ 计算结果</h3>
           
-          <!-- 网格计算结果 -->
-          <el-row :gutter="20">
-            <el-col :span="6">
-              <div class="result-item highlight">
-                <div class="result-label">发电潜力</div>
-                <div class="result-value">{{ formatPower(result.power_potential_mw) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="result-item">
-                <div class="result-label">可采热量</div>
-                <div class="result-value">{{ formatNumber(result.extractable_heat) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="result-item">
-                <div class="result-label">总网格数</div>
-                <div class="result-value">{{ result.total_grid_count || 0 }} 个</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="result-item">
-                <div class="result-label">总网格体积</div>
-                <div class="result-value">{{ formatVolume(result.total_volume) }}</div>
-              </div>
-            </el-col>
-          </el-row>
+          <!-- 地热资源总量 -->
+          <div class="result-item highlight" style="text-align: center; padding: 20px;">
+            <div class="result-label" style="font-size: 16px;">地热资源总量 Q<sub>总</sub></div>
+            <div class="result-value" style="font-size: 28px; font-weight: bold;">{{ formatScientificKJ(result.total_resource_joules) }}</div>
+          </div>
           
           <el-divider />
           
-          <!-- 总热量构成 -->
-          <h4 style="margin: 16px 0 12px;">热量构成</h4>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <div class="result-item">
-                <div class="result-label">地热流体热量</div>
-                <div class="result-value">{{ formatNumber(result.fluid_resource_joules) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="result-item">
-                <div class="result-label">岩石热量</div>
-                <div class="result-value">{{ formatNumber(result.rock_heat_joules) }}</div>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="result-item highlight">
-                <div class="result-label">总地热资源量 Q<sub>总</sub></div>
-                <div class="result-value">{{ formatNumber(result.total_resource_joules) }}</div>
-              </div>
-            </el-col>
-          </el-row>
-          
-          <el-divider />
-          
-          <!-- 资源量分类 -->
+          <!-- 流体资源量分类 -->
           <h4 style="margin: 16px 0 12px;">流体资源量分类（按相态）</h4>
           <el-row :gutter="20">
-            <el-col :span="6">
+            <el-col :span="8">
               <div class="result-item">
                 <div class="result-label">液态资源量 Q<sub>1</sub></div>
-                <div class="result-value">{{ formatNumber(result.liquid_resource_joules) }}</div>
+                <div class="result-value">{{ formatScientificKJ(result.liquid_resource_joules) }}</div>
               </div>
             </el-col>
-            <el-col :span="6">
+            <el-col :span="8">
               <div class="result-item">
                 <div class="result-label">气液共存资源量 Q<sub>4</sub></div>
-                <div class="result-value">{{ formatNumber(result.reservoir_resource_joules) }}</div>
+                <div class="result-value">{{ formatScientificKJ(result.reservoir_resource_joules) }}</div>
               </div>
             </el-col>
-            <el-col :span="6">
+            <el-col :span="8">
               <div class="result-item">
                 <div class="result-label">气态资源量 Q<sub>5</sub></div>
-                <div class="result-value">{{ formatNumber(result.gas_resource_joules || 0) }}</div>
+                <div class="result-value">{{ formatScientificKJ(result.gas_resource_joules || 0) }}</div>
               </div>
             </el-col>
           </el-row>
           
           <el-row :gutter="20" style="margin-top: 12px;">
-            <el-col :span="6">
+            <el-col :span="12">
               <div class="result-item">
                 <div class="result-label">气液共存液态 Q<sub>2</sub></div>
-                <div class="result-value">{{ formatNumber(result.two_phase_liquid_resource_joules) }}</div>
+                <div class="result-value">{{ formatScientificKJ(result.two_phase_liquid_resource_joules) }}</div>
               </div>
             </el-col>
-            <el-col :span="6">
+            <el-col :span="12">
               <div class="result-item">
                 <div class="result-label">气液共存蒸汽 Q<sub>3</sub></div>
-                <div class="result-value">{{ formatNumber(result.steam_resource_joules) }}</div>
+                <div class="result-value">{{ formatScientificKJ(result.steam_resource_joules) }}</div>
               </div>
             </el-col>
           </el-row>
