@@ -688,7 +688,7 @@ onMounted(async () => {
           <!-- 地热资源总量 -->
           <div class="result-item highlight" style="text-align: center; padding: 20px;">
             <div class="result-label" style="font-size: 16px;">地热资源总量 Q<sub>总</sub></div>
-            <div class="result-value" style="font-size: 28px; font-weight: bold;">{{ formatScientificKJ(result.total_resource_joules) }}</div>
+            <div class="result-value" style="font-size: 28px; font-weight: bold;" v-html="formatScientificKJ(result.total_resource_joules)"></div>
           </div>
           
           <el-divider />
@@ -699,19 +699,19 @@ onMounted(async () => {
             <el-col :span="8">
               <div class="result-item">
                 <div class="result-label">液态资源量 Q<sub>1</sub></div>
-                <div class="result-value">{{ formatScientificKJ(result.liquid_resource_joules) }}</div>
+                <div class="result-value" v-html="formatScientificKJ(result.liquid_resource_joules)"></div>
               </div>
             </el-col>
             <el-col :span="8">
               <div class="result-item">
                 <div class="result-label">气液共存资源量 Q<sub>4</sub></div>
-                <div class="result-value">{{ formatScientificKJ(result.reservoir_resource_joules) }}</div>
+                <div class="result-value" v-html="formatScientificKJ(result.reservoir_resource_joules)"></div>
               </div>
             </el-col>
             <el-col :span="8">
               <div class="result-item">
                 <div class="result-label">气态资源量 Q<sub>5</sub></div>
-                <div class="result-value">{{ formatScientificKJ(result.gas_resource_joules || 0) }}</div>
+                <div class="result-value" v-html="formatScientificKJ(result.gas_resource_joules || 0)"></div>
               </div>
             </el-col>
           </el-row>
@@ -720,13 +720,13 @@ onMounted(async () => {
             <el-col :span="12">
               <div class="result-item">
                 <div class="result-label">气液共存液态 Q<sub>2</sub></div>
-                <div class="result-value">{{ formatScientificKJ(result.two_phase_liquid_resource_joules) }}</div>
+                <div class="result-value" v-html="formatScientificKJ(result.two_phase_liquid_resource_joules)"></div>
               </div>
             </el-col>
             <el-col :span="12">
               <div class="result-item">
                 <div class="result-label">气液共存蒸汽 Q<sub>3</sub></div>
-                <div class="result-value">{{ formatScientificKJ(result.steam_resource_joules) }}</div>
+                <div class="result-value" v-html="formatScientificKJ(result.steam_resource_joules)"></div>
               </div>
             </el-col>
           </el-row>
