@@ -520,17 +520,6 @@ const handleGridCalculate = async () => {
   }
 }
 
-// 格式化数字
-const formatNumber = (num: number, decimals: number = 2): string => {
-  if (!num && num !== 0) return '0'
-  if (num >= 1e18) return (num / 1e18).toFixed(decimals) + ' EJ'
-  if (num >= 1e15) return (num / 1e15).toFixed(decimals) + ' PJ'
-  if (num >= 1e12) return (num / 1e12).toFixed(decimals) + ' TJ'
-  if (num >= 1e9) return (num / 1e9).toFixed(decimals) + ' GJ'
-  if (num >= 1e6) return (num / 1e6).toFixed(decimals) + ' MJ'
-  return num.toFixed(decimals) + ' J'
-}
-
 // 科学计数法格式化kJ
 const formatScientificKJ = (num: number): string => {
   if (!num && num !== 0) return '0 kJ'
@@ -541,28 +530,7 @@ const formatScientificKJ = (num: number): string => {
   return `${mantissa.toFixed(2)} × 10<sup>${exponent}</sup> kJ`
 }
 
-// 智能格式化功率单位
-const formatPower = (mw: number): string => {
-  if (!mw && mw !== 0) return '0'
-  if (mw >= 1e6) return (mw / 1e6).toFixed(4) + ' TW'    // 太瓦
-  if (mw >= 1e3) return (mw / 1e3).toFixed(4) + ' GW'    // 吉瓦
-  if (mw >= 1) return mw.toFixed(4) + ' MW'               // 兆瓦
-  if (mw >= 1e-3) return (mw * 1e3).toFixed(4) + ' kW'    // 千瓦
-  if (mw >= 1e-6) return (mw * 1e6).toFixed(4) + ' W'    // 瓦
-  if (mw >= 1e-9) return (mw * 1e9).toFixed(4) + ' mW'   // 毫瓦
-  if (mw >= 1e-12) return (mw * 1e12).toFixed(4) + ' μW'  // 微瓦
-  if (mw >= 1e-15) return (mw * 1e15).toFixed(4) + ' nW'  // 纳瓦
-  return mw.toExponential(4) + ' W'                       // 科学计数法
-}
 
-// 格式化体积
-const formatVolume = (vol: number, decimals: number = 2): string => {
-  if (!vol && vol !== 0) return '0'
-  if (vol >= 1e9) return (vol / 1e9).toFixed(decimals) + ' km³'
-  if (vol >= 1e6) return (vol / 1e6).toFixed(decimals) + ' Mm³'
-  if (vol >= 1e3) return (vol / 1e3).toFixed(decimals) + ' 千m³'
-  return vol.toFixed(decimals) + ' m³'
-}
 
 // 页面加载时初始化
 onMounted(async () => {
