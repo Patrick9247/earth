@@ -673,9 +673,9 @@ class GeothermalCalculator:
         total_rock_heat = 0.0        # 岩石热量
         
         for i, grid in enumerate(grid_data):
-            porosity = grid.get('porosity', 0.15)
-            volume = grid.get('volume', 0)
-            temperature = grid.get('temperature', 100)
+            porosity = grid.get('porosity', 0.15) #孔隙度
+            volume = grid.get('volume', 0) #体积
+            temperature = grid.get('temperature', 100) #温度
             pressure = grid.get('pressure', 101.325)  # 默认101.325 kPa (大气压)
             grid_count = grid.get('grid_count', 1)  # 网格数量
             liquid_specific_heat = grid.get('liquid_specific_heat')  # kJ/(kg·°C)
