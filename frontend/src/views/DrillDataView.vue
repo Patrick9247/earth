@@ -398,11 +398,13 @@ const handleSubmit = async () => {
 // ==================== 导入操作 ====================
 const previewColumns = computed(() => {
   if (!previewData.value?.columns) return []
-  return previewData.value.columns.map((col: string) => ({
-    prop: col,
-    label: col,
-    minWidth: 120
-  }))
+  // 支持 columns 为字符串数组或对象数组
+  return previewData.value.columns.map((col: any) => {
+    if (typeof col === 'string') {
+      return { prop: col, label: col, minWidth: 120 }
+    }
+    return { prop: col.prop, label: col.label, minWidth: 120 }
+  })
 })
 
 const handleFileChange = async (file: UploadFile) => {
@@ -414,12 +416,17 @@ const handleFileChange = async (file: UploadFile) => {
     // 使用地层分层API导入
     const res = await stratigraphicApi.importCsv(file.raw)
     if (res.data.success) {
-      // 构造预览数据
+      // 构造预览数据 - 使用英文prop匹配后端字段，中文label显示
       previewData.value = {
         success: true,
         total_rows: res.data.count || 0,
         rows: res.data.data || [],
-        columns: ['钻孔名称', '顶部深度', '底部深度', '地层类型']
+        columns: [
+          { prop: 'hole_name', label: '钻孔名称' },
+          { prop: 'depth_top', label: '顶部深度' },
+          { prop: 'depth_bottom', label: '底部深度' },
+          { prop: 'layer_type', label: '地层类型' }
+        ]
       }
       ElMessage.success(`成功读取 ${res.data.count || 0} 行数据`)
     } else {
