@@ -199,6 +199,7 @@ const downloadStratigraphicTemplate = () => {
 
 // 导入CSV
 const handleStratigraphicUpload = async (file: File) => {
+  // 返回false阻止自动上传，手动处理
   try {
     const res = await stratigraphicApi.importCsv(file)
     if (res.data.success) {
@@ -211,7 +212,7 @@ const handleStratigraphicUpload = async (file: File) => {
     console.error('导入失败:', error)
     ElMessage.error(error.response?.data?.detail || '导入失败')
   }
-  return false
+  return false  // 阻止el-upload的自动上传行为
 }
 
 // ==================== 数据加载 ====================

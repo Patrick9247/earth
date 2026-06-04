@@ -43,51 +43,12 @@ def get_all_hole_names(db: Session = Depends(get_db)):
     return [r[0] for r in result]
 
 
-@router.get("/{layer_id}", response_model=StratigraphicLayerResponse)
-def get_layer(layer_id: int, db: Session = Depends(get_db)):
-    """获取单条地层分层数据"""
-    layer = db.query(StratigraphicLayer).filter(StratigraphicLayer.id == layer_id).first()
-    if not layer:
-        raise HTTPException(status_code=404, detail="地层分层数据不存在")
-    return layer
-
-
-@router.post("/create", response_model=StratigraphicLayerResponse)
-def create_layer(layer: StratigraphicLayerCreate, db: Session = Depends(get_db)):
-    """创建地层分层数据"""
-    db_layer = StratigraphicLayer(**layer.model_dump())
-    db.add(db_layer)
+@router.delete("/clear-all", response_model=MessageResponse)
+def clear_all(db: Session = Depends(get_db)):
+    """清空所有地层分层数据"""
+    count = db.query(StratigraphicLayer).delete()
     db.commit()
-    db.refresh(db_layer)
-    return db_layer
-
-
-@router.put("/{layer_id}", response_model=StratigraphicLayerResponse)
-def update_layer(layer_id: int, layer: StratigraphicLayerUpdate, db: Session = Depends(get_db)):
-    """更新地层分层数据"""
-    db_layer = db.query(StratigraphicLayer).filter(StratigraphicLayer.id == layer_id).first()
-    if not db_layer:
-        raise HTTPException(status_code=404, detail="地层分层数据不存在")
-    
-    update_data = layer.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_layer, key, value)
-    
-    db.commit()
-    db.refresh(db_layer)
-    return db_layer
-
-
-@router.delete("/{layer_id}", response_model=MessageResponse)
-def delete_layer(layer_id: int, db: Session = Depends(get_db)):
-    """删除地层分层数据"""
-    db_layer = db.query(StratigraphicLayer).filter(StratigraphicLayer.id == layer_id).first()
-    if not db_layer:
-        raise HTTPException(status_code=404, detail="地层分层数据不存在")
-    
-    db.delete(db_layer)
-    db.commit()
-    return MessageResponse(success=True, message="删除成功")
+    return MessageResponse(success=True, message=f"已清空 {count} 条数据")
 
 
 @router.delete("/hole/{hole_name}", response_model=MessageResponse)
@@ -175,9 +136,48 @@ def batch_create_layers(layers: List[StratigraphicLayerCreate], db: Session = De
         raise HTTPException(status_code=500, detail=f"批量创建失败: {str(e)}")
 
 
-@router.delete("/clear-all", response_model=MessageResponse)
-def clear_all(db: Session = Depends(get_db)):
-    """清空所有地层分层数据"""
-    count = db.query(StratigraphicLayer).delete()
+@router.get("/{layer_id}", response_model=StratigraphicLayerResponse)
+def get_layer(layer_id: int, db: Session = Depends(get_db)):
+    """获取单条地层分层数据"""
+    layer = db.query(StratigraphicLayer).filter(StratigraphicLayer.id == layer_id).first()
+    if not layer:
+        raise HTTPException(status_code=404, detail="地层分层数据不存在")
+    return layer
+
+
+@router.post("/create", response_model=StratigraphicLayerResponse)
+def create_layer(layer: StratigraphicLayerCreate, db: Session = Depends(get_db)):
+    """创建地层分层数据"""
+    db_layer = StratigraphicLayer(**layer.model_dump())
+    db.add(db_layer)
     db.commit()
-    return MessageResponse(success=True, message=f"已清空 {count} 条数据")
+    db.refresh(db_layer)
+    return db_layer
+
+
+@router.put("/{layer_id}", response_model=StratigraphicLayerResponse)
+def update_layer(layer_id: int, layer: StratigraphicLayerUpdate, db: Session = Depends(get_db)):
+    """更新地层分层数据"""
+    db_layer = db.query(StratigraphicLayer).filter(StratigraphicLayer.id == layer_id).first()
+    if not db_layer:
+        raise HTTPException(status_code=404, detail="地层分层数据不存在")
+    
+    update_data = layer.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_layer, key, value)
+    
+    db.commit()
+    db.refresh(db_layer)
+    return db_layer
+
+
+@router.delete("/{layer_id}", response_model=MessageResponse)
+def delete_layer(layer_id: int, db: Session = Depends(get_db)):
+    """删除地层分层数据"""
+    db_layer = db.query(StratigraphicLayer).filter(StratigraphicLayer.id == layer_id).first()
+    if not db_layer:
+        raise HTTPException(status_code=404, detail="地层分层数据不存在")
+    
+    db.delete(db_layer)
+    db.commit()
+    return MessageResponse(success=True, message="删除成功")
