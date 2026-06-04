@@ -1,7 +1,7 @@
 `<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import * as echarts from 'echarts'
-import { drillHolesApi, importApi, stratigraphicApi } from '@/api/get-api.ts'
+import { drillHolesApi, stratigraphicApi } from '@/api/get-api.ts'
 import { useGeothermalStore } from '@/stores/geothermal'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -17,14 +17,14 @@ const activeTab = ref('import')  // 默认显示数据导入
 const drillHoles = ref<any[]>([])
 
 // ==================== 导入相关 ====================
-const importType = ref('drill_info')
+const importType = ref('stratigraphic')
 const uploading = ref(false)
 const previewData = ref<any>(null)
 const importResult = ref<any>(null)
 const fileList = ref<UploadFile[]>([])
 
 const importTypes = [
-  { value: 'drill_info', label: '钻孔空间信息', description: '钻孔编号、坐标、深度等基本信息', icon: 'Aim' }
+  { value: 'stratigraphic', label: '地层分层数据', description: '钻孔名称、顶部深度、底部深度、地层类型', icon: 'DataLine' }
 ]
 
 // ==================== 手动输入表单 ====================
@@ -410,10 +410,17 @@ const handleFileChange = async (file: UploadFile) => {
   importResult.value = null
   
   try {
-    const res = await importApi.preview(file.raw)
+    // 使用地层分层API导入
+    const res = await stratigraphicApi.importCsv(file.raw)
     if (res.data.success) {
-      previewData.value = res.data
-      ElMessage.success(`成功读取 ${res.data.total_rows} 行数据`)
+      // 构造预览数据
+      previewData.value = {
+        success: true,
+        total_rows: res.data.count || 0,
+        rows: res.data.data || [],
+        columns: ['钻孔名称', '顶部深度', '底部深度', '地层类型']
+      }
+      ElMessage.success(`成功读取 ${res.data.count || 0} 行数据`)
     } else {
       ElMessage.error(res.data.message || '预览失败')
     }
@@ -423,8 +430,25 @@ const handleFileChange = async (file: UploadFile) => {
 }
 
 const downloadTemplate = () => {
-  const url = importApi.downloadTemplate(importType.value)
-  window.open(url, '_blank')
+  const headers = ['钻孔名称', '顶部深度', '底部深度', '地层类型']
+  const csvContent = headers.join(',') + '\n'
+  
+  // 添加示例数据
+  const exampleRows = [
+    ['ZK001', '0', '23', '盖层'],
+    ['ZK001', '23', '56', '热储层'],
+    ['ZK001', '56', '120', '基层']
+  ]
+  const fullContent = csvContent + exampleRows.map(row => row.join(',')).join('\n')
+  
+  const blob = new Blob(['\ufeff' + fullContent], { type: 'text/csv;charset=utf-8;' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '地层分层数据模板.csv'
+  link.click()
+  window.URL.revokeObjectURL(url)
+  ElMessage.success('模板已下载')
 }
 
 const executeImport = async () => {
@@ -437,29 +461,39 @@ const executeImport = async () => {
   importResult.value = null
   
   try {
-    let res
     const file = fileList.value[0].raw
-    
-    switch (importType.value) {
-      case 'drill_info': res = await importApi.importDrillInfo(file); break
-      case 'layers': res = await importApi.importLayers(file); break
-      case 'temperature': res = await importApi.importTemperature(file); break
-      case 'pressure': res = await importApi.importPressure(file); break
-      case 'porosity': res = await importApi.importPorosity(file); break
-      default: throw new Error('未知的导入类型')
-    }
+    const res = await stratigraphicApi.importCsv(file)
     
     if (res.data.success) {
-      importResult.value = res.data
+      importResult.value = {
+        success: true,
+        message: res.data.message,
+        total_rows: res.data.count || 0,
+        success_rows: res.data.count || 0,
+        failed_rows: 0
+      }
       ElMessage.success(res.data.message)
       fileList.value = []
       previewData.value = null
-      loadDrillHoles()
+      loadStratigraphicLayers()
     } else {
-      importResult.value = res.data
+      importResult.value = {
+        success: false,
+        message: res.data.message,
+        total_rows: 0,
+        success_rows: 0,
+        failed_rows: 0
+      }
       ElMessage.error(res.data.message)
     }
   } catch (error: any) {
+    importResult.value = {
+      success: false,
+      message: error.response?.data?.detail || '导入失败',
+      total_rows: 0,
+      success_rows: 0,
+      failed_rows: 1
+    }
     ElMessage.error(error.response?.data?.detail || '导入失败')
   } finally {
     uploading.value = false
