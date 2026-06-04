@@ -173,4 +173,27 @@ export const usersApi = {
   toggleActive: (id: number) => api.patch(`/users/${id}/toggle-active`)
 }
 
+// ==================== 地层分层数据 API ====================
+export const stratigraphicApi = {
+  getAll: (holeName?: string) => {
+    const params = holeName ? `?hole_name=${encodeURIComponent(holeName)}` : ''
+    return api.get(`/stratigraphic/list${params}`)
+  },
+  getHoles: () => api.get('/stratigraphic/holes'),
+  getOne: (id: number) => api.get(`/stratigraphic/${id}`),
+  create: (data: any) => api.post('/stratigraphic/create', data),
+  update: (id: number, data: any) => api.put(`/stratigraphic/${id}`, data),
+  delete: (id: number) => api.delete(`/stratigraphic/${id}`),
+  deleteByHole: (holeName: string) => api.delete(`/stratigraphic/hole/${encodeURIComponent(holeName)}`),
+  importCsv: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/stratigraphic/import-csv', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  batchCreate: (layers: any[]) => api.post('/stratigraphic/batch-create', layers),
+  clearAll: () => api.delete('/stratigraphic/clear-all')
+}
+
 export default api

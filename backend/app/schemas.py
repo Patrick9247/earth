@@ -403,6 +403,38 @@ class GridCalculationFormResponse(GridCalculationFormBase):
         from_attributes = True
 
 
+# ==================== 地层分层数据 Schemas ====================
+class StratigraphicLayerBase(BaseModel):
+    """地层分层数据基础模型"""
+    hole_name: str = Field(..., description="钻孔名称")
+    depth_top: float = Field(..., description="顶部深度(m)")
+    depth_bottom: float = Field(..., description="底部深度(m)")
+    layer_type: str = Field(..., description="地层类型(盖层/热储层/基层)")
+
+
+class StratigraphicLayerCreate(StratigraphicLayerBase):
+    """创建地层分层数据"""
+    pass
+
+
+class StratigraphicLayerUpdate(BaseModel):
+    """更新地层分层数据"""
+    hole_name: Optional[str] = None
+    depth_top: Optional[float] = None
+    depth_bottom: Optional[float] = None
+    layer_type: Optional[str] = None
+
+
+class StratigraphicLayerResponse(StratigraphicLayerBase):
+    """地层分层数据响应"""
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
 # ==================== 单个网格数据 Schemas ====================
 class GridItemBase(BaseModel):
     """单个网格基础模型"""

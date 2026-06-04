@@ -1,9 +1,9 @@
 `<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import * as echarts from 'echarts'
-import { drillHolesApi, importApi, drillHoleDetailApi } from '@/api/get-api.ts'
+import { drillHolesApi, importApi, drillHoleDetailApi, stratigraphicApi } from '@/api/get-api.ts'
 import { useGeothermalStore } from '@/stores/geothermal'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import {formatDate} from "../utils/utils.ts";
 
@@ -131,6 +131,167 @@ const porosityForm = ref({
   laboratory: '',
   description: ''
 })
+
+// ==================== 地层分层数据 ====================
+const stratigraphicLoading = ref(false)
+const stratigraphicLayers = ref<any[]>([])
+const stratigraphicHoles = ref<string[]>([])
+const selectedHoleFilter = ref<string>('')
+const filteredStratigraphicLayers = ref<any[]>([])
+const stratigraphicDialogVisible = ref(false)
+const stratigraphicForm = ref({
+  id: null as number | null,
+  hole_name: '',
+  depth_top: 0,
+  depth_bottom: 0,
+  layer_type: '盖层'
+})
+
+// 加载地层分层数据
+const loadStratigraphicLayers = async () => {
+  stratigraphicLoading.value = true
+  try {
+    const [layersRes, holesRes] = await Promise.all([
+      stratigraphicApi.getAll(),
+      stratigraphicApi.getHoles()
+    ])
+    stratigraphicLayers.value = layersRes.data || []
+    stratigraphicHoles.value = holesRes.data || []
+    filteredStratigraphicLayers.value = stratigraphicLayers.value
+  } catch (error) {
+    console.error('加载地层分层数据失败:', error)
+    ElMessage.error('加载地层分层数据失败')
+  } finally {
+    stratigraphicLoading.value = false
+  }
+}
+
+// 筛选地层分层数据
+const filterStratigraphicLayers = () => {
+  if (selectedHoleFilter.value) {
+    filteredStratigraphicLayers.value = stratigraphicLayers.value.filter(
+      (layer: any) => layer.hole_name === selectedHoleFilter.value
+    )
+  } else {
+    filteredStratigraphicLayers.value = stratigraphicLayers.value
+  }
+}
+
+// 获取地层类型标签颜色
+const getLayerTypeTag = (type: string) => {
+  const typeMap: Record<string, string> = {
+    '盖层': 'info',
+    '热储层': 'success',
+    '基层': 'warning'
+  }
+  return typeMap[type] || ''
+}
+
+// 添加地层分层
+const addStratigraphicLayer = () => {
+  stratigraphicForm.value = {
+    id: null,
+    hole_name: '',
+    depth_top: 0,
+    depth_bottom: 0,
+    layer_type: '盖层'
+  }
+  stratigraphicDialogVisible.value = true
+}
+
+// 编辑地层分层
+const editStratigraphicLayer = (row: any) => {
+  stratigraphicForm.value = { ...row }
+  stratigraphicDialogVisible.value = true
+}
+
+// 保存地层分层
+const saveStratigraphicLayer = async () => {
+  try {
+    if (stratigraphicForm.value.id) {
+      await stratigraphicApi.update(stratigraphicForm.value.id, stratigraphicForm.value)
+      ElMessage.success('更新成功')
+    } else {
+      await stratigraphicApi.create(stratigraphicForm.value)
+      ElMessage.success('添加成功')
+    }
+    stratigraphicDialogVisible.value = false
+    loadStratigraphicLayers()
+  } catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败')
+  }
+}
+
+// 删除地层分层
+const deleteStratigraphicLayer = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('确定删除该地层分层记录吗？', '提示', {
+      type: 'warning'
+    })
+    await stratigraphicApi.delete(row.id)
+    ElMessage.success('删除成功')
+    loadStratigraphicLayers()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+// 清空地层分层数据
+const clearStratigraphicData = async () => {
+  try {
+    await ElMessageBox.confirm('确定清空所有地层分层数据吗？此操作不可恢复！', '警告', {
+      type: 'warning'
+    })
+    await stratigraphicApi.clearAll()
+    ElMessage.success('清空成功')
+    loadStratigraphicLayers()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('清空失败:', error)
+      ElMessage.error('清空失败')
+    }
+  }
+}
+
+// 下载CSV模板
+const downloadStratigraphicTemplate = () => {
+  const headers = ['钻孔名称', '顶部深度', '底部深度', '地层类型']
+  const csvContent = headers.join(',') + '\n'
+  
+  // 添加示例数据行
+  const exampleRow = ['ZK001', '0', '23', '盖层']
+  const fullContent = csvContent + exampleRow.join(',')
+  
+  const blob = new Blob(['\ufeff' + fullContent], { type: 'text/csv;charset=utf-8;' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '地层分层数据模板.csv'
+  link.click()
+  window.URL.revokeObjectURL(url)
+  ElMessage.success('模板已下载')
+}
+
+// 导入CSV
+const handleStratigraphicUpload = async (file: File) => {
+  try {
+    const res = await stratigraphicApi.importCsv(file)
+    if (res.data.success) {
+      ElMessage.success(res.data.message)
+      loadStratigraphicLayers()
+    } else {
+      ElMessage.warning(res.data.message)
+    }
+  } catch (error: any) {
+    console.error('导入失败:', error)
+    ElMessage.error(error.response?.data?.detail || '导入失败')
+  }
+  return false
+}
 
 // ==================== 数据加载 ====================
 const loadDrillHoles = async () => {
@@ -963,6 +1124,7 @@ const resizeChart = () => {
 
 onMounted(() => {
   loadDrillHoles()
+  loadStratigraphicLayers()
   window.addEventListener('resize', resizeChart)
 })
 
@@ -1146,6 +1308,82 @@ onUnmounted(() => {
             <h3 class="card-title">钻孔数据可视化</h3>
             <!-- 柱状图容器 -->
            <div ref="chartRef" class="chart-container"></div>
+          </div>
+        </el-tab-pane>
+
+        <!-- 地层分层数据 -->
+        <el-tab-pane label="地层分层" name="stratigraphic">
+          <div class="card">
+            <div class="toolbar">
+              <el-button type="primary" @click="addStratigraphicLayer">
+                <el-icon><Plus /></el-icon>
+                添加分层
+              </el-button>
+              <el-upload
+                ref="stratigraphicUploadRef"
+                :show-file-list="false"
+                :before-upload="handleStratigraphicUpload"
+                accept=".csv"
+                style="display: inline-block; margin-left: 10px;"
+              >
+                <el-button type="warning">
+                  <el-icon><Upload /></el-icon>
+                  导入CSV
+                </el-button>
+              </el-upload>
+              <el-button type="info" @click="downloadStratigraphicTemplate">
+                <el-icon><Download /></el-icon>
+                下载模板
+              </el-button>
+              <el-button @click="loadStratigraphicLayers">
+                <el-icon><Refresh /></el-icon>
+                刷新
+              </el-button>
+              <el-button type="danger" @click="clearStratigraphicData" :disabled="stratigraphicLayers.length === 0">
+                <el-icon><Delete /></el-icon>
+                清空数据
+              </el-button>
+            </div>
+
+            <!-- 钻孔筛选 -->
+            <div class="filter-section" style="margin-bottom: 16px;">
+              <el-select v-model="selectedHoleFilter" placeholder="筛选钻孔" clearable @change="filterStratigraphicLayers" style="width: 200px;">
+                <el-option v-for="hole in stratigraphicHoles" :key="hole" :label="hole" :value="hole" />
+              </el-select>
+            </div>
+
+            <el-table :data="filteredStratigraphicLayers" border stripe v-loading="stratigraphicLoading" max-height="500">
+              <el-table-column type="index" label="序号" width="60" />
+              <el-table-column prop="hole_name" label="钻孔名称" width="120" />
+              <el-table-column prop="depth_top" label="顶部深度(m)" width="120">
+                <template #default="{ row }">
+                  {{ row.depth_top?.toFixed(2) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="depth_bottom" label="底部深度(m)" width="120">
+                <template #default="{ row }">
+                  {{ row.depth_bottom?.toFixed(2) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="厚度(m)" width="100">
+                <template #default="{ row }">
+                  {{ (row.depth_bottom - row.depth_top)?.toFixed(2) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="layer_type" label="地层类型" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="getLayerTypeTag(row.layer_type)" size="small">
+                    {{ row.layer_type }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <el-button type="primary" link @click="editStratigraphicLayer(row)">编辑</el-button>
+                  <el-button type="danger" link @click="deleteStratigraphicLayer(row)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -1807,6 +2045,32 @@ onUnmounted(() => {
       <template #footer>
         <el-button @click="porosityDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitPorosity">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 地层分层编辑对话框 -->
+    <el-dialog v-model="stratigraphicDialogVisible" :title="stratigraphicForm.id ? '编辑地层分层' : '添加地层分层'" width="500px">
+      <el-form :model="stratigraphicForm" label-width="100px">
+        <el-form-item label="钻孔名称" required>
+          <el-input v-model="stratigraphicForm.hole_name" placeholder="如 ZK001" />
+        </el-form-item>
+        <el-form-item label="顶部深度(m)" required>
+          <el-input-number v-model="stratigraphicForm.depth_top" :min="0" :controls="false" :precision="2" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="底部深度(m)" required>
+          <el-input-number v-model="stratigraphicForm.depth_bottom" :min="0" :controls="false" :precision="2" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="地层类型" required>
+          <el-select v-model="stratigraphicForm.layer_type" style="width: 100%">
+            <el-option label="盖层" value="盖层" />
+            <el-option label="热储层" value="热储层" />
+            <el-option label="基层" value="基层" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="stratigraphicDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveStratigraphicLayer">保存</el-button>
       </template>
     </el-dialog>
   </div>

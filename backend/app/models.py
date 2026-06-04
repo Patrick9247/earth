@@ -24,6 +24,19 @@ class User(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
+class StratigraphicLayer(Base):
+    """地层分层数据表 - 按Excel模板设计"""
+    __tablename__ = "stratigraphic_layers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    hole_name = Column(String(100), nullable=False, index=True, comment="钻孔名称")
+    depth_top = Column(Float, nullable=False, comment="顶部深度(m)")
+    depth_bottom = Column(Float, nullable=False, comment="底部深度(m)")
+    layer_type = Column(String(50), nullable=False, comment="地层类型(盖层/热储层/基层)")
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class GeologicalLayer(Base):
     """地质层模型"""
     __tablename__ = "geological_layers"
