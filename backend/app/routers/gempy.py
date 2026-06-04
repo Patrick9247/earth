@@ -265,7 +265,7 @@ async def calculate_grid_resources(
         # 调试日志：打印接收到的网格数据
         logger.info(f"[网格计算] 接收到 {len(grid_data)} 条网格数据")
         for i, g in enumerate(grid_data):
-            logger.info(f"[网格计算] 网格{i+1}: grid_count={g.get('grid_count')}, volume={g.get('volume')}, temperature={g.get('temperature')}, phase={g.get('phase')}")
+            logger.info(f"[网格计算] 网格{i+1}: coord=({g.get('coord_x')}, {g.get('coord_y')}, {g.get('coord_z')}), volume={g.get('volume')}, temperature={g.get('temperature')}, phase={g.get('phase')}")
         
         # 执行网格资源计算
         results = geothermal_calculator.calculate_grid_resources(
@@ -316,7 +316,7 @@ async def calculate_grid_resources(
             db_resource = GeothermalResource(
                 name=f"网格计算_{results['total_grid_count']}个网格",
                 model_type="grid_calculation",
-                volume=sum(g.volume * (g.grid_count or 1) for g in request.grids),
+                volume=sum(g.volume for g in request.grids),
                 temperature_avg=sum(g.temperature for g in request.grids) / len(request.grids),
                 temperature_max=max(g.temperature for g in request.grids),
                 heat_content=results['total_resource_joules'],
