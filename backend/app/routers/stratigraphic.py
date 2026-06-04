@@ -82,6 +82,8 @@ async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
         error_count = 0
         errors = []
         
+        imported_data = []
+        
         for i, row in enumerate(reader, start=2):
             try:
                 # 解析数据
@@ -101,6 +103,14 @@ async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
                     layer_type=layer_type
                 )
                 db.add(db_layer)
+                db.flush()  # 获取ID
+                imported_data.append({
+                    "id": db_layer.id,
+                    "hole_name": hole_name,
+                    "depth_top": depth_top,
+                    "depth_bottom": depth_bottom,
+                    "layer_type": layer_type
+                })
                 success_count += 1
             except Exception as e:
                 error_count += 1
@@ -111,7 +121,8 @@ async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
         return {
             "success": True,
             "message": f"导入完成：成功 {success_count} 条，失败 {error_count} 条",
-            "success_count": success_count,
+            "count": success_count,
+            "data": imported_data,
             "error_count": error_count,
             "errors": errors[:10] if errors else []
         }
