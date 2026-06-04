@@ -332,8 +332,10 @@ class GeothermalCalculationResponse(BaseModel):
 
 # ==================== 网格资源计算请求 Schemas ====================
 class GridDataItem(BaseModel):
-    """单个网格数据"""
-    grid_count: int = Field(1, ge=1, description="网格数量")
+    """单个网格数据 - 每条数据为一个网格"""
+    coord_x: Optional[float] = Field(None, description="X坐标")
+    coord_y: Optional[float] = Field(None, description="Y坐标")
+    coord_z: Optional[float] = Field(None, description="Z坐标(深度)")
     porosity: float = Field(0.15, ge=0, le=1, description="孔隙度")
     volume: float = Field(..., gt=0, description="体积(m³)")
     temperature: float = Field(..., gt=0, description="温度(°C)")
@@ -405,14 +407,16 @@ class GridCalculationFormResponse(GridCalculationFormBase):
 class GridItemBase(BaseModel):
     """单个网格基础模型"""
     calc_id: int = Field(..., description="所属计算ID")
-    grid_count: int = Field(1, ge=1, description="网格数量")
+    coord_x: Optional[float] = Field(None, description="X坐标")
+    coord_y: Optional[float] = Field(None, description="Y坐标")
+    coord_z: Optional[float] = Field(None, description="Z坐标(深度)")
     porosity: Optional[float] = Field(None, ge=0, le=1, description="孔隙度")
     volume: Optional[float] = Field(None, gt=0, description="体积(m³)")
     temperature: Optional[float] = Field(None, description="温度(°C)")
     pressure: Optional[float] = Field(None, description="压力(kPa)")
+    liquid_specific_heat: Optional[float] = Field(None, description="液体比热容(kJ/(kg·°C))")
     gas_specific_heat: Optional[float] = Field(None, description="气体比热容(kJ/(kg·°C))")
     latent_heat: Optional[float] = Field(None, description="气化潜热(kJ/kg)")
-    liquid_specific_heat: Optional[float] = Field(None, description="液体比热容(kJ/(kg·°C))")
     sort_order: Optional[int] = Field(0, description="排序顺序")
 
 
@@ -423,14 +427,16 @@ class GridItemCreate(GridItemBase):
 
 class GridItemUpdate(BaseModel):
     """更新网格"""
-    grid_count: Optional[int] = None
+    coord_x: Optional[float] = None
+    coord_y: Optional[float] = None
+    coord_z: Optional[float] = None
     porosity: Optional[float] = None
     volume: Optional[float] = None
     temperature: Optional[float] = None
     pressure: Optional[float] = None
+    liquid_specific_heat: Optional[float] = None
     gas_specific_heat: Optional[float] = None
     latent_heat: Optional[float] = None
-    liquid_specific_heat: Optional[float] = None
     sort_order: Optional[int] = None
 
 

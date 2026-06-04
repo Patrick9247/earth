@@ -63,7 +63,6 @@ const loadForm = async (formId: number) => {
     // 确保每个网格都有热力学参数，没有则设置默认值
     gridData.value = (gridsRes.data || []).map((grid: any) => ({
       ...grid,
-      grid_count: grid.grid_count ?? 1,  // 确保有网格数默认值
       liquid_specific_heat: grid.liquid_specific_heat ?? 4.18,
       gas_specific_heat: grid.gas_specific_heat ?? 2.0,
       latent_heat: grid.latent_heat ?? 2257
@@ -104,7 +103,9 @@ const addGrid = async () => {
     try {
       const res = await gridCalcApi.addGrid(currentFormId.value, {
         calc_id: currentFormId.value,
-        grid_count: 1,
+        coord_x: null,
+        coord_y: null,
+        coord_z: null,
         porosity: null,
         volume: null,
         temperature: null,
@@ -125,11 +126,11 @@ const addGrid = async () => {
 
 // 下载CSV模板
 const downloadCsvTemplate = () => {
-  const headers = ['网格数', '孔隙度', '体积(m³)', '温度(°C)', '压力(kPa)', '液体比热容(kJ/(kg·°C))', '气体比热容(kJ/(kg·°C))', '气化潜热(kJ/kg)']
+  const headers = ['X', 'Y', 'Z(深度)', '孔隙度', '体积(m³)', '温度(°C)', '压力(kPa)', '液体比热容(kJ/(kg·°C))', '气体比热容(kJ/(kg·°C))', '气化潜热(kJ/kg)']
   const csvContent = headers.join(',') + '\n'
   
   // 添加示例数据行
-  const exampleRow = ['10', '0.2', '1000', '150', '500', '4.18', '2.0', '2257']
+  const exampleRow = ['100', '200', '500', '0.2', '1000', '150', '500', '4.18', '2.0', '2257']
   const fullContent = csvContent + exampleRow.join(',')
   
   const blob = new Blob(['\ufeff' + fullContent], { type: 'text/csv;charset=utf-8;' })
@@ -199,7 +200,8 @@ const handleCsvUpload = async (file: File) => {
       const values = parseCsvLine(line)
       console.log('[CSV导入] 解析行:', values)
       
-      if (values.length >= 5) {
+      // 新字段顺序: X, Y, Z, 孔隙度, 体积, 温度, 压力, 液体比热容, 气体比热容, 气化潜热
+      if (values.length >= 7) {
         try {
           // 安全解析数值，空字符串返回 null
           const safeParseFloat = (val: string): number | null => {
@@ -207,22 +209,19 @@ const handleCsvUpload = async (file: File) => {
             const num = parseFloat(val)
             return isNaN(num) ? null : num
           }
-          const safeParseInt = (val: string): number => {
-            if (!val || val.trim() === '') return 1
-            const num = parseInt(val)
-            return isNaN(num) ? 1 : num
-          }
           
           const gridItem = {
             calc_id: currentFormId.value!,
-            grid_count: safeParseInt(values[0]),
-            porosity: safeParseFloat(values[1]),
-            volume: safeParseFloat(values[2]),
-            temperature: safeParseFloat(values[3]),
-            pressure: safeParseFloat(values[4]),
-            liquid_specific_heat: safeParseFloat(values[5]) ?? 4.18,
-            gas_specific_heat: safeParseFloat(values[6]) ?? 2.0,
-            latent_heat: safeParseFloat(values[7]) ?? 2257,
+            coord_x: safeParseFloat(values[0]),
+            coord_y: safeParseFloat(values[1]),
+            coord_z: safeParseFloat(values[2]),
+            porosity: safeParseFloat(values[3]),
+            volume: safeParseFloat(values[4]),
+            temperature: safeParseFloat(values[5]),
+            pressure: safeParseFloat(values[6]),
+            liquid_specific_heat: safeParseFloat(values[7]) ?? 4.18,
+            gas_specific_heat: safeParseFloat(values[8]) ?? 2.0,
+            latent_heat: safeParseFloat(values[9]) ?? 2257,
             sort_order: gridData.value.length
           }
           console.log('[CSV导入] 准备添加网格:', gridItem)
@@ -273,7 +272,9 @@ const updateGridData = async (index: number) => {
   if (item && item.id && currentFormId.value) {
     try {
       await gridCalcApi.updateGrid(currentFormId.value, item.id, {
-        grid_count: item.grid_count || 1,
+        coord_x: item.coord_x,
+        coord_y: item.coord_y,
+        coord_z: item.coord_z,
         porosity: item.porosity,
         volume: item.volume,
         temperature: item.temperature,
@@ -465,7 +466,9 @@ const handleGridCalculate = async () => {
   try {
     // 直接传递网格数据，后端会根据 phase 字段使用对应公式计算
     const grids = gridData.value.map((grid: any) => ({
-      grid_count: grid.grid_count || 0,
+      coord_x: grid.coord_x,
+      coord_y: grid.coord_y,
+      coord_z: grid.coord_z,
       porosity: grid.porosity,
       volume: grid.volume,
       temperature: grid.temperature,
@@ -476,9 +479,7 @@ const handleGridCalculate = async () => {
       latent_heat: grid.latent_heat
     }))
     
-    // 计算总网格数用于显示
-    const totalGrids = grids.reduce((sum: number, g: any) => sum + (g.grid_count || 1), 0)
-    console.log(`[网格计算] 准备计算 ${grids.length} 条记录，共 ${totalGrids} 个网格...`)
+    console.log(`[网格计算] 准备计算 ${grids.length} 条记录...`)
     console.log('[网格计算] 发送的数据:', JSON.stringify(grids, null, 2))
     
     // 调用后端API计算并保存
@@ -494,7 +495,7 @@ const handleGridCalculate = async () => {
     
     if (res.data.success) {
       result.value = res.data.data
-      ElMessage.success(`网格计算完成！共 ${totalGrids} 个网格`)
+      ElMessage.success(`网格计算完成！共 ${grids.length} 个网格`)
     } else {
       ElMessage.error(res.data.message || '计算失败')
     }
@@ -587,9 +588,19 @@ onMounted(async () => {
 
           <el-table :data="gridData" border stripe style="width: 100%" table-layout="auto">
             <el-table-column label="编号" type="index" width="50" />
-            <el-table-column label="网格数" min-width="120">
+            <el-table-column label="X" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.grid_count" :min="1" :max="10000" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.coord_x" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="Y" min-width="100">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.coord_y" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
+              </template>
+            </el-table-column>
+            <el-table-column label="Z(深度)" min-width="100">
+              <template #default="{ row, $index }">
+                <el-input-number v-model="row.coord_z" :min="0" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="孔隙度" min-width="110">
