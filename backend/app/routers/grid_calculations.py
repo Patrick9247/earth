@@ -122,7 +122,9 @@ async def create_grid_item(
     
     db_item = GridItem(
         calc_id=calc_id,
-        grid_count=request.grid_count,
+        coord_x=request.coord_x,
+        coord_y=request.coord_y,
+        coord_z=request.coord_z,
         porosity=request.porosity,
         volume=request.volume,
         temperature=request.temperature,
@@ -150,8 +152,12 @@ async def update_grid_item(
     if not db_item:
         raise HTTPException(status_code=404, detail="网格未找到")
     
-    if request.grid_count is not None:
-        db_item.grid_count = request.grid_count
+    if request.coord_x is not None:
+        db_item.coord_x = request.coord_x
+    if request.coord_y is not None:
+        db_item.coord_y = request.coord_y
+    if request.coord_z is not None:
+        db_item.coord_z = request.coord_z
     if request.porosity is not None:
         db_item.porosity = request.porosity
     if request.volume is not None:
