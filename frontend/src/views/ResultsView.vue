@@ -120,19 +120,6 @@ const formatNumber = (num: number): string => {
   return num.toFixed(2) + ' J'
 }
 
-// 格式化功率显示
-const formatPower = (mw: number): string => {
-  if (!mw) return '0'
-  if (mw >= 1e6) return (mw / 1e6).toFixed(4) + ' TW'
-  if (mw >= 1e3) return (mw / 1e3).toFixed(4) + ' GW'
-  if (mw >= 1) return mw.toFixed(4) + ' MW'
-  if (mw >= 1e-3) return (mw * 1e3).toFixed(4) + ' kW'
-  if (mw >= 1e-6) return (mw * 1e6).toFixed(4) + ' W'
-  if (mw >= 1e-9) return (mw * 1e9).toFixed(4) + ' mW'
-  if (mw >= 1e-12) return (mw * 1e12).toFixed(4) + ' μW'
-  return mw.toExponential(4) + ' W'
-}
-
 // 格式化体积显示
 const formatVolume = (vol: number | null | undefined): string => {
   if (!vol) return '0 m³'
@@ -143,14 +130,14 @@ const formatVolume = (vol: number | null | undefined): string => {
   return vol.toFixed(2) + ' m³'
 }
 
-// 格式化热量
+// 格式化热量为kJ科学计数法
 const formatHeat = (heat: number | null | undefined): string => {
-  if (!heat) return '0 J'
-  if (heat >= 1e18) return (heat / 1e18).toFixed(2) + ' EJ'
-  if (heat >= 1e15) return (heat / 1e15).toFixed(2) + ' PJ'
-  if (heat >= 1e12) return (heat / 1e12).toFixed(2) + ' TJ'
-  if (heat >= 1e9) return (heat / 1e9).toFixed(2) + ' GJ'
-  return heat.toExponential(2) + ' J'
+  if (!heat) return '0 kJ'
+  const kJ = heat / 1000 // J转换为kJ
+  if (kJ === 0) return '0 kJ'
+  const exponent = Math.floor(Math.log10(Math.abs(kJ)))
+  const mantissa = kJ / Math.pow(10, exponent)
+  return `${mantissa.toFixed(2)} × 10<sup>${exponent}</sup> kJ`
 }
 
 // 导出为 CSV
@@ -203,14 +190,14 @@ const chartOption = computed(() => {
         textStyle: { color: '#999', fontSize: 14 }
       },
       xAxis: { type: 'category', data: [] },
-      yAxis: { type: 'value', name: '发电潜力 (MW)' },
+      yAxis: { type: 'value', name: '可采热量 (kJ)' },
       series: []
     }
   }
 
   const selectedData = results.value.filter(r => selectedChartData.value.includes(r.id))
   const xAxisData = selectedData.map((r, index) => `${index + 1}. ${r.name}`)
-  const powerData = selectedData.map(r => r.power_potential || 0)
+  const heatData = selectedData.map(r => (r.extractable_heat || 0) / 1000) // 转换为kJ
 
   return {
     tooltip: {
@@ -226,13 +213,12 @@ const chartOption = computed(() => {
           <div style="font-weight: bold; margin-bottom: 5px;">${data.name}</div>
           <div>储层体积: ${formatVolume(data.volume)}</div>
           <div>平均温度: ${data.temperature_avg?.toFixed(4) || '0'} °C</div>
-          <div>可采热量: ${formatHeat(data.extractable_heat)}</div>
-          <div style="color: #67c23a; font-weight: bold;">发电潜力: ${formatPower(data.power_potential)}</div>
+          <div style="color: #67c23a; font-weight: bold;">可采热量: ${formatHeat(data.extractable_heat)}</div>
         `
       }
     },
     legend: {
-      data: ['发电潜力'],
+      data: ['可采热量'],
       top: 10
     },
     grid: {
@@ -255,18 +241,23 @@ const chartOption = computed(() => {
     },
     yAxis: {
       type: 'value',
-      name: '发电潜力 (MW)',
+      name: '可采热量 (kJ)',
       nameLocation: 'middle',
-      nameGap: 100,
+      nameGap: 80,
       axisLabel: {
-        formatter: (value: number) => formatPower(value)
+        formatter: (value: number) => {
+          if (value >= 1e9) return (value / 1e9).toFixed(1) + '×10⁹'
+          if (value >= 1e6) return (value / 1e6).toFixed(1) + '×10⁶'
+          if (value >= 1e3) return (value / 1e3).toFixed(1) + '×10³'
+          return value.toFixed(0)
+        }
       }
     },
     series: [
       {
-        name: '发电潜力',
+        name: '可采热量',
         type: 'line',
-        data: powerData,
+        data: heatData,
         smooth: true,
         symbol: 'circle',
         symbolSize: 8,
@@ -296,7 +287,13 @@ const chartOption = computed(() => {
         label: {
           show: true,
           position: 'top',
-          formatter: (params: any) => formatPower(params.value),
+          formatter: (params: any) => {
+            const value = params.value
+            if (value >= 1e9) return (value / 1e9).toFixed(1) + '×10⁹'
+            if (value >= 1e6) return (value / 1e6).toFixed(1) + '×10⁶'
+            if (value >= 1e3) return (value / 1e3).toFixed(1) + '×10³'
+            return value.toFixed(0)
+          },
           fontSize: 10
         }
       }
@@ -359,13 +356,8 @@ onMounted(() => {
         <el-table-column prop="heat_content" label="热含量(J)" width="140">
           <template #default="{ row }">{{ formatNumber(row.heat_content) }}</template>
         </el-table-column>
-        <el-table-column prop="extractable_heat" label="可采热量(J)" width="140">
-          <template #default="{ row }">{{ formatNumber(row.extractable_heat) }}</template>
-        </el-table-column>
-        <el-table-column prop="power_potential" label="发电潜力" width="120">
-          <template #default="{ row }">
-            <span style="color: #67c23a; font-weight: 600;">{{ formatPower(row.power_potential) }}</span>
-          </template>
+        <el-table-column prop="extractable_heat" label="可采热量(kJ)" width="160">
+          <template #default="{ row }"><span v-html="formatHeat(row.extractable_heat)"></span></template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="120">
           <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
@@ -398,28 +390,16 @@ onMounted(() => {
 
     <!-- 结果统计 -->
     <el-row :gutter="20">
-      <el-col :span="8">
+      <el-col :span="12">
         <div class="stat-card">
           <div class="stat-value">{{ results.length }}</div>
           <div class="stat-label">计算记录</div>
         </div>
       </el-col>
-      <el-col :span="8">
-        <div class="stat-card success">
-          <div class="stat-value">{{ formatPower(results.reduce((sum: number, r: any) => sum + (r.power_potential || 0), 0)) }}</div>
-          <div class="stat-label">总发电潜力</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
+      <el-col :span="12">
         <div class="stat-card info">
-          <div class="stat-value">{{ formatNumber(results.reduce((sum: number, r: any) => sum + (r.extractable_heat || 0), 0)) }}</div>
+          <div class="stat-value" v-html="formatHeat(results.reduce((sum: number, r: any) => sum + (r.extractable_heat || 0), 0))"></div>
           <div class="stat-label">总可采热量</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="stat-card success">
-          <div class="stat-value">{{ formatVolume(results.reduce((sum: number, r: any) => sum + (r.volume || 0), 0)) }}</div>
-          <div class="stat-label">总储层体积</div>
         </div>
       </el-col>
     </el-row>
@@ -428,7 +408,7 @@ onMounted(() => {
     <el-card class="chart-card">
       <template #header>
         <div class="card-header">
-          <span>发电潜力折线图</span>
+          <span>可采热量折线图</span>
           <el-tag v-if="selectedChartData.length > 0" type="primary">
             已选择 {{ selectedChartData.length }} 条数据
           </el-tag>
@@ -451,9 +431,8 @@ onMounted(() => {
         <el-descriptions-item label="储层体积">{{ formatVolume(selectedResult.volume) }}</el-descriptions-item>
         <el-descriptions-item label="平均温度">{{ selectedResult.temperature_avg }} °C</el-descriptions-item>
         <el-descriptions-item label="热含量">{{ formatNumber(selectedResult.heat_content) }}</el-descriptions-item>
-        <el-descriptions-item label="可采热量">{{ formatNumber(selectedResult.extractable_heat) }}</el-descriptions-item>
-        <el-descriptions-item label="发电潜力" :span="2">
-          <el-tag type="success" size="large">{{ formatPower(selectedResult.power_potential) }}</el-tag>
+        <el-descriptions-item label="可采热量">
+          <span v-html="formatHeat(selectedResult.extractable_heat)"></span>
         </el-descriptions-item>
       </el-descriptions>
 
