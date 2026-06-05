@@ -739,16 +739,6 @@ onMounted(async () => {
         </div>
       </el-tab-pane>
 
-      <!-- 数据可视化 -->
-      <el-tab-pane label="数据可视化" name="visualization">
-        <div class="card">
-          <h3 class="card-title">网格数据可视化</h3>
-          <div class="chart-section" v-if="gridData.length > 0">
-            <div ref="chartRef" class="grid-chart"></div>
-          </div>
-          <el-empty v-else description="暂无网格数据，请先添加网格" />
-        </div>
-      </el-tab-pane>
     </el-tabs>
   </div>
 </template>

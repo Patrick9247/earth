@@ -19,7 +19,6 @@ const emit = defineEmits<{
 
 const navItems = [
   { path: '/', icon: 'HomeFilled', label: '系统首页' },
-  { path: '/layers', icon: 'Document', label: '地质层管理' },
   { path: '/drill-data', icon: 'Aim', label: '钻孔数据' },
   // { path: '/model', icon: 'DataAnalysis', label: '地质建模' },
   { path: '/calculation', icon: 'Cpu', label: '资源计算' },

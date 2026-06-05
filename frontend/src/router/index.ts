@@ -15,12 +15,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '系统首页' }
   },
   {
-    path: '/layers',
-    name: 'layers',
-    component: () => import('@/views/LayersView.vue'),
-    meta: { title: '地质层管理' }
-  },
-  {
     path: '/drill-data',
     name: 'drill-data',
     component: () => import('@/views/DrillDataView.vue'),
