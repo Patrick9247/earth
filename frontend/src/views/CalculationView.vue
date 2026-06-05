@@ -315,6 +315,27 @@ const determinePhase = (temperature: number, pressure: number): string => {
   }
 }
 
+// 计算流体密度 ρ (kg/m³)
+// 根据专利公式: ρ_i = 137.1358 × e^(A) + 139.3560 × e^(B) + 769.9024
+// A = -(P_i - 163278.7315)² / (6.613 × 10¹⁰)
+// B = -(T_i - 4.1171)² / 29947.659
+// 注意：公式中 P_i 的单位是 Pa（帕斯卡）
+const calculateFluidDensity = (temperature: number, pressureKpa: number): number => {
+  if (temperature < 0 || pressureKpa <= 0) return 1000.0  // 默认水密度
+  
+  // 将 kPa 转换为 Pa
+  const pressurePa = pressureKpa * 1000
+  
+  // 计算 A 和 B
+  const A = -Math.pow(pressurePa - 163278.7315, 2) / (6.613e10)
+  const B = -Math.pow(temperature - 4.1171, 2) / 29947.659
+  
+  // 计算密度
+  const density = 137.1358 * Math.exp(A) + 139.3560 * Math.exp(B) + 769.9024
+  
+  return density
+}
+
 // 获取相态标签
 const getPhaseLabel = (phase: string): string => {
   return phase === 'liquid' ? '液态水' : phase === 'two_phase' ? '气液共存' : '气态'
@@ -641,6 +662,11 @@ onMounted(async () => {
             <el-table-column label="沸点(°C)" min-width="80">
               <template #default="{ row }">
                 {{ calculateBoilingPoint(row.pressure || 0.1).toFixed(1) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="流体密度ρ(kg/m³)" min-width="100">
+              <template #default="{ row }">
+                {{ calculateFluidDensity(row.temperature || 0, row.pressure || 0.1).toFixed(2) }}
               </template>
             </el-table-column>
             <el-table-column label="相态" min-width="90">
