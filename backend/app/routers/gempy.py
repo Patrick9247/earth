@@ -162,7 +162,6 @@ async def calculate_geothermal_resource(
             temperature_avg=request.avg_temperature,
             temperature_max=request.avg_temperature,
             heat_content=results['total_heat'],
-            extractable_heat=results['extractable_heat'],
             power_potential=results['power_potential_mw'],
             lifetime_years=request.lifetime_years,
             parameters=results['parameters'],
@@ -237,7 +236,6 @@ async def quick_calculation(
         "success": True,
         "data": {
             "total_heat_joules": results['total_heat'],
-            "extractable_heat_joules": results['extractable_heat'],
             "power_potential_mw": results['power_potential_mw'],
             "summary": f"储层体积 {reservoir_volume:.2e} m³，平均温度 {avg_temperature}°C，"
                       f"预估发电潜力 {results['power_potential_mw']:.2f} MW"
@@ -320,7 +318,6 @@ async def calculate_grid_resources(
                 temperature_avg=sum(g.temperature for g in request.grids) / len(request.grids),
                 temperature_max=max(g.temperature for g in request.grids),
                 heat_content=results['total_resource_joules'],
-                extractable_heat=power_results['extractable_heat'],
                 power_potential=power_results['power_potential_mw'],
                 lifetime_years=request.lifetime_years,
                 parameters=save_params,

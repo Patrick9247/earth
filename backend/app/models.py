@@ -248,7 +248,6 @@ class GeothermalResource(Base):
     temperature_avg = Column(Float, comment="平均温度(°C)")
     temperature_max = Column(Float, comment="最高温度(°C)")
     heat_content = Column(Float, comment="热含量(J)")
-    extractable_heat = Column(Float, comment="可采热量(J)")
     power_potential = Column(Float, comment="发电潜力(MW)")
     lifetime_years = Column(Integer, comment="开采年限(年)")
     parameters = Column(JSON, comment="计算参数")

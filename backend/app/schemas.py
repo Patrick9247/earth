@@ -227,7 +227,6 @@ class GeothermalResourceBase(BaseModel):
     temperature_avg: Optional[float] = Field(None, description="平均温度(°C)")
     temperature_max: Optional[float] = Field(None, description="最高温度(°C)")
     heat_content: Optional[float] = Field(None, ge=0, description="热含量(J)")
-    extractable_heat: Optional[float] = Field(None, ge=0, description="可采热量(J)")
     power_potential: Optional[float] = Field(None, ge=0, description="发电潜力(MW)")
     lifetime_years: Optional[int] = Field(None, ge=0, description="开采年限(年)")
     parameters: Optional[Dict[str, Any]] = Field(None, description="计算参数")
@@ -251,7 +250,6 @@ class GeothermalResourceListItem(BaseModel):
     temperature_avg: Optional[float] = None
     temperature_max: Optional[float] = None
     heat_content: Optional[float] = None
-    extractable_heat: Optional[float] = None
     power_potential: Optional[float] = None
     lifetime_years: Optional[int] = None
     parameters: Optional[Dict[str, Any]] = None  # 包含网格数据等参数

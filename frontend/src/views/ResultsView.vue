@@ -135,14 +135,13 @@ const exportToCSV = () => {
     return
   }
 
-  const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(J)', '可采热量(J)', '发电潜力(MW)', '创建时间']
+  const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(kJ)', '发电潜力(MW)', '创建时间']
   
   const rows = results.value.map(row => [
     row.name,
     row.volume?.toFixed(2) || '0.00',
     row.temperature_avg?.toFixed(2) || '0.00',
     row.heat_content?.toFixed(2) || '0.00',
-    row.extractable_heat?.toFixed(2) || '0.00',
     row.power_potential?.toFixed(6) || '0.000000',
     row.created_at
   ])
@@ -344,9 +343,6 @@ onMounted(() => {
         <el-table-column prop="heat_content" label="热含量(kJ)" width="140">
           <template #default="{ row }"><span v-html="formatHeat(row.heat_content)"></span></template>
         </el-table-column>
-        <el-table-column prop="extractable_heat" label="可采热量(kJ)" width="160">
-          <template #default="{ row }"><span v-html="formatHeat(row.extractable_heat)"></span></template>
-        </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="120">
           <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
         </el-table-column>
@@ -420,9 +416,6 @@ onMounted(() => {
         <el-descriptions-item label="平均温度">{{ selectedResult.temperature_avg }} °C</el-descriptions-item>
         <el-descriptions-item label="热含量">
           <span v-html="formatHeat(selectedResult.heat_content)"></span>
-        </el-descriptions-item>
-        <el-descriptions-item label="可采热量">
-          <span v-html="formatHeat(selectedResult.extractable_heat)"></span>
         </el-descriptions-item>
       </el-descriptions>
 
