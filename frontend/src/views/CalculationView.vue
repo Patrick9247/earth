@@ -590,52 +590,52 @@ onMounted(async () => {
             <el-table-column label="编号" type="index" width="50" />
             <el-table-column label="X" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.coord_x" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.coord_x" :step="1" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="Y" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.coord_y" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.coord_y" :step="1" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="Z(深度)" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.coord_z" :min="0" :step="1" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.coord_z" :min="0" :step="1" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="孔隙度" min-width="110">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.001" :precision="4" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.001" :precision="4" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="体积(m³)" min-width="120">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.volume" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.volume" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="温度(°C)" min-width="110">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.temperature" :min="0" :max="1000" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.temperature" :min="0" :max="1000" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="压力(kPa)" min-width="110">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.pressure" :min="0.1" :max="500000" :step="100" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.pressure" :min="0.1" :max="500000" :step="100" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="液体比热容" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.liquid_specific_heat" :min="0.1" :max="10" :step="0.01" :precision="2" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.liquid_specific_heat" :min="0.1" :max="10" :step="0.01" :precision="2" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="气体比热容" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.gas_specific_heat" :min="0.1" :max="5" :step="0.01" :precision="2" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.gas_specific_heat" :min="0.1" :max="5" :step="0.01" :precision="2" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="气化潜热" min-width="100">
               <template #default="{ row, $index }">
-                <el-input-number v-model="row.latent_heat" :min="100" :max="3000" :step="10" :precision="0" size="small" controls-position="right" @change="updateGridData($index)" />
+                <el-input-number v-model="row.latent_heat" :min="100" :max="3000" :step="10" :precision="0" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
             <el-table-column label="沸点(°C)" min-width="80">
