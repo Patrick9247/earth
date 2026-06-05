@@ -178,14 +178,14 @@ const chartOption = computed(() => {
         textStyle: { color: '#999', fontSize: 14 }
       },
       xAxis: { type: 'category', data: [] },
-      yAxis: { type: 'value', name: '可采热量 (kJ)' },
+      yAxis: { type: 'value', name: '热含量 (kJ)' },
       series: []
     }
   }
 
   const selectedData = results.value.filter(r => selectedChartData.value.includes(r.id))
   const xAxisData = selectedData.map((r, index) => `${index + 1}. ${r.name}`)
-  const heatData = selectedData.map(r => (r.extractable_heat || 0) / 1000) // 转换为kJ
+  const heatData = selectedData.map(r => (r.heat_content || 0) / 1000) // 转换为kJ
 
   return {
     tooltip: {
@@ -201,12 +201,12 @@ const chartOption = computed(() => {
           <div style="font-weight: bold; margin-bottom: 5px;">${data.name}</div>
           <div>储层体积: ${formatVolume(data.volume)}</div>
           <div>平均温度: ${data.temperature_avg?.toFixed(4) || '0'} °C</div>
-          <div style="color: #67c23a; font-weight: bold;">可采热量: ${formatHeat(data.extractable_heat)}</div>
+          <div style="color: #67c23a; font-weight: bold;">热含量: ${formatHeat(data.heat_content)}</div>
         `
       }
     },
     legend: {
-      data: ['可采热量'],
+      data: ['热含量'],
       top: 10
     },
     grid: {
@@ -229,7 +229,7 @@ const chartOption = computed(() => {
     },
     yAxis: {
       type: 'value',
-      name: '可采热量 (kJ)',
+      name: '热含量 (kJ)',
       nameLocation: 'middle',
       nameGap: 80,
       axisLabel: {
@@ -243,7 +243,7 @@ const chartOption = computed(() => {
     },
     series: [
       {
-        name: '可采热量',
+        name: '热含量',
         type: 'line',
         data: heatData,
         smooth: true,
@@ -396,7 +396,7 @@ onMounted(() => {
     <el-card class="chart-card">
       <template #header>
         <div class="card-header">
-          <span>可采热量折线图</span>
+          <span>热含量折线图</span>
           <el-tag v-if="selectedChartData.length > 0" type="primary">
             已选择 {{ selectedChartData.length }} 条数据
           </el-tag>
