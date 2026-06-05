@@ -629,7 +629,7 @@ onMounted(async () => {
                 <el-input-number v-model="row.porosity" :min="0" :max="1" :step="0.001" :precision="4" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="体积(m³)" min-width="120">
+            <el-table-column label="体积(m³)" width="85">
               <template #default="{ row, $index }">
                 <el-input-number v-model="row.volume" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
