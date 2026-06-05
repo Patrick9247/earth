@@ -619,7 +619,7 @@ onMounted(async () => {
                 <el-input-number v-model="row.coord_y" :step="1" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
             </el-table-column>
-            <el-table-column label="Z(深度)" min-width="100">
+            <el-table-column label="Z" min-width="100">
               <template #default="{ row, $index }">
                 <el-input-number v-model="row.coord_z" :min="0" :step="1" size="small" :controls="false" @change="updateGridData($index)" />
               </template>
@@ -664,7 +664,7 @@ onMounted(async () => {
                 {{ calculateBoilingPoint(row.pressure || 0.1).toFixed(1) }}
               </template>
             </el-table-column>
-            <el-table-column label="流体密度ρ(kg/m³)" min-width="100">
+            <el-table-column label="流体密度ρ" min-width="100">
               <template #default="{ row }">
                 {{ calculateFluidDensity(row.temperature || 0, row.pressure || 0.1).toFixed(2) }}
               </template>
