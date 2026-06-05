@@ -712,6 +712,30 @@ onMounted(async () => {
           
           <el-divider />
           
+          <!-- 岩石热量 -->
+          <h4 style="margin: 16px 0 12px;">岩石热量</h4>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <div class="result-item">
+                <div class="result-label">岩石热量 Q<sub>岩</sub></div>
+                <div class="result-value" v-html="formatScientificKJ(result.rock_heat_joules)"></div>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="result-item">
+                <div class="result-label">流体资源量 Q<sub>流体</sub></div>
+                <div class="result-value" v-html="formatScientificKJ(result.fluid_resource_joules)"></div>
+                <div class="result-hint" style="font-size: 12px; color: #909399;">= Q₁ + Q₄ + Q₅</div>
+              </div>
+            </el-col>
+          </el-row>
+          
+          <div style="margin-top: 16px; padding: 12px; background: #f5f7fa; border-radius: 4px; font-size: 13px; color: #606266;">
+            <strong>计算公式：</strong>Q<sub>总</sub> = Q<sub>流体</sub> + Q<sub>岩</sub> = (Q₁ + Q₄ + Q₅) + Q<sub>岩</sub>
+          </div>
+          
+          <el-divider />
+          
           <!-- 网格分类统计 -->
           <el-row :gutter="20">
             <el-col :span="8">
