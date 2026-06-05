@@ -607,7 +607,7 @@ onMounted(async () => {
             </el-button>
           </div>
 
-          <el-table :data="gridData" border stripe style="width: 100%" table-layout="auto">
+          <el-table :data="gridData" border stripe style="width: 100%" table-layout="auto" size="small">
             <el-table-column label="编号" type="index" width="50" />
             <el-table-column label="X" min-width="100">
               <template #default="{ row, $index }">
