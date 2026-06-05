@@ -108,18 +108,6 @@ const handleSelectionChange = (val: any[]) => {
   selectedChartData.value = val.map(v => v.id)
 }
 
-// 格式化数字显示
-const formatNumber = (num: number): string => {
-  if (!num) return '0'
-  if (num >= 1e18) return (num / 1e18).toFixed(2) + ' EJ'
-  if (num >= 1e15) return (num / 1e15).toFixed(2) + ' PJ'
-  if (num >= 1e12) return (num / 1e12).toFixed(2) + ' TJ'
-  if (num >= 1e9) return (num / 1e9).toFixed(2) + ' GJ'
-  if (num >= 1e6) return (num / 1e6).toFixed(2) + ' MJ'
-  if (num >= 1e3) return (num / 1e3).toFixed(2) + ' kJ'
-  return num.toFixed(2) + ' J'
-}
-
 // 格式化体积显示
 const formatVolume = (vol: number | null | undefined): string => {
   if (!vol) return '0 m³'
@@ -353,8 +341,8 @@ onMounted(() => {
             <el-tag :type="row.temperature_avg > 150 ? 'danger' : 'success'">{{ row.temperature_avg?.toFixed(4) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="heat_content" label="热含量(J)" width="140">
-          <template #default="{ row }">{{ formatNumber(row.heat_content) }}</template>
+        <el-table-column prop="heat_content" label="热含量(kJ)" width="140">
+          <template #default="{ row }"><span v-html="formatHeat(row.heat_content)"></span></template>
         </el-table-column>
         <el-table-column prop="extractable_heat" label="可采热量(kJ)" width="160">
           <template #default="{ row }"><span v-html="formatHeat(row.extractable_heat)"></span></template>
@@ -398,8 +386,8 @@ onMounted(() => {
       </el-col>
       <el-col :span="12">
         <div class="stat-card info">
-          <div class="stat-value" v-html="formatHeat(results.reduce((sum: number, r: any) => sum + (r.extractable_heat || 0), 0))"></div>
-          <div class="stat-label">总可采热量</div>
+          <div class="stat-value" v-html="formatHeat(results.reduce((sum: number, r: any) => sum + (r.heat_content || 0), 0))"></div>
+          <div class="stat-label">总热含量</div>
         </div>
       </el-col>
     </el-row>
@@ -430,7 +418,9 @@ onMounted(() => {
         <el-descriptions-item label="创建时间">{{ formatDate(selectedResult.created_at)}}</el-descriptions-item>
         <el-descriptions-item label="储层体积">{{ formatVolume(selectedResult.volume) }}</el-descriptions-item>
         <el-descriptions-item label="平均温度">{{ selectedResult.temperature_avg }} °C</el-descriptions-item>
-        <el-descriptions-item label="热含量">{{ formatNumber(selectedResult.heat_content) }}</el-descriptions-item>
+        <el-descriptions-item label="热含量">
+          <span v-html="formatHeat(selectedResult.heat_content)"></span>
+        </el-descriptions-item>
         <el-descriptions-item label="可采热量">
           <span v-html="formatHeat(selectedResult.extractable_heat)"></span>
         </el-descriptions-item>
