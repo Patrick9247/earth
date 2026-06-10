@@ -328,9 +328,9 @@ class GeothermalCalculator:
         相态判定
         
         根据专利方法，比较网格温度与饱和温度：
-        - T < T_sat: 液态水
-        - T == T_sat: 气液共存
-        - T > T_sat: 气态
+        - T < T_sat - 10: 液态水
+        - T_sat - 10 <= T <= T_sat + 10: 气液共存
+        - T > T_sat + 10: 气态
         
         Args:
             temperature: 网格温度 (°C)
@@ -341,8 +341,8 @@ class GeothermalCalculator:
         """
         T_boiling = self.calculate_boiling_point(pressure_kpa)
         
-        # 使用一个小的容差来判断"等于"
-        tolerance = 0.1  # 0.1°C 容差
+        # 扩大气液共存判定范围到 ±10°C
+        tolerance = 10  # 10°C 容差
         
         if temperature < T_boiling - tolerance:
             return 'liquid'

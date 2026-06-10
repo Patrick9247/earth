@@ -139,3 +139,6 @@ backend/static/
 tmp/
 temp/
 .cozeproj/reduction
+
+# Preview files
+.preview

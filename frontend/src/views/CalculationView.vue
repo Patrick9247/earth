@@ -303,9 +303,10 @@ const calculateBoilingPoint = (pressure: number): number => {
 
 // 根据温度和压力自动判断相态
 // T < T_sat: 液态水; T ≈ T_sat: 气液共存; T > T_sat: 气态
+// 扩大气液共存判定范围：温度在饱和温度 ±10°C 范围内
 const determinePhase = (temperature: number, pressure: number): string => {
   const boilingPoint = calculateBoilingPoint(pressure)
-  const tolerance = 0.1  // 温度容差
+  const tolerance = 10  // 温度容差扩大到10°C
   if (temperature < boilingPoint - tolerance) {
     return 'liquid'  // 液态水
   } else if (temperature >= boilingPoint - tolerance && temperature <= boilingPoint + tolerance) {
