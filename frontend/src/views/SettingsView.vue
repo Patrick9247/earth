@@ -19,9 +19,7 @@ const settings = ref({
   
   // 物理常数
   water_density: 1000,
-  rock_density: 2600,
-  water_specific_heat: 4186,
-  rock_specific_heat: 880
+  water_specific_heat: 4186
 })
 
 const saveSettings = () => {
@@ -40,9 +38,7 @@ const resetSettings = () => {
     default_lifetime_years: 30,
     default_grid_resolution: 50,
     water_density: 1000,
-    rock_density: 2600,
-    water_specific_heat: 4186,
-    rock_specific_heat: 880
+    water_specific_heat: 4186
   }
   localStorage.removeItem('geothermal_settings')
   ElMessage.success('设置已重置')
@@ -106,20 +102,8 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="岩石密度(kg/m³)">
-              <el-input-number v-model="settings.rock_density" :min="2000" :max="3000" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
             <el-form-item label="水比热容(J/kg·K)">
               <el-input-number v-model="settings.water_specific_heat" :min="4000" :max="4500" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="岩石比热容(J/kg·K)">
-              <el-input-number v-model="settings.rock_specific_heat" :min="700" :max="1000" />
             </el-form-item>
           </el-col>
         </el-row>

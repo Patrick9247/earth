@@ -148,9 +148,7 @@ async def calculate_geothermal_resource(
             utilization_efficiency=request.utilization_efficiency,
             lifetime_years=request.lifetime_years,
             water_density=request.water_density,
-            rock_density=request.rock_density,
             water_specific_heat=request.water_specific_heat,
-            rock_specific_heat=request.rock_specific_heat,
             pressure=request.pressure
         )
         

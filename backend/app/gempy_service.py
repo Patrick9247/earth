@@ -231,9 +231,7 @@ class GeothermalCalculator:
     
     # 物理常数
     WATER_DENSITY_STANDARD = 1000  # kg/m³ 标准条件下水密度
-    ROCK_DENSITY = 2600   # kg/m³
     WATER_SPECIFIC_HEAT = 4800  # J/(kg·K)
-    ROCK_SPECIFIC_HEAT = 880    # J/(kg·K)
     SECONDS_PER_YEAR = 365.25 * 24 * 3600
     
     # 水蒸气参数
@@ -829,9 +827,7 @@ class GeothermalCalculator:
         utilization_efficiency: float = 0.1,
         lifetime_years: int = 30,
         water_density: float = None,
-        rock_density: float = ROCK_DENSITY,
         water_specific_heat: float = WATER_SPECIFIC_HEAT,
-        rock_specific_heat: float = ROCK_SPECIFIC_HEAT,
         pressure: float = 101.325  # kPa
     ) -> Dict[str, Any]:
         """
@@ -857,18 +853,15 @@ class GeothermalCalculator:
         
         # 计算有效体积
         water_volume = reservoir_volume * porosity
-        rock_volume = reservoir_volume * (1 - porosity)
         
         # 计算质量
         water_mass = water_volume * water_density
-        rock_mass = rock_volume * rock_density
         
         # 根据相态选择计算方法
         if phase == 'liquid':
             # 液态水计算
             water_heat = water_mass * water_specific_heat * delta_T
-            rock_heat = rock_mass * rock_specific_heat * delta_T
-            total_heat = water_heat + rock_heat
+            total_heat = water_heat
             
             phase_info = {
                 'phase_type': 'liquid',
@@ -906,9 +899,7 @@ class GeothermalCalculator:
             'total_heat': total_heat,
             'water_heat': water_heat if phase == 'liquid' else phase_info['liquid_resource'],
             'water_volume': water_volume,
-            'rock_volume': rock_volume,
             'water_mass': water_mass,
-            'rock_mass': rock_mass,
             'delta_temperature': delta_T,
             **power_results,
             'phase_info': phase_info,
@@ -921,8 +912,7 @@ class GeothermalCalculator:
                 'recovery_factor': recovery_factor,
                 'utilization_efficiency': utilization_efficiency,
                 'lifetime_years': lifetime_years,
-                'water_density': water_density,
-                'rock_density': rock_density
+                'water_density': water_density
             }
         }
     def calculate_heat_content(
@@ -932,32 +922,24 @@ class GeothermalCalculator:
         reference_temperature: float = 25.0,
         porosity: float = 0.15,
         water_density: float = WATER_DENSITY_STANDARD,
-        rock_density: float = ROCK_DENSITY,
-        water_specific_heat: float = WATER_SPECIFIC_HEAT,
-        rock_specific_heat: float = ROCK_SPECIFIC_HEAT
+        water_specific_heat: float = WATER_SPECIFIC_HEAT
     ) -> Dict[str, float]:
         """
-        计算地热储层热含量（传统方法，保持兼容性）
+        计算地热储层热含量（仅计算流体热量）
         """
         delta_T = avg_temperature - reference_temperature
         
         water_volume = reservoir_volume * porosity
-        rock_volume = reservoir_volume * (1 - porosity)
         
         water_mass = water_volume * water_density
-        rock_mass = rock_volume * rock_density
         
         water_heat = water_mass * water_specific_heat * delta_T
-        rock_heat = rock_mass * rock_specific_heat * delta_T
-        total_heat = water_heat + rock_heat
+        total_heat = water_heat
         
         return {
             'water_volume': water_volume,
-            'rock_volume': rock_volume,
             'water_mass': water_mass,
-            'rock_mass': rock_mass,
             'water_heat': water_heat,
-            'rock_heat': rock_heat,
             'total_heat': total_heat,
             'delta_temperature': delta_T
         }
