@@ -859,7 +859,7 @@ class GeothermalCalculator:
         
         # 根据相态选择计算方法
         if phase == 'liquid':
-            # 液态水计算
+            # 液态水计算 Q₁
             water_heat = water_mass * water_specific_heat * delta_T
             total_heat = water_heat
             
@@ -868,14 +868,13 @@ class GeothermalCalculator:
                 'water_density': water_density,
                 'boiling_point': self.calculate_boiling_point(pressure)
             }
-        else:
-            # 气液共存计算
+        elif phase == 'two_phase':
+            # 气液共存计算 Q₂ + Q₃ + Q₄
             result = self.calculate_two_phase_resource(
                 porosity, reservoir_volume, avg_temperature, pressure, reference_temperature
             )
+            total_heat = result['liquid_resource'] + result['steam_resource']
             
-
-        
             phase_info = {
                 'phase_type': 'two_phase',
                 'water_density': water_density,
@@ -884,6 +883,20 @@ class GeothermalCalculator:
                 'steam_fraction': result['steam_fraction'],
                 'liquid_resource': result['liquid_resource'],
                 'steam_resource': result['steam_resource']
+            }
+        else:
+            # 气态计算 Q₅ (过热蒸汽)
+            result = self.calculate_gas_resource(
+                porosity, reservoir_volume, avg_temperature, pressure, reference_temperature
+            )
+            total_heat = result['gas_resource']
+            
+            phase_info = {
+                'phase_type': 'gas',
+                'water_density': water_density,
+                'boiling_point': self.calculate_boiling_point(pressure),
+                'gas_density': result.get('gas_density', 0),
+                'gas_resource': result['gas_resource']
             }
         
         # 计算发电潜力
@@ -895,9 +908,16 @@ class GeothermalCalculator:
         )
         
         # 合并结果
+        if phase == 'liquid':
+            water_heat_result = water_heat
+        elif phase == 'two_phase':
+            water_heat_result = phase_info['liquid_resource']
+        else:  # gas
+            water_heat_result = 0  # 气态没有液态水热量
+        
         return {
             'total_heat': total_heat,
-            'water_heat': water_heat if phase == 'liquid' else phase_info['liquid_resource'],
+            'water_heat': water_heat_result,
             'water_volume': water_volume,
             'water_mass': water_mass,
             'delta_temperature': delta_T,
