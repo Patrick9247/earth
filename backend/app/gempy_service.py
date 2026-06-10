@@ -881,10 +881,8 @@ class GeothermalCalculator:
                 porosity, reservoir_volume, avg_temperature, pressure, reference_temperature
             )
             
-            # 加上岩石热量
-            rock_heat = rock_mass * rock_specific_heat * delta_T
-            total_heat = result['total_resource'] + rock_heat
-            
+
+        
             phase_info = {
                 'phase_type': 'two_phase',
                 'water_density': water_density,
@@ -907,7 +905,6 @@ class GeothermalCalculator:
         return {
             'total_heat': total_heat,
             'water_heat': water_heat if phase == 'liquid' else phase_info['liquid_resource'],
-            'rock_heat': rock_heat,
             'water_volume': water_volume,
             'rock_volume': rock_volume,
             'water_mass': water_mass,
