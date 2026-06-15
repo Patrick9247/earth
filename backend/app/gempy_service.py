@@ -530,25 +530,22 @@ class GeothermalCalculator:
         # 其中 α 是液相体积分数
         # 求解 α = (ρ_mixed - ρ_steam) / (ρ_liquid - ρ_steam)
         
-        # 使用密度校正公式计算的密度作为混合密度
-        rho_mixed = density
+        # 使用专利公式计算气液共存资源量
+        # ρᵢ 通过密度校正公式计算
+        rho_i = density
         
-        # 计算液相体积分数
-        if rho_liquid > rho_steam:
-            liquid_volume_fraction = (rho_mixed - rho_steam) / (rho_liquid - rho_steam)
-            liquid_volume_fraction = max(0, min(1, liquid_volume_fraction))
-        else:
-            liquid_volume_fraction = 1.0
+        # 专利公式:
+        # 液相质量密度 = (1 - ρᵢ × vg) / (vp - vg)
+        # 气相质量密度 = ρᵢ - (1 - ρᵢ × vg) / (vp - vg) = ρᵢ - 液相质量密度
         
-        # 液态水质量 = 液相体积分数 × 饱和水密度
-        # 蒸汽质量 = (1 - 液相体积分数) × 饱和蒸汽密度
-        liquid_mass_fraction = liquid_volume_fraction * rho_liquid
-        steam_mass_fraction = (1 - liquid_volume_fraction) * rho_steam
+        liquid_mass_density = (1 - rho_i * vg) / (vp - vg)
+        steam_mass_density = rho_i - liquid_mass_density
             
         delta_T_boil = T_sat - reference_temp
         
+        # Q₂: 气液共存液态资源量
         Q2 = (
-            porosity * volume * liquid_mass_fraction * 
+            porosity * volume * liquid_mass_density * 
             Cw * delta_T_boil
         )
         
@@ -556,7 +553,7 @@ class GeothermalCalculator:
         delta_T_excess = max(0, temperature - T_sat)
         
         Q3 = (
-            porosity * volume * steam_mass_fraction * 
+            porosity * volume * steam_mass_density * 
             (Cw * delta_T_boil + Lv + Cv * delta_T_excess)
         )
         
@@ -567,8 +564,9 @@ class GeothermalCalculator:
             'steam_resource': Q3,       # Q₃
             'total_resource': Q_total,
             'boiling_temp': T_sat,
-            'liquid_mass_fraction': liquid_mass_fraction,
-            'steam_mass_fraction': steam_mass_fraction,
+            'liquid_mass_density': liquid_mass_density,
+            'steam_mass_density': steam_mass_density,
+            'rho_i': rho_i,
             'rho_liquid': rho_liquid,
             'rho_steam': rho_steam,
             'vg': vg,
