@@ -689,7 +689,7 @@ onMounted(async () => {
 
         <!-- 计算结果 -->
         <div class="card" v-if="result">
-          <h3 class="card-title">✅ 计算结果</h3>
+          <h3 class="card-title">计算结果</h3>
           
           <!-- 地热资源总量 -->
           <div class="result-item highlight" style="text-align: center; padding: 20px;">
@@ -722,20 +722,6 @@ onMounted(async () => {
             </el-col>
           </el-row>
           
-          <el-row :gutter="20" style="margin-top: 12px;">
-            <el-col :span="12">
-              <div class="result-item">
-                <div class="result-label">气液共存液态 Q<sub>2</sub></div>
-                <div class="result-value" v-html="formatScientificKJ(result.two_phase_liquid_resource_joules)"></div>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="result-item">
-                <div class="result-label">气液共存蒸汽 Q<sub>3</sub></div>
-                <div class="result-value" v-html="formatScientificKJ(result.steam_resource_joules)"></div>
-              </div>
-            </el-col>
-          </el-row>
           
           <el-divider />
           
