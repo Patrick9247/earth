@@ -9,10 +9,8 @@ import logging
 from ..database import get_db
 from ..models import GeothermalResource
 from ..schemas import (
-    GemPyModelRequest,
-    GemPyModelResponse,
     GeothermalCalculationRequest,
-    GeothermalCalculationResponse,
+    GeothermalCalculationResponse,  
     GeothermalResourceResponse,
     GeothermalResourceListItem,
     GridCalculationRequest,
@@ -174,6 +172,7 @@ async def calculate_grid_resources(
             grid_data=grid_data,
             reference_temp=request.reference_temperature
         )
+        
         
         # 合并结果
         final_results = {

@@ -13,7 +13,7 @@ import os
 from app.config import settings
 from app.database import init_db, SessionLocal
 from app.models import GeologicalLayer, DrillHole
-from app.routers import geological, gempy, export, import_csv, grid_calculations, users, stratigraphic
+from app.routers import gempy, export, import_csv, grid_calculations, users, stratigraphic
 
 # 配置日志
 logging.basicConfig(
@@ -62,9 +62,7 @@ async def lifespan(app: FastAPI):
             
     except Exception as e:
         logger.warning(f"Database initialization failed: {e}. Running without database.")
-    
     yield
-    
     # 关闭时清理资源
     logger.info("Shutting down...")
 
@@ -73,20 +71,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="""
-## 地热流体资源建模系统 API
-
-基于 GemPy 的三维地质建模和地热资源计算系统。
-
-### 主要功能
-- **地质层管理**: 管理地质层数据
-- **钻孔数据管理**: 管理钻孔勘探数据
-- **资源计算**: 计算地热资源量和发电潜力
-  
-### 技术栈
-- FastAPI + SQLAlchemy
-- GemPy 地质建模引擎
-""",
+    description="""地热流体资源计算系统""",
     lifespan=lifespan
 )
 
@@ -104,12 +89,9 @@ frontend_dist = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(frontend_dist):
     app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
 
-
 # 注册路由
-app.include_router(geological.router)
 app.include_router(gempy.router)
 app.include_router(export.router)
-# app.include_router(resource.router)
 app.include_router(import_csv.router)
 app.include_router(grid_calculations.router)
 app.include_router(users.router)
@@ -131,7 +113,6 @@ async def root():
         "redoc": "/redoc"
     }
 
-
 @app.get("/api/health")
 async def health_check():
     """健康检查接口"""
@@ -140,7 +121,6 @@ async def health_check():
         "app_name": settings.APP_NAME,
         "version": settings.APP_VERSION
     }
-
 
 @app.get("/api/info")
 async def get_app_info():
@@ -157,7 +137,6 @@ async def get_app_info():
         ]
     }
 
-
 # SPA fallback - 所有非 API 路由返回 index.html
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
@@ -165,17 +144,13 @@ async def serve_spa(full_path: str):
     # 如果是 API 路由但没匹配到，返回 404
     if full_path.startswith("api/"):
         return {"detail": "Not Found"}
-    
     # 返回前端 index.html
     index_file = os.path.join(frontend_dist, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
-    
     return {"detail": "Frontend not found"}
-
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("DEPLOY_RUN_PORT", "5000"))
-    # os.system(f"cd {os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))} && pnpm build")
     uvicorn.run(app, host="0.0.0.0", port=port)
