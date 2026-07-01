@@ -23,7 +23,6 @@ router = APIRouter(
     tags=["地层分层数据"]
 )
 
-
 @router.get("/list", response_model=List[StratigraphicLayerResponse])
 def get_all_layers(
     hole_name: Optional[str] = None,
@@ -35,13 +34,11 @@ def get_all_layers(
         query = query.filter(StratigraphicLayer.hole_name == hole_name)
     return query.order_by(StratigraphicLayer.hole_name, StratigraphicLayer.depth_top).all()
 
-
 @router.get("/holes", response_model=List[str])
 def get_all_hole_names(db: Session = Depends(get_db)):
     """获取所有钻孔名称列表"""
     result = db.query(StratigraphicLayer.hole_name).distinct().all()
     return [r[0] for r in result]
-
 
 @router.delete("/clear-all", response_model=MessageResponse)
 def clear_all(db: Session = Depends(get_db)):
@@ -50,14 +47,12 @@ def clear_all(db: Session = Depends(get_db)):
     db.commit()
     return MessageResponse(success=True, message=f"已清空 {count} 条数据")
 
-
 @router.delete("/hole/{hole_name}", response_model=MessageResponse)
 def delete_by_hole(hole_name: str, db: Session = Depends(get_db)):
     """删除指定钻孔的所有地层分层数据"""
     count = db.query(StratigraphicLayer).filter(StratigraphicLayer.hole_name == hole_name).delete()
     db.commit()
     return MessageResponse(success=True, message=f"已删除 {count} 条数据")
-
 
 @router.post("/import-csv", response_model=dict)
 async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
@@ -129,7 +124,6 @@ async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"导入失败: {str(e)}")
 
-
 @router.post("/batch-create", response_model=dict)
 def batch_create_layers(layers: List[StratigraphicLayerCreate], db: Session = Depends(get_db)):
     """批量创建地层分层数据"""
@@ -146,7 +140,6 @@ def batch_create_layers(layers: List[StratigraphicLayerCreate], db: Session = De
         db.rollback()
         raise HTTPException(status_code=500, detail=f"批量创建失败: {str(e)}")
 
-
 @router.get("/{layer_id}", response_model=StratigraphicLayerResponse)
 def get_layer(layer_id: int, db: Session = Depends(get_db)):
     """获取单条地层分层数据"""
@@ -154,7 +147,6 @@ def get_layer(layer_id: int, db: Session = Depends(get_db)):
     if not layer:
         raise HTTPException(status_code=404, detail="地层分层数据不存在")
     return layer
-
 
 @router.post("/create", response_model=StratigraphicLayerResponse)
 def create_layer(layer: StratigraphicLayerCreate, db: Session = Depends(get_db)):
@@ -164,7 +156,6 @@ def create_layer(layer: StratigraphicLayerCreate, db: Session = Depends(get_db))
     db.commit()
     db.refresh(db_layer)
     return db_layer
-
 
 @router.put("/{layer_id}", response_model=StratigraphicLayerResponse)
 def update_layer(layer_id: int, layer: StratigraphicLayerUpdate, db: Session = Depends(get_db)):
@@ -180,7 +171,6 @@ def update_layer(layer_id: int, layer: StratigraphicLayerUpdate, db: Session = D
     db.commit()
     db.refresh(db_layer)
     return db_layer
-
 
 @router.delete("/{layer_id}", response_model=MessageResponse)
 def delete_layer(layer_id: int, db: Session = Depends(get_db)):

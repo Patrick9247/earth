@@ -1,5 +1,5 @@
 """
-地热流体资源建模系统
+地热流体计算
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -21,14 +21,12 @@ from ..schemas import (
 router = APIRouter(prefix="/api/grid-calculations", tags=["网格计算表单"])
 logger = logging.getLogger(__name__)
 
-
-# ==================== 计算表单 CRUD ====================
+#  计算表单 CRUD 
 @router.get("/", response_model=List[GridCalculationFormResponse])
 async def get_all_grid_calculations(db: Session = Depends(get_db)):
     """获取所有网格计算表单"""
     results = db.query(GridCalculation).order_by(GridCalculation.updated_at.desc().nullslast(), GridCalculation.created_at.desc()).all()
     return results
-
 
 @router.get('/grids/count')
 async def get_total_grid_items(db: Session = Depends(get_db)):
@@ -43,7 +41,6 @@ async def get_total_grid_items(db: Session = Depends(get_db)):
         logger.error(f"Failed to count grid items: {e}")
         raise HTTPException(status_code=500, detail="查询网格项总数失败")
 
-
 @router.get("/{calc_id}", response_model=GridCalculationFormResponse)
 async def get_grid_calculation(calc_id: int, db: Session = Depends(get_db)):
     """获取单个网格计算表单"""
@@ -51,7 +48,6 @@ async def get_grid_calculation(calc_id: int, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="网格计算表单未找到")
     return result
-
 
 @router.post("/", response_model=GridCalculationFormResponse)
 async def create_grid_calculation(
@@ -70,7 +66,6 @@ async def create_grid_calculation(
     db.commit()
     db.refresh(db_calc)
     return db_calc
-
 
 @router.put("/{calc_id}", response_model=GridCalculationFormResponse)
 async def update_grid_calculation(
@@ -98,7 +93,6 @@ async def update_grid_calculation(
     db.refresh(db_calc)
     return db_calc
 
-
 @router.delete("/{calc_id}", response_model=MessageResponse)
 async def delete_grid_calculation(calc_id: int, db: Session = Depends(get_db)):
     """删除网格计算表单（同时删除关联的网格）"""
@@ -113,8 +107,7 @@ async def delete_grid_calculation(calc_id: int, db: Session = Depends(get_db)):
     db.commit()
     return MessageResponse(success=True, message="删除成功")
 
-
-# ==================== 网格数据 CRUD ====================
+#  网格数据  
 @router.get("/{calc_id}/grids", response_model=List[GridItemResponse])
 async def get_grids_by_calc(calc_id: int, db: Session = Depends(get_db)):
     """获取指定计算的所有网格"""
@@ -192,7 +185,6 @@ async def update_grid_item(
     db.commit()
     db.refresh(db_item)
     return db_item
-
 
 @router.delete("/{calc_id}/grids/{item_id}", response_model=MessageResponse)
 async def delete_grid_item(

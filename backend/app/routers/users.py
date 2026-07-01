@@ -20,12 +20,10 @@ from ..auth import (
 
 router = APIRouter(prefix="/api/users", tags=["用户管理"])
 
-
-# ==================== Schemas ====================
+#  Schemas 
 class UserLogin(BaseModel):
     username: str = Field(..., description="用户名")
     password: str = Field(..., description="密码")
-
 
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="用户名")
@@ -34,7 +32,6 @@ class UserRegister(BaseModel):
     email: Optional[str] = Field(None, description="邮箱")
     full_name: Optional[str] = Field(None, description="姓名")
     phone: Optional[str] = Field(None, description="联系电话")
-
 
 class UserCreate(BaseModel):
     """超级管理员创建用户"""
@@ -45,7 +42,6 @@ class UserCreate(BaseModel):
     full_name: Optional[str] = Field(None, description="姓名")
     phone: Optional[str] = Field(None, description="联系电话")
 
-
 class UserUpdate(BaseModel):
     """用户更新模型"""
     password: Optional[str] = Field(None, min_length=6, max_length=50, description="新密码")
@@ -53,7 +49,6 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, description="姓名")
     phone: Optional[str] = Field(None, description="联系电话")
     is_active: Optional[bool] = Field(None, description="是否启用")
-
 
 class UserUpdateByAdmin(BaseModel):
     """管理员更新用户模型"""
@@ -63,7 +58,6 @@ class UserUpdateByAdmin(BaseModel):
     full_name: Optional[str] = Field(None, description="姓名")
     phone: Optional[str] = Field(None, description="联系电话")
     is_active: Optional[bool] = Field(None, description="是否启用")
-
 
 class UserResponse(BaseModel):
     id: int
@@ -79,20 +73,18 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
 
 
-# ==================== API 端点 ====================
+#  API  
 
 @router.post("/register", response_model=UserResponse, summary="用户注册")
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """
     用户注册接口
-    
     - 普通注册: 不提供 super_admin_key，创建为普通管理员 (ADMIN)
     - 超级管理员注册: 提供正确的 super_admin_key，创建为超级管理员 (SUPER)
     """
@@ -132,7 +124,6 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     
     return user
 
-
 @router.post("/login", response_model=TokenResponse, summary="用户登录")
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
     """
@@ -167,12 +158,10 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
         user=UserResponse.model_validate(user)
     )
 
-
 @router.get("/me", response_model=UserResponse, summary="获取当前用户信息")
 def get_me(current_user: User = Depends(get_current_user)):
     """获取当前登录用户的信息"""
     return current_user
-
 
 @router.get("/", response_model=List[UserResponse], summary="获取所有用户列表")
 def get_users(
@@ -182,7 +171,6 @@ def get_users(
     """获取所有用户列表（仅超级管理员）"""
     users = db.query(User).order_by(User.created_at.desc()).all()
     return users
-
 
 @router.get("/{user_id}", response_model=UserResponse, summary="获取指定用户")
 def get_user(
@@ -206,7 +194,6 @@ def get_user(
         )
     
     return user
-
 
 @router.post("/", response_model=UserResponse, summary="创建用户")
 def create_user(
@@ -244,7 +231,6 @@ def create_user(
     db.refresh(user)
     
     return user
-
 
 @router.put("/{user_id}", response_model=UserResponse, summary="更新用户")
 def update_user(
@@ -294,7 +280,6 @@ def update_user(
     
     return user
 
-
 @router.delete("/{user_id}", response_model=UserResponse, summary="删除用户")
 def delete_user(
     user_id: int,
@@ -320,7 +305,6 @@ def delete_user(
     db.commit()
     
     return user
-
 
 @router.patch("/{user_id}/toggle-active", response_model=UserResponse, summary="切换用户启用状态")
 def toggle_user_active(

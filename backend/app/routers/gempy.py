@@ -1,5 +1,5 @@
 """
-GemPy 建模和地热资源计算 API
+地热资源计算 API
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from ..schemas import (
 )
 from ..gempy_service import geothermal_calculator
 
-router = APIRouter(prefix="/api/gempy", tags=["GemPy建模与资源计算"])
+router = APIRouter(prefix="/api/geothermal", tags=["地热资源计算"])
 logger = logging.getLogger(__name__)
 
 @router.post("/calculate", response_model=GeothermalCalculationResponse)
@@ -75,13 +75,11 @@ async def calculate_geothermal_resource(
             message=f"计算出错: {str(e)}"
         )
 
-
 @router.get("/results", response_model=List[GeothermalResourceListItem])
 async def get_calculation_results(db: Session = Depends(get_db)):
     """获取所有计算结果（简化列表，不含大数据字段）"""
     results = db.query(GeothermalResource).order_by(GeothermalResource.created_at.desc()).all()
     return results
-
 
 @router.get("/results/count")
 async def get_calculation_results_count(db: Session = Depends(get_db)):
@@ -93,7 +91,6 @@ async def get_calculation_results_count(db: Session = Depends(get_db)):
         logger.error(f"Failed to query calculation result count: {e}")
         raise HTTPException(status_code=500, detail="查询计算结果总数失败")
 
-
 @router.get("/results/{result_id}", response_model=GeothermalResourceResponse)
 async def get_calculation_result(result_id: int, db: Session = Depends(get_db)):
     """获取单个计算结果"""
@@ -101,7 +98,6 @@ async def get_calculation_result(result_id: int, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="计算结果未找到")
     return result
-
 
 @router.delete("/results/{result_id}", response_model=MessageResponse)
 async def delete_calculation_result(result_id: int, db: Session = Depends(get_db)):
@@ -113,7 +109,6 @@ async def delete_calculation_result(result_id: int, db: Session = Depends(get_db
     db.delete(result)
     db.commit()
     return MessageResponse(success=True, message="计算结果删除成功")
-
 
 @router.get("/quick-calc")
 async def quick_calculation(
@@ -144,7 +139,6 @@ async def quick_calculation(
         }
     }
 
-
 @router.post("/calculate-grid", response_model=GridCalculationResponse)
 async def calculate_grid_resources(
     request: GridCalculationRequest,
@@ -153,10 +147,6 @@ async def calculate_grid_resources(
     """
     网格资源计算 - 基于专利方法
     
-    根据专利《一种不规则热储层多相态地热流体资源量计算方法》实现：
-    1. 相态判定：比较网格温度与沸点温度，划分为气液共存网格集和液态水网格集
-    2. 密度校正：根据温度计算地热流体密度
-    3. 资源量计算：分别计算液态和气液共存资源量
     """
     try:
         # 转换网格数据
@@ -172,7 +162,6 @@ async def calculate_grid_resources(
             grid_data=grid_data,
             reference_temp=request.reference_temperature
         )
-        
         
         # 合并结果
         final_results = {
