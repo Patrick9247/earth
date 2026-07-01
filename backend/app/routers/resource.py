@@ -2,11 +2,14 @@
 地热流体资源计算模块
 基于公式
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 import math
 import logging
+from sqlalchemy.orm import Session
+from ..database import get_db
+from ..models import GeothermalResource
 
 router = APIRouter(prefix="/api/resource", tags=["资源计算"])
 logger = logging.getLogger(__name__)
@@ -513,6 +516,18 @@ async def get_boiling_point(pressure: float):
         "boiling_point_celsius": bp
     }
 
+
+@router.get("/count")
+async def get_resource_count(db: Session = Depends(get_db)):
+    """
+    获取已保存的地热资源计算结果总数
+    """
+    try:
+        count = db.query(GeothermalResource).count()
+        return {"count": count}
+    except Exception as e:
+        logger.error(f"Failed to query geothermal resource count: {e}")
+        raise HTTPException(status_code=500, detail="查询地热资源计算总数失败")
 
 @router.get("/density")
 async def get_density(

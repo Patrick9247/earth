@@ -5,22 +5,17 @@ import { ElMessage } from 'element-plus'
 import { ElLoading } from 'element-plus'
 import { Plus, Upload, Download, Delete, Cpu } from '@element-plus/icons-vue'
 import { gempyApi, gridCalcApi } from '@/api/get-api.ts'
-
 const loading = ref(false)
 const result = ref<any>(null)
 let loadingInstance: any = null
-
 // 图表相关
 const chartRef = ref<HTMLElement | null>(null)
 let myChart: echarts.ECharts | null = null
-
 // 页签状态
 const activeTab = ref('calculation')
-
 // 当前编辑的表单ID
 const currentFormId = ref<number | null>(null)
 const currentFormName = ref('未命名')
-
 // 网格计算表单参数
 const gridForm = ref({
   reference_temperature: 25,
@@ -28,10 +23,8 @@ const gridForm = ref({
   utilization_efficiency: 0.1,
   lifetime_years: 30
 })
-
 // 网格数据列表
 const gridData = ref<any[]>([])
-
 // 加载表单列表
 const loadFormList = async () => {
   try {
@@ -42,7 +35,6 @@ const loadFormList = async () => {
     return []
   }
 }
-
 // 加载指定表单
 const loadForm = async (formId: number) => {
   try {
@@ -57,7 +49,6 @@ const loadForm = async (formId: number) => {
       utilization_efficiency: form.utilization_efficiency,
       lifetime_years: form.lifetime_years
     }
-    
     // 加载网格数据
     const gridsRes = await gridCalcApi.getGrids(formId)
     // 确保每个网格都有热力学参数，没有则设置默认值
@@ -72,7 +63,6 @@ const loadForm = async (formId: number) => {
     ElMessage.error('加载表单失败')
   }
 }
-
 // 新建表单
 const createNewForm = async () => {
   try {
@@ -92,13 +82,11 @@ const createNewForm = async () => {
     ElMessage.error('创建表单失败')
   }
 }
-
 // 添加网格
 const addGrid = async () => {
   if (!currentFormId.value) {
     await createNewForm()
   }
-  
   if (currentFormId.value) {
     try {
       const res = await gridCalcApi.addGrid(currentFormId.value, {
@@ -123,16 +111,13 @@ const addGrid = async () => {
     }
   }
 }
-
 // 下载CSV模板
 const downloadCsvTemplate = () => {
   const headers = ['X', 'Y', 'Z(深度)', '孔隙度', '体积(m³)', '温度(°C)', '压力(kPa)', '液体比热容(kJ/(kg·°C))', '气体比热容(kJ/(kg·°C))', '气化潜热(kJ/kg)']
   const csvContent = headers.join(',') + '\n'
-  
   // 添加示例数据行
   const exampleRow = ['100', '200', '500', '0.2', '1000', '150', '500', '4.18', '2.0', '2257']
   const fullContent = csvContent + exampleRow.join(',')
-  
   const blob = new Blob(['\ufeff' + fullContent], { type: 'text/csv;charset=utf-8;' })
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -142,13 +127,11 @@ const downloadCsvTemplate = () => {
   window.URL.revokeObjectURL(url)
   ElMessage.success('模板已下载')
 }
-
 // 解析CSV文件
 const parseCsvLine = (line: string): string[] => {
   const result: string[] = []
   let current = ''
   let inQuotes = false
-  
   for (let i = 0; i < line.length; i++) {
     const char = line[i]
     if (char === '"') {
@@ -163,53 +146,40 @@ const parseCsvLine = (line: string): string[] => {
   result.push(current.trim())
   return result
 }
-
 // 导入CSV文件
 const handleCsvUpload = async (file: File) => {
   console.log('[CSV导入] 文件信息:', file.name, file.type, file.size)
-  
   const loading = ElLoading.service({ lock: true, text: '正在导入CSV文件...' })
-  
   try {
     if (!currentFormId.value) {
       await createNewForm()
     }
-    
     // 直接读取File对象
     const text = await file.text()
     console.log('[CSV导入] 文件内容长度:', text.length)
-    
     const lines = text.split(/\r?\n/).filter(line => line.trim() && !line.startsWith('#'))
     console.log('[CSV导入] 有效行数:', lines.length)
-    
     // 跳过表头行
     const dataLines = lines.slice(1)
     let successCount = 0
     let errorCount = 0
-    
     // 检查是否有有效的表单ID
     if (!currentFormId.value) {
       loading.close()
       ElMessage.error('请先创建或选择一个计算表单')
       return false
     }
-    
     for (const line of dataLines) {
       if (!line.trim()) continue
-      
       const values = parseCsvLine(line)
       console.log('[CSV导入] 解析行:', values)
-      
-      // 新字段顺序: X, Y, Z, 孔隙度, 体积, 温度, 压力, 液体比热容, 气体比热容, 气化潜热
       if (values.length >= 7) {
         try {
-          // 安全解析数值，空字符串返回 null
           const safeParseFloat = (val: string): number | null => {
             if (!val || val.trim() === '') return null
             const num = parseFloat(val)
             return isNaN(num) ? null : num
           }
-          
           const gridItem = {
             calc_id: currentFormId.value!,
             coord_x: safeParseFloat(values[0]),
@@ -225,7 +195,6 @@ const handleCsvUpload = async (file: File) => {
             sort_order: gridData.value.length
           }
           console.log('[CSV导入] 准备添加网格:', gridItem)
-          
           const res = await gridCalcApi.addGrid(currentFormId.value!, gridItem)
           gridData.value.push(res.data)
           successCount++
@@ -237,7 +206,6 @@ const handleCsvUpload = async (file: File) => {
         errorCount++
       }
     }
-    
     loading.close()
     if (successCount > 0) {
       ElMessage.success(`成功导入 ${successCount} 条数据${errorCount > 0 ? `，${errorCount} 条失败` : ''}`)
@@ -249,10 +217,8 @@ const handleCsvUpload = async (file: File) => {
     loading.close()
     ElMessage.error('读取文件失败，请检查文件格式')
   }
-  
   return false  // 阻止默认上传行为
 }
-
 // 删除网格
 const removeGrid = async (index: number) => {
   const item = gridData.value[index]
@@ -265,7 +231,6 @@ const removeGrid = async (index: number) => {
   }
   gridData.value.splice(index, 1)
 }
-
 // 更新网格数据
 const updateGridData = async (index: number) => {
   const item = gridData.value[index]
@@ -288,10 +253,7 @@ const updateGridData = async (index: number) => {
     }
   }
 }
-
 // 计算饱和温度（分段公式，P 单位: kPa）
-// P_i ≤ 101.325 kPa: T_isat = 0.95 × P_i + 26.44
-// P_i > 101.325 kPa: T_isat = 0.04 × P_i + 132.01
 const calculateBoilingPoint = (pressure: number): number => {
   if (pressure <= 0) return 100.0
   if (pressure <= 101.325) {
@@ -300,7 +262,6 @@ const calculateBoilingPoint = (pressure: number): number => {
     return 0.04 * pressure + 132.01
   }
 }
-
 // 根据温度和压力自动判断相态
 // T < T_sat: 液态水; T ≈ T_sat: 气液共存; T > T_sat: 气态
 // 扩大气液共存判定范围：温度在饱和温度 ±10°C 范围内
@@ -315,7 +276,6 @@ const determinePhase = (temperature: number, pressure: number): string => {
     return 'gas'  // 气态
   }
 }
-
 // 计算流体密度 ρ (kg/m³)
 // 根据专利公式: ρ_i = 137.1358 × e^(A) + 139.3560 × e^(B) + 769.9024
 // A = -(P_i - 163278.7315)² / (6.613 × 10¹⁰)
@@ -323,48 +283,37 @@ const determinePhase = (temperature: number, pressure: number): string => {
 // 注意：公式中 P_i 的单位是 Pa（帕斯卡）
 const calculateFluidDensity = (temperature: number, pressureKpa: number): number => {
   if (temperature < 0 || pressureKpa <= 0) return 1000.0  // 默认水密度
-  
   // 将 kPa 转换为 Pa
   const pressurePa = pressureKpa * 1000
-  
   // 计算 A 和 B
   const A = -Math.pow(pressurePa - 163278.7315, 2) / (6.613e10)
   const B = -Math.pow(temperature - 4.1171, 2) / 29947.659
-  
   // 计算密度
   const density = 137.1358 * Math.exp(A) + 139.3560 * Math.exp(B) + 769.9024
-  
   return density
 }
-
 // 获取相态标签
 const getPhaseLabel = (phase: string): string => {
   return phase === 'liquid' ? '液态水' : phase === 'two_phase' ? '气液共存' : '气态'
 }
-
 // 获取相态标签类型
 const getPhaseTagType = (phase: string): string => {
   return phase === 'liquid' ? 'success' : phase === 'two_phase' ? 'warning' : 'danger'
 }
-
 // 初始化图表
 const initChart = () => {
   if (!chartRef.value) return
   if (gridData.value.length === 0) return
-
   // 销毁旧实例
   if (myChart) {
     myChart.dispose()
     myChart = null
   }
-
   // 准备图表数据
   const xData = gridData.value.map((_, idx) => `网格${idx + 1}`)
   const yData = gridData.value.map(d => d.grid_count || 1)
-
   // 初始化图表
   myChart = echarts.init(chartRef.value)
-
   const option = {
     title: {
       text: '网格数量分布',
@@ -432,26 +381,21 @@ const initChart = () => {
       }
     ]
   }
-
   myChart.setOption(option)
 }
-
 // 监听页签切换，更新图表
 watch(activeTab, (newTab) => {
   if (newTab === 'visualization') {
     setTimeout(() => initChart(), 100)
   }
 })
-
 // 窗口变化自适应
 const resizeChart = () => {
   myChart?.resize()
 }
-
 onMounted(() => {
   window.addEventListener('resize', resizeChart)
 })
-
 onUnmounted(() => {
   window.removeEventListener('resize', resizeChart)
   if (myChart) {
@@ -459,7 +403,6 @@ onUnmounted(() => {
     myChart = null
   }
 })
-
 // 网格计算
 const handleGridCalculate = async () => {
   // 验证数据
@@ -467,7 +410,6 @@ const handleGridCalculate = async () => {
     ElMessage.warning('请先添加网格数据')
     return
   }
-  
   for (let i = 0; i < gridData.value.length; i++) {
     const grid = gridData.value[i]
     if (!grid.porosity || !grid.volume || !grid.temperature || !grid.pressure) {
@@ -475,7 +417,6 @@ const handleGridCalculate = async () => {
       return
     }
   }
-  
   loading.value = true
   result.value = null  // 清除之前的结果
   // 显示加载遮罩
@@ -484,7 +425,6 @@ const handleGridCalculate = async () => {
     text: '正在计算，请稍候...',
     background: 'rgba(0, 0, 0, 0.7)'
   })
-  
   try {
     // 直接传递网格数据，后端会根据 phase 字段使用对应公式计算
     const grids = gridData.value.map((grid: any) => ({
@@ -500,10 +440,8 @@ const handleGridCalculate = async () => {
       gas_specific_heat: grid.gas_specific_heat,
       latent_heat: grid.latent_heat
     }))
-    
     console.log(`[网格计算] 准备计算 ${grids.length} 条记录...`)
     console.log('[网格计算] 发送的数据:', JSON.stringify(grids, null, 2))
-    
     // 调用后端API计算并保存
     const res = await gempyApi.calculateGrid({
       grids,
@@ -512,9 +450,7 @@ const handleGridCalculate = async () => {
       utilization_efficiency: gridForm.value.utilization_efficiency,
       lifetime_years: gridForm.value.lifetime_years
     })
-    
     console.log('[网格计算] API响应:', res.data)
-    
     if (res.data.success) {
       result.value = res.data.data
       ElMessage.success(`网格计算完成！共 ${grids.length} 个网格`)
@@ -542,7 +478,6 @@ const handleGridCalculate = async () => {
     }
   }
 }
-
 // 科学计数法格式化kJ
 const formatScientificKJ = (num: number): string => {
   if (!num && num !== 0) return '0 kJ'
@@ -552,9 +487,6 @@ const formatScientificKJ = (num: number): string => {
   const mantissa = kj / Math.pow(10, exponent)
   return `${mantissa.toFixed(2)} × 10<sup>${exponent}</sup> kJ`
 }
-
-
-
 // 页面加载时初始化
 onMounted(async () => {
   // 加载表单列表，如果有则加载最新的
@@ -567,11 +499,9 @@ onMounted(async () => {
   }
 })
 </script>
-
 <template>
   <div class="calculation-view">
     <h1 class="page-title">地热资源计算</h1>
-
     <el-tabs v-model="activeTab" class="main-tabs">
       <!-- 网格资源计算 -->
       <el-tab-pane label="网格资源计算" name="calculation">
@@ -580,7 +510,6 @@ onMounted(async () => {
           <p class="description">
             基于一种不规则热储层多相态地热流体资源量计算方法，对每个网格进行相态判定后分别计算资源量。
           </p>
-          
           <div class="grid-toolbar">
             <el-button type="primary" @click="addGrid">
               <el-icon><Plus /></el-icon>
@@ -607,7 +536,6 @@ onMounted(async () => {
               计算网格资源
             </el-button>
           </div>
-
           <el-table :data="gridData" border stripe style="width: 100%" table-layout="auto" size="small">
             <el-table-column label="编号" type="index" width="50" />
             <el-table-column label="X" min-width="100">
@@ -686,19 +614,15 @@ onMounted(async () => {
             </el-table-column>
           </el-table>
         </div>
-
         <!-- 计算结果 -->
         <div class="card" v-if="result">
           <h3 class="card-title">计算结果</h3>
-          
           <!-- 地热资源总量 -->
           <div class="result-item highlight" style="text-align: center; padding: 20px;">
             <div class="result-label" style="font-size: 16px;">地热资源总量 Q<sub>总</sub></div>
             <div class="result-value" style="font-size: 28px; font-weight: bold;" v-html="formatScientificKJ(result.total_resource_joules)"></div>
           </div>
-          
           <el-divider />
-          
           <!-- 流体资源量分类 -->
           <h4 style="margin: 16px 0 12px;">流体资源量分类（按相态）</h4>
           <el-row :gutter="20">
@@ -721,10 +645,7 @@ onMounted(async () => {
               </div>
             </el-col>
           </el-row>
-          
-          
           <el-divider />
-          
           <!-- 网格分类统计 -->
           <el-row :gutter="20">
             <el-col :span="8">
@@ -751,11 +672,9 @@ onMounted(async () => {
           </el-row>
         </div>
       </el-tab-pane>
-
     </el-tabs>
   </div>
 </template>
-
 <style scoped>
 @import "@/styles/calculation-view.css";
 </style>

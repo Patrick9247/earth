@@ -6,7 +6,6 @@ import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 
 const router = useRouter()
-
 // 用户信息
 interface User {
   id: number
@@ -16,10 +15,8 @@ interface User {
   email?: string
   phone?: string
 }
-
 const currentUser = ref<User | null>(null)
 const isLoggedIn = computed(() => !!currentUser.value)
-
 // 加载用户信息
 const loadUser = () => {
   const userStr = localStorage.getItem('user')
@@ -31,7 +28,6 @@ const loadUser = () => {
     }
   }
 }
-
 // 登出
 const handleLogout = async () => {
   try {
@@ -40,7 +36,6 @@ const handleLogout = async () => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     currentUser.value = null
@@ -49,16 +44,13 @@ const handleLogout = async () => {
     // 用户取消
   }
 }
-
 // 跳转到用户管理
 const goToUserManagement = () => {
   router.push('/users')
 }
-
 onMounted(() => {
   loadUser()
 })
-
 // 监听登录状态变化
 window.addEventListener('storage', (e) => {
   if (e.key === 'user') {
@@ -66,7 +58,6 @@ window.addEventListener('storage', (e) => {
   }
 })
 </script>
-
 <template>
   <div class="app-container" v-if="isLoggedIn">
     <AppHeader 
@@ -85,11 +76,6 @@ window.addEventListener('storage', (e) => {
     <RouterView @login-success="loadUser" />
   </div>
 </template>
-
 <style scoped>
 @import "@/styles/app.css";
-
-.app-container--login {
-  min-height: 100vh;
-}
 </style>

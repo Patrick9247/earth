@@ -260,35 +260,9 @@ class GeothermalResourceListItem(BaseModel):
 
 
 # ==================== 模型配置 Schemas ====================
-class ModelConfigBase(BaseModel):
-    name: str = Field(..., description="配置名称")
-    grid_resolution: int = Field(50, ge=10, le=200, description="网格分辨率")
-    extent_x_min: float = Field(0, description="X范围最小值")
-    extent_x_max: float = Field(1000, description="X范围最大值")
-    extent_y_min: float = Field(0, description="Y范围最小值")
-    extent_y_max: float = Field(1000, description="Y范围最大值")
-    extent_z_min: float = Field(-2000, description="Z范围最小值")
-    extent_z_max: float = Field(0, description="Z范围最大值")
-    config_data: Optional[Dict[str, Any]] = Field(None, description="完整配置数据")
-
-
-class ModelConfigCreate(ModelConfigBase):
-    pass
-
-
-class ModelConfigResponse(ModelConfigBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
 # ==================== GemPy 建模请求 Schemas ====================
 class GemPyModelRequest(BaseModel):
     """GemPy 建模请求"""
-    config_id: Optional[int] = Field(None, description="配置ID")
     layers: List[GeologicalLayerCreate] = Field(..., description="地质层数据")
     drill_holes: List[DrillHoleCreate] = Field(..., description="钻孔数据")
     grid_resolution: int = Field(50, ge=10, le=200, description="网格分辨率")

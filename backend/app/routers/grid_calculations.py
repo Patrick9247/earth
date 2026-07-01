@@ -30,6 +30,20 @@ async def get_all_grid_calculations(db: Session = Depends(get_db)):
     return results
 
 
+@router.get('/grids/count')
+async def get_total_grid_items(db: Session = Depends(get_db)):
+    """
+    获取所有网格项的总数
+    返回: { "count": <int> }
+    """
+    try:
+        count = db.query(GridItem).count()
+        return {"count": count}
+    except Exception as e:
+        logger.error(f"Failed to count grid items: {e}")
+        raise HTTPException(status_code=500, detail="查询网格项总数失败")
+
+
 @router.get("/{calc_id}", response_model=GridCalculationFormResponse)
 async def get_grid_calculation(calc_id: int, db: Session = Depends(get_db)):
     """获取单个网格计算表单"""

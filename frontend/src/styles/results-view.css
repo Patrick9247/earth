@@ -1,0 +1,35 @@
+.stat-card {
+    text-align: center;
+    padding: 24px;
+    border-radius: 8px;
+    color: #fff;
+    margin-top: 20px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.chart-card {
+    margin-top: 20px;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #ebeef5;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chart-container {
+    min-height: 400px;
+}

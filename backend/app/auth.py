@@ -55,8 +55,9 @@ def decode_token(token: str) -> Optional[dict]:
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token已过期"
+            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+            detail="Token已过期",
+            headers={"Location": "/login"}
         )
     except jwt.InvalidTokenError:
         raise HTTPException(

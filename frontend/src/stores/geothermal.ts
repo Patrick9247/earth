@@ -27,7 +27,7 @@ export const useGeothermalStore = defineStore('geothermal', () => {
   // Getters
   const totalLayers = computed(() => layers.value.length)
   const totalDrillHoles = computed(() => drillHoles.value.length)
-  const totalPowerPotential = computed(() => 
+  const totalPowerPotential = computed(() =>
     calculationResults.value.reduce((sum, r) => sum + (r.power_potential || 0), 0)
   )
 

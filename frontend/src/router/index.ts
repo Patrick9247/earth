@@ -18,13 +18,7 @@ const routes: RouteRecordRaw[] = [
     path: '/drill-data',
     name: 'drill-data',
     component: () => import('@/views/DrillDataView.vue'),
-    meta: { title: '钻孔数据' }
-  },
-  {
-    path: '/model',
-    name: 'model',
-    component: () => import('@/views/ModelView.vue'),
-    meta: { title: '地质建模' }
+    meta: { title: '地层数据' }
   },
   {
     path: '/calculation',
@@ -44,32 +38,17 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/UserManagementView.vue'),
     meta: { title: '用户管理' }
   }
-  // {
-  //   path: '/settings',
-  //   name: 'settings',
-  //   component: () => import('@/views/SettingsView.vue'),
-  //   meta: { title: '系统设置' }
-  // },
-  // {
-  //   path: '/guide',
-  //   name: 'guide',
-  //   component: () => import('@/views/GuideView.vue'),
-  //   meta: { title: '使用指南' }
-  // }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
 })
-
 router.beforeEach((to, _from, next) => {
   document.title = `${to.meta.title || '首页'} - 地热流体资源计算系统`
-
   // 检查是否需要登录
   const token = localStorage.getItem('token')
   const requiresAuth = to.meta.requiresAuth !== false && to.name !== 'login'
-
   if (requiresAuth && !token) {
     // 未登录，跳转到登录页面
     next({ name: 'login' })
@@ -80,5 +59,4 @@ router.beforeEach((to, _from, next) => {
     next()
   }
 })
-
 export default router

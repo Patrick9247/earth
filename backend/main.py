@@ -12,8 +12,8 @@ import os
 
 from app.config import settings
 from app.database import init_db, SessionLocal
-from app.models import GeologicalLayer, DrillHole, ModelConfig
-from app.routers import geological, drill_holes, model_configs, gempy, export, download, resource, import_csv, grid_calculations, users, stratigraphic
+from app.models import GeologicalLayer, DrillHole
+from app.routers import geological, drill_holes, gempy, export, resource, import_csv, grid_calculations, users, stratigraphic
 
 # 配置日志
 logging.basicConfig(
@@ -52,10 +52,6 @@ async def lifespan(app: FastAPI):
                 drill_holes_data = generate_synthetic_drill_data(num_holes=10, extent=(0, 0, 1000, 1000), depth_range=(600, 1500), gradient_range=(5.5, 7.5))
                 drill_holes = [DrillHole(**dh) for dh in drill_holes_data]
                 db.add_all(drill_holes)
-                
-                # 插入模型配置
-                config = ModelConfig(name="默认配置", grid_resolution=50, extent_x_min=0, extent_x_max=1000, extent_y_min=0, extent_y_max=1000, extent_z_min=-2000, extent_z_max=100)
-                db.add(config)
                 
                 db.commit()
                 logger.info("Sample data inserted successfully!")
@@ -111,8 +107,6 @@ if os.path.exists(frontend_dist):
 
 # 注册路由
 app.include_router(geological.router)
-app.include_router(drill_holes.router)
-app.include_router(model_configs.router)
 app.include_router(gempy.router)
 app.include_router(export.router)
 app.include_router(resource.router)
@@ -158,7 +152,6 @@ async def get_app_info():
         "features": [
             "geological_layers",
             "drill_holes",
-            "model_configs",
             "gempy_modeling",
             "geothermal_calculation"
         ]
@@ -184,5 +177,5 @@ async def serve_spa(full_path: str):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("DEPLOY_RUN_PORT", "5000"))
-    os.system(f"cd {os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))} && pnpm build")
+    # os.system(f"cd {os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))} && pnpm build")
     uvicorn.run(app, host="0.0.0.0", port=port)

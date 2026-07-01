@@ -9,10 +9,8 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { ElTable } from 'element-plus'
-
 // 注册 ECharts 组件
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
-
 const results = ref<any[]>([])
 const loading = ref(false)
 const selectedResult = ref<any>(null)
@@ -21,33 +19,27 @@ const dialogVisible = computed({
   get: () => selectedResult.value !== null,
   set: () => { selectedResult.value = null }
 })
-
 // 分页配置
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = computed(() => results.value.length)
-
 // 分页后的数据
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
   return results.value.slice(start, end)
 })
-
 // 分页变化
 const handlePageChange = (page: number) => {
   currentPage.value = page
 }
-
 // 每页条数变化
 const handleSizeChange = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
 }
-
 // 选中的用于图表展示的数据
 const selectedChartData = ref<number[]>([])
-
 const loadResults = async () => {
   loading.value = true
   try {
@@ -65,7 +57,6 @@ const loadResults = async () => {
     loading.value = false
   }
 }
-
 const handleDelete = async (id: number) => {
   const index = results.value.findIndex(r => r.id === id)
   if (index !== -1) {
@@ -79,14 +70,12 @@ const handleDelete = async (id: number) => {
     console.error('API删除失败，但已从本地删除:', error)
   }
 }
-
 const viewDetail = async (row: any) => {
   selectedResult.value = row
   if (row.parameters && row.parameters.original_grids) {
     selectedResult.value.grids = row.parameters.original_grids
   }
 }
-
 // 全选/取消全选图表数据
 const toggleSelectAll = () => {
   if (selectedChartData.value.length === results.value.length) {
@@ -97,17 +86,14 @@ const toggleSelectAll = () => {
     })
   }
 }
-
 // 清除选择
 const clearSelection = () => {
   tableRef.value?.clearSelection()
 }
-
 // 监听表格选择变化
 const handleSelectionChange = (val: any[]) => {
   selectedChartData.value = val.map(v => v.id)
 }
-
 // 格式化体积显示
 const formatVolume = (vol: number | null | undefined): string => {
   if (!vol) return '0 m³'
@@ -117,7 +103,6 @@ const formatVolume = (vol: number | null | undefined): string => {
   if (vol >= 1e3) return (vol / 1e3).toFixed(2) + ' × 10³ m³'
   return vol.toFixed(2) + ' m³'
 }
-
 // 格式化热量为kJ科学计数法
 const formatHeat = (heat: number | null | undefined): string => {
   if (!heat) return '0 kJ'
@@ -127,16 +112,13 @@ const formatHeat = (heat: number | null | undefined): string => {
   const mantissa = kJ / Math.pow(10, exponent)
   return `${mantissa.toFixed(2)} × 10<sup>${exponent}</sup> kJ`
 }
-
 // 导出为 CSV
 const exportToCSV = () => {
   if (results.value.length === 0) {
     ElMessage.warning('没有数据可导出')
     return
   }
-
   const headers = ['名称', '储层体积(m³)', '平均温度(°C)', '热含量(kJ)', '发电潜力(MW)', '创建时间']
-  
   const rows = results.value.map(row => [
     row.name,
     row.volume?.toFixed(2) || '0.00',
@@ -145,15 +127,12 @@ const exportToCSV = () => {
     row.power_potential?.toFixed(6) || '0.000000',
     row.created_at
   ])
-
   const csvContent = [
     headers.join(','),
     ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
   ].join('\n')
-
   const BOM = '\uFEFF'
   const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
-  
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   link.setAttribute('href', url)
@@ -165,7 +144,6 @@ const exportToCSV = () => {
   
   ElMessage.success('导出成功')
 }
-
 // 图表配置
 const chartOption = computed(() => {
   if (selectedChartData.value.length === 0) {
@@ -181,11 +159,9 @@ const chartOption = computed(() => {
       series: []
     }
   }
-
   const selectedData = results.value.filter(r => selectedChartData.value.includes(r.id))
   const xAxisData = selectedData.map((r, index) => `${index + 1}. ${r.name}`)
   const heatData = selectedData.map(r => (r.heat_content || 0) / 1000) // 转换为kJ
-
   return {
     tooltip: {
       trigger: 'axis',
@@ -289,16 +265,13 @@ const chartOption = computed(() => {
     animationEasing: 'cubicOut' as const
   }
 })
-
 onMounted(() => {
   loadResults()
 })
 </script>
-
 <template>
   <div class="results-view">
     <h1 class="page-title">计算结果管理</h1>
-    
     <div class="card">
       <div class="btn-group">
         <el-button @click="loadResults">
@@ -316,7 +289,6 @@ onMounted(() => {
           导出 CSV
         </el-button>
       </div>
-
       <el-table 
         ref="tableRef"
         :data="paginatedData" 
@@ -357,7 +329,6 @@ onMounted(() => {
           </template>
         </el-table-column>
       </el-table>
-
       <!-- 分页组件 -->
       <div class="pagination-wrapper">
         <el-pagination
@@ -371,7 +342,6 @@ onMounted(() => {
         />
       </div>
     </div>
-
     <!-- 结果统计 -->
     <el-row :gutter="20">
       <el-col :span="12">
@@ -387,7 +357,6 @@ onMounted(() => {
         </div>
       </el-col>
     </el-row>
-
     <!-- 图表区域 -->
     <el-card class="chart-card">
       <template #header>
@@ -406,7 +375,6 @@ onMounted(() => {
         />
       </div>
     </el-card>
-
     <!-- 详情对话框 -->
     <el-dialog v-model="dialogVisible" title="计算结果详情" width="900px" @close="selectedResult = null">
       <el-descriptions :column="2" border v-if="selectedResult">
@@ -418,7 +386,6 @@ onMounted(() => {
           <span v-html="formatHeat(selectedResult.heat_content)"></span>
         </el-descriptions-item>
       </el-descriptions>
-
       <!-- 网格数据表格 -->
       <div v-if="selectedResult?.grids?.length" style="margin-top: 20px;">
         <h4>网格数据 ({{ selectedResult.grids.length }} 个)</h4>
@@ -437,41 +404,6 @@ onMounted(() => {
     </el-dialog>
   </div>
 </template>
-
 <style scoped>
-.stat-card {
-  text-align: center;
-  padding: 24px;
-  border-radius: 8px;
-  color: #fff;
-  margin-top: 20px;
-}
-
-.btn-group {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.chart-card {
-  margin-top: 20px;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #ebeef5;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chart-container {
-  min-height: 400px;
-}
+@import "@/styles/results-view.css";
 </style>

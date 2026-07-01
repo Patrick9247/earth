@@ -7,26 +7,20 @@ interface User {
   email?: string
   phone?: string
 }
-
 defineProps<{
   user: User | null
 }>()
-
 const emit = defineEmits<{
   (e: 'logout'): void
   (e: 'go-to-users'): void
 }>()
-
 const navItems = [
   { path: '/', icon: 'HomeFilled', label: '系统首页' },
-  { path: '/drill-data', icon: 'Aim', label: '钻孔数据' },
-  // { path: '/model', icon: 'DataAnalysis', label: '地质建模' },
+  { path: '/drill-data', icon: 'Aim', label: '地层数据' },
   { path: '/calculation', icon: 'Cpu', label: '资源计算' },
   { path: '/results', icon: 'TrendCharts', label: '计算结果' },
   { path: '/users', icon: 'User', label: '用户管理' }
-  // { path: '/settings', icon: 'Setting', label: '系统设置' }
 ]
-
 const handleCommand = (command: string) => {
   switch (command) {
     case 'profile':
@@ -37,16 +31,13 @@ const handleCommand = (command: string) => {
       break
   }
 }
-
 const getRoleText = (role: string) => {
   return role === 'SUPER' ? '超级管理员' : '普通管理员'
 }
-
 const getRoleTagType = (role: string) => {
   return role === 'SUPER' ? 'danger' : 'primary'
 }
 </script>
-
 <template>
   <header class="app-header">
     <div class="logo">
@@ -98,47 +89,4 @@ const getRoleTagType = (role: string) => {
 
 <style scoped>
 @import "@/styles/app-header.css";
-
-.user-section {
-  margin-left: auto;
-  margin-right: 10px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.user-info:hover {
-  background-color: rgba(64, 158, 255, 0.1);
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
-.username {
-  font-size: 14px;
-  color: #303133;
-  font-weight: 500;
-}
-
-.dropdown-icon {
-  font-size: 12px;
-  color: #909399;
-}
-
-:deep(.el-dropdown-menu__item) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 </style>

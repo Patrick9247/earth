@@ -23,6 +23,20 @@ async def get_layers(db: Session = Depends(get_db)):
     return layers
 
 
+@router.get("/distinct-count")
+async def get_distinct_layer_count(db: Session = Depends(get_db)):
+    """
+    获取不同名称的地质层数量（去重计数）
+    返回: { "count": <int> }
+    """
+    try:
+        # 使用 distinct 统计不同 name 的数量
+        count = db.query(GeologicalLayer.name).distinct().count()
+        return {"count": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="查询地质层去重计数失败")
+
+
 @router.get("/{layer_id}", response_model=GeologicalLayerResponse)
 async def get_layer(layer_id: int, db: Session = Depends(get_db)):
     """获取单个地质层"""
@@ -30,6 +44,8 @@ async def get_layer(layer_id: int, db: Session = Depends(get_db)):
     if not layer:
         raise HTTPException(status_code=404, detail="地质层未找到")
     return layer
+
+
 
 
 @router.post("/", response_model=GeologicalLayerResponse)

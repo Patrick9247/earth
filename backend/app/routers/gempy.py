@@ -7,7 +7,7 @@ from typing import List
 import logging
 
 from ..database import get_db
-from ..models import GeothermalResource, ModelConfig
+from ..models import GeothermalResource
 from ..schemas import (
     GemPyModelRequest,
     GemPyModelResponse,
@@ -36,37 +36,25 @@ async def create_geological_model(
     使用 GemPy 根据地质层和钻孔数据创建三维地质模型
     """
     try:
-        # 确定模型范围
-        if request.config_id:
-            config = db.query(ModelConfig).filter(ModelConfig.id == request.config_id).first()
-            if not config:
-                raise HTTPException(status_code=404, detail="模型配置未找到")
-            extent = [
-                config.extent_x_min, config.extent_x_max,
-                config.extent_y_min, config.extent_y_max,
-                config.extent_z_min, config.extent_z_max
-            ]
-            resolution = config.grid_resolution
-        else:
-            # 根据钻孔数据自动计算范围
-            drill_holes = request.drill_holes
-            x_coords = [dh.location_x for dh in drill_holes]
-            y_coords = [dh.location_y for dh in drill_holes]
-            depths = [dh.total_depth for dh in drill_holes if dh.total_depth]
-            
-            # 添加边界缓冲
-            x_range = max(x_coords) - min(x_coords) if x_coords else 1000
-            y_range = max(y_coords) - min(y_coords) if y_coords else 1000
-            
-            extent = [
-                min(x_coords) - x_range * 0.2 if x_coords else 0,
-                max(x_coords) + x_range * 0.2 if x_coords else 1000,
-                min(y_coords) - y_range * 0.2 if y_coords else 0,
-                max(y_coords) + y_range * 0.2 if y_coords else 1000,
-                -max(depths) - 100 if depths else -2000,
-                100
-            ]
-            resolution = request.grid_resolution
+        # 根据钻孔数据自动计算范围
+        drill_holes = request.drill_holes
+        x_coords = [dh.location_x for dh in drill_holes]
+        y_coords = [dh.location_y for dh in drill_holes]
+        depths = [dh.total_depth for dh in drill_holes if dh.total_depth]
+        
+        # 添加边界缓冲
+        x_range = max(x_coords) - min(x_coords) if x_coords else 1000
+        y_range = max(y_coords) - min(y_coords) if y_coords else 1000
+        
+        extent = [
+            min(x_coords) - x_range * 0.2 if x_coords else 0,
+            max(x_coords) + x_range * 0.2 if x_coords else 1000,
+            min(y_coords) - y_range * 0.2 if y_coords else 0,
+            max(y_coords) + y_range * 0.2 if y_coords else 1000,
+            -max(depths) - 100 if depths else -2000,
+            100
+        ]
+        resolution = request.grid_resolution
         
         # 创建 GemPy 模型
         success = gempy_service.create_model(

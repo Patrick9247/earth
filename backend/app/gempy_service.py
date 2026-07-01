@@ -938,14 +938,10 @@ class GeothermalCalculator:
         计算地热储层热含量（仅计算流体热量）
         """
         delta_T = avg_temperature - reference_temperature
-        
         water_volume = reservoir_volume * porosity
-        
         water_mass = water_volume * water_density
-        
         water_heat = water_mass * water_specific_heat * delta_T
         total_heat = water_heat
-        
         return {
             'water_volume': water_volume,
             'water_mass': water_mass,
@@ -953,8 +949,5 @@ class GeothermalCalculator:
             'total_heat': total_heat,
             'delta_temperature': delta_T
         }
-
-
-# 创建全局服务实例
 gempy_service = GemPyService()
 geothermal_calculator = GeothermalCalculator()
