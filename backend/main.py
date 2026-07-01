@@ -1,5 +1,5 @@
 """
-地热流体资源建模系统 - FastAPI 主应用
+地热流体资源建模系统
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,8 +8,6 @@ from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import logging
 import os
-
-
 from app.config import settings
 from app.database import init_db, SessionLocal
 from app.models import GeologicalLayer
@@ -21,8 +19,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
@@ -36,8 +32,6 @@ async def lifespan(app: FastAPI):
         db = SessionLocal()
         try:
             if db.query(GeologicalLayer).count() == 0:
-                logger.info("No data found, inserting sample data...")
-                from app.utils import generate_synthetic_drill_data
                 
                 # 插入地质层数据
                 layers = [
@@ -47,26 +41,16 @@ async def lifespan(app: FastAPI):
                     GeologicalLayer(name="花岗岩基底", layer_type="基岩", depth_top=800, depth_bottom=2000, porosity=0.05, permeability=0.5, thermal_conductivity=3.2, color="#CD5C5C"),
                 ]
                 db.add_all(layers)
-                
-                # 插入钻孔数据
-                drill_holes_data = generate_synthetic_drill_data(num_holes=10, extent=(0, 0, 1000, 1000), depth_range=(600, 1500), gradient_range=(5.5, 7.5))
-                drill_holes = [DrillHole(**dh) for dh in drill_holes_data]
-                db.add_all(drill_holes)
-                
-                db.commit()
-                logger.info("Sample data inserted successfully!")
+            
         except Exception as e:
             logger.warning(f"Failed to insert sample data: {e}")
         finally:
-            db.close()
-            
+            db.close()       
     except Exception as e:
         logger.warning(f"Database initialization failed: {e}. Running without database.")
     yield
     # 关闭时清理资源
     logger.info("Shutting down...")
-
-
 # 创建 FastAPI 应用
 app = FastAPI(
     title=settings.APP_NAME,
@@ -94,7 +78,6 @@ app.include_router(gempy.router)
 app.include_router(grid_calculations.router)
 app.include_router(users.router)
 app.include_router(stratigraphic.router)
-
 
 @app.get("/")
 async def root():

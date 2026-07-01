@@ -10,9 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.config import settings
 from app.database import engine, Base, SessionLocal
-from app.models import GeologicalLayer, DrillHole
-from app.utils import generate_synthetic_drill_data
-
+from app.models import GeologicalLayer
 
 def create_tables():
     """创建所有表"""
@@ -85,17 +83,6 @@ def insert_sample_data():
         ]
         
         db.add_all(layers)
-        
-        # 插入钻孔数据
-        drill_holes_data = generate_synthetic_drill_data(
-            num_holes=10,
-            extent=(0, 0, 1000, 1000),
-            depth_range=(600, 1500),
-            gradient_range=(5.5, 7.5)
-        )
-        
-        drill_holes = [DrillHole(**dh) for dh in drill_holes_data]
-        db.add_all(drill_holes)
         
         db.commit()
         print("Sample data inserted successfully!")
