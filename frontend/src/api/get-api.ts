@@ -96,52 +96,7 @@ export const gridCalcApi = {
   // 获取所有网格项总数
   getTotalGridItems: () => api.get('/grid-calculations/grids/count')
 }
-//  CSV导入 API 
-export const importApi = {
-  downloadTemplate: (type: string) => `/api/import/template/${type}`,
-  preview: (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/import/preview', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  },
-  importDrillInfo: (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/import/drill-info', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  },
-  importLayers: (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/import/layers', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  },
-  importTemperature: (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/import/temperature', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  },
-  importPressure: (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/import/pressure', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  },
-  importPorosity: (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/import/porosity', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  }
-}
+
 //  钻孔详情 API 
 export const drillHoleDetailApi = {
   getDetail: (id: number) => api.get(`/drill-holes/${id}/detail`)

@@ -12,8 +12,8 @@ import os
 
 from app.config import settings
 from app.database import init_db, SessionLocal
-from app.models import GeologicalLayer, DrillHole
-from app.routers import gempy, export, import_csv, grid_calculations, users, stratigraphic
+from app.models import GeologicalLayer
+from app.routers import gempy, grid_calculations, users, stratigraphic
 
 # 配置日志
 logging.basicConfig(
@@ -91,8 +91,6 @@ if os.path.exists(frontend_dist):
 
 # 注册路由
 app.include_router(gempy.router)
-app.include_router(export.router)
-app.include_router(import_csv.router)
 app.include_router(grid_calculations.router)
 app.include_router(users.router)
 app.include_router(stratigraphic.router)
