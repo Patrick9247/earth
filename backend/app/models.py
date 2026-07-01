@@ -7,7 +7,6 @@ from sqlalchemy.orm import relationship
 from .database import Base
 from datetime import datetime
 
-
 class User(Base):
     """用户模型"""
     __tablename__ = "users"
@@ -23,7 +22,6 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-
 class StratigraphicLayer(Base):
     """地层分层数据表 - 按Excel模板设计"""
     __tablename__ = "stratigraphic_layers"
@@ -35,7 +33,6 @@ class StratigraphicLayer(Base):
     layer_type = Column(String(50), nullable=False, comment="地层类型(盖层/热储层/基层)")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
 
 class GeologicalLayer(Base):
     """地质层模型"""
@@ -54,7 +51,6 @@ class GeologicalLayer(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-
 class GeothermalResource(Base):
     """地热资源计算结果"""
     __tablename__ = "geothermal_resources"
@@ -71,7 +67,6 @@ class GeothermalResource(Base):
     parameters = Column(JSON, comment="计算参数")
     result_data = Column(JSON, comment="详细结果数据")
     created_at = Column(DateTime, default=datetime.now())
-
 
 class ModelConfig(Base):
     """模型配置"""
@@ -90,7 +85,6 @@ class ModelConfig(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-
 class CsvImportRecord(Base):
     """CSV导入记录表"""
     __tablename__ = "csv_import_records"
@@ -105,7 +99,6 @@ class CsvImportRecord(Base):
     status = Column(String(50), default="处理中", comment="导入状态")
     created_at = Column(DateTime, server_default=func.now())
 
-
 class GridCalculation(Base):
     """网格资源计算表单数据（专利方法）"""
     __tablename__ = "grid_calculations"
@@ -118,7 +111,6 @@ class GridCalculation(Base):
     lifetime_years = Column(Integer, default=30, comment="开采年限(年)")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
 
 class GridItem(Base):
     """单个网格数据"""

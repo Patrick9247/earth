@@ -5,34 +5,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-
-# ==================== 地质层 Schemas ====================
-class GeologicalLayerBase(BaseModel):
-    name: str = Field(..., description="地层名称")
-    layer_type: Optional[str] = Field(None, description="地层类型")
-    depth_top: Optional[float] = Field(None, description="顶部深度(m)")
-    depth_bottom: Optional[float] = Field(None, description="底部深度(m)")
-    porosity: Optional[float] = Field(None, ge=0, le=1, description="孔隙度")
-    permeability: Optional[float] = Field(None, ge=0, description="渗透率(mD)")
-    thermal_conductivity: Optional[float] = Field(None, ge=0, description="热导率(W/m·K)")
-    color: Optional[str] = Field(None, description="可视化颜色")
-    layer_metadata: Optional[Dict[str, Any]] = Field(None, description="元数据")
-
-
-class GeologicalLayerCreate(GeologicalLayerBase):
-    pass
-
-
-class GeologicalLayerResponse(GeologicalLayerBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
-# ==================== CSV导入 Schemas ====================
+#  CSV导入  
 class CsvImportResult(BaseModel):
     """CSV导入结果"""
     success: bool
@@ -43,7 +16,6 @@ class CsvImportResult(BaseModel):
     errors: Optional[List[Dict[str, Any]]] = None
     record_id: Optional[int] = None
 
-
 class CsvPreviewResponse(BaseModel):
     """CSV预览响应"""
     success: bool
@@ -52,8 +24,7 @@ class CsvPreviewResponse(BaseModel):
     total_rows: int
     message: Optional[str] = None
 
-
-# ==================== 地热资源 Schemas ====================
+#  地热资源  
 class GeothermalResourceBase(BaseModel):
     name: str = Field(..., description="模型名称")
     model_type: Optional[str] = Field(None, description="模型类型")
@@ -66,14 +37,12 @@ class GeothermalResourceBase(BaseModel):
     parameters: Optional[Dict[str, Any]] = Field(None, description="计算参数")
     result_data: Optional[Dict[str, Any]] = Field(None, description="详细结果数据")
 
-
 class GeothermalResourceResponse(GeothermalResourceBase):
     id: int
     created_at: datetime
     
     class Config:
         from_attributes = True
-
 
 class GeothermalResourceListItem(BaseModel):
     """用于列表显示的简化响应模型"""
@@ -92,9 +61,7 @@ class GeothermalResourceListItem(BaseModel):
     class Config:
         from_attributes = True
 
-
-
-# ==================== 地热资源计算请求 Schemas ====================
+#  地热资源计算请求  
 class GeothermalCalculationRequest(BaseModel):
     """地热资源计算请求"""
     model_id: int = Field(..., description="模型ID")
@@ -109,15 +76,13 @@ class GeothermalCalculationRequest(BaseModel):
     utilization_efficiency: float = Field(0.1, ge=0, le=1, description="利用效率")
     lifetime_years: int = Field(30, ge=1, description="开采年限(年)")
 
-
 class GeothermalCalculationResponse(BaseModel):
     """地热资源计算响应"""
     success: bool
     message: str
     result: Optional[GeothermalResourceResponse] = None
 
-
-# ==================== 网格资源计算请求 Schemas ====================
+#  网格资源计算请求  
 class GridDataItem(BaseModel):
     """单个网格数据 - 每条数据为一个网格"""
     coord_x: Optional[float] = Field(None, description="X坐标")
@@ -132,7 +97,6 @@ class GridDataItem(BaseModel):
     gas_specific_heat: Optional[float] = Field(None, description="气体比热容(kJ/(kg·°C))")
     latent_heat: Optional[float] = Field(None, description="气化潜热(kJ/kg)")
 
-
 class GridCalculationRequest(BaseModel):
     """网格资源计算请求 - 基于专利方法"""
     grids: List[GridDataItem] = Field(..., description="网格数据列表")
@@ -141,22 +105,19 @@ class GridCalculationRequest(BaseModel):
     utilization_efficiency: float = Field(0.1, ge=0, le=1, description="利用效率")
     lifetime_years: int = Field(30, ge=1, description="开采年限(年)")
 
-
 class GridCalculationResponse(BaseModel):
     """网格资源计算响应"""
     success: bool
     message: str
     data: Optional[Dict[str, Any]] = None
 
-
-# ==================== 通用响应 ====================
+#  通用响应 
 class MessageResponse(BaseModel):
     """通用消息响应"""
     success: bool
     message: str
 
-
-# ==================== 网格计算表单数据 Schemas ====================
+#  网格计算表单数据  
 class GridCalculationFormBase(BaseModel):
     """网格计算表单基础模型"""
     name: str = Field(..., description="计算名称")
@@ -165,11 +126,9 @@ class GridCalculationFormBase(BaseModel):
     utilization_efficiency: float = Field(0.1, ge=0, le=1, description="利用效率")
     lifetime_years: int = Field(30, ge=1, description="开采年限(年)")
 
-
 class GridCalculationFormCreate(GridCalculationFormBase):
     """创建网格计算表单"""
     pass
-
 
 class GridCalculationFormUpdate(BaseModel):
     """更新网格计算表单"""
@@ -178,7 +137,6 @@ class GridCalculationFormUpdate(BaseModel):
     recovery_factor: Optional[float] = None
     utilization_efficiency: Optional[float] = None
     lifetime_years: Optional[int] = None
-
 
 class GridCalculationFormResponse(GridCalculationFormBase):
     """网格计算表单响应"""
@@ -189,8 +147,7 @@ class GridCalculationFormResponse(GridCalculationFormBase):
     class Config:
         from_attributes = True
 
-
-# ==================== 地层分层数据 Schemas ====================
+#  地层分层数据  
 class StratigraphicLayerBase(BaseModel):
     """地层分层数据基础模型"""
     hole_name: str = Field(..., description="钻孔名称")
@@ -198,11 +155,9 @@ class StratigraphicLayerBase(BaseModel):
     depth_bottom: float = Field(..., description="底部深度(m)")
     layer_type: str = Field(..., description="地层类型(盖层/热储层/基层)")
 
-
 class StratigraphicLayerCreate(StratigraphicLayerBase):
     """创建地层分层数据"""
     pass
-
 
 class StratigraphicLayerUpdate(BaseModel):
     """更新地层分层数据"""
@@ -210,7 +165,6 @@ class StratigraphicLayerUpdate(BaseModel):
     depth_top: Optional[float] = None
     depth_bottom: Optional[float] = None
     layer_type: Optional[str] = None
-
 
 class StratigraphicLayerResponse(StratigraphicLayerBase):
     """地层分层数据响应"""
@@ -221,8 +175,7 @@ class StratigraphicLayerResponse(StratigraphicLayerBase):
     class Config:
         from_attributes = True
 
-
-# ==================== 单个网格数据 Schemas ====================
+#  单个网格数据  
 class GridItemBase(BaseModel):
     """单个网格基础模型"""
     calc_id: int = Field(..., description="所属计算ID")
@@ -238,11 +191,9 @@ class GridItemBase(BaseModel):
     latent_heat: Optional[float] = Field(None, description="气化潜热(kJ/kg)")
     sort_order: Optional[int] = Field(0, description="排序顺序")
 
-
 class GridItemCreate(GridItemBase):
     """创建网格"""
     pass
-
 
 class GridItemUpdate(BaseModel):
     """更新网格"""
@@ -257,7 +208,6 @@ class GridItemUpdate(BaseModel):
     gas_specific_heat: Optional[float] = None
     latent_heat: Optional[float] = None
     sort_order: Optional[int] = None
-
 
 class GridItemResponse(GridItemBase):
     """网格响应"""

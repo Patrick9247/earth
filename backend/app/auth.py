@@ -25,16 +25,13 @@ SUPER_ADMIN_KEY = "CDUT2026SUPER"
 # HTTP Bearer 认证
 security = HTTPBearer()
 
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""
     return pwd_context.verify(plain_password, hashed_password)
 
-
 def get_password_hash(password: str) -> str:
     """获取密码哈希"""
     return pwd_context.hash(password)
-
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """创建访问令牌"""
@@ -46,7 +43,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
 
 def decode_token(token: str) -> Optional[dict]:
     """解码令牌"""
@@ -64,7 +60,6 @@ def decode_token(token: str) -> Optional[dict]:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的Token"
         )
-
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -95,7 +90,6 @@ def get_current_user(
     
     return user
 
-
 def require_super_admin(current_user: User = Depends(get_current_user)) -> User:
     """要求超级管理员权限"""
     if current_user.role != "SUPER":
@@ -104,7 +98,6 @@ def require_super_admin(current_user: User = Depends(get_current_user)) -> User:
             detail="需要超级管理员权限"
         )
     return current_user
-
 
 def check_super_admin_key(key: str) -> bool:
     """验证超级管理员注册密钥"""

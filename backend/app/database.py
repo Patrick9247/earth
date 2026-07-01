@@ -27,7 +27,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 创建基类
 Base = declarative_base()
 
-
 def get_db():
     """获取数据库会话依赖"""
     db = SessionLocal()
@@ -35,7 +34,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
 
 def init_db():
     """初始化数据库表"""

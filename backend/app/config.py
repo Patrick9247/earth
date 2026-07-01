@@ -54,5 +54,4 @@ class Settings(BaseSettings):
             return f"sqlite:///{self.SQLITE_DB_PATH}"
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
 
-
 settings = Settings()

@@ -1,11 +1,8 @@
 """
-GemPy 地质建模服务
-用于构建三维地质模型和计算地热流体资源
-
-基于专利：一种不规则热储层多相态地热流体资源量计算方法
+计算流体热量
 """
 import numpy as np
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any
 import logging
 import math
 
