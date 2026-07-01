@@ -1,22 +1,49 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGeothermalStore } from '@/stores/geothermal'
+import { layersApi, resourceApi, gridCalcApi } from '@/api/get-api.ts'
+
 const router = useRouter()
 const store = useGeothermalStore()
+
+const layerCount = ref(0)
+const gridItemCount = ref(0)
+const resourceCount = ref(0)
+
 const stats = computed(() => ({
-  layers: store.layerCount,
-  drillHoles: store.gridItemCount,
-  calculations: store.resourceCount,
+  layers: layerCount.value,
+  drillHoles: gridItemCount.value,
+  calculations: resourceCount.value,
   models: store.modelCreated ? 1 : 0
 }))
+
+const loadStats = async () => {
+  try {
+    const [layerRes, resourceRes, gridRes] = await Promise.all([
+      layersApi.getDistinctCount(),
+      resourceApi.getCount(),
+      gridCalcApi.getTotalGridItems()
+    ])
+
+    layerCount.value = layerRes.data?.count ?? 0
+    resourceCount.value = resourceRes.data?.count ?? 0
+    gridItemCount.value = gridRes.data?.count ?? 0
+  } catch (error) {
+    console.error('加载首页统计数据失败:', error)
+    layerCount.value = 0
+    resourceCount.value = 0
+    gridItemCount.value = 0
+  }
+}
+
 // 导航到对应页面
 const navigateTo = (path: string) => {
   router.push(path)
 }
+
 onMounted(async () => {
-  // 从 store 初始化数据（会自动同步）
-  await store.initializeData()
+  await Promise.all([store.initializeData(), loadStats()])
 })
 </script>
 <template>

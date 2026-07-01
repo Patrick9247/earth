@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..database import get_db
-from ..models import GeologicalLayer
+from ..models import GeologicalLayer, StratigraphicLayer
 from ..schemas import (
     GeologicalLayerCreate,
     GeologicalLayerResponse,
@@ -26,15 +26,14 @@ async def get_layers(db: Session = Depends(get_db)):
 @router.get("/distinct-count")
 async def get_distinct_layer_count(db: Session = Depends(get_db)):
     """
-    获取不同名称的地质层数量（去重计数）
+    获取地层分层数据中不同地层名称/钻孔组合的数量（去重计数）
     返回: { "count": <int> }
     """
     try:
-        # 使用 distinct 统计不同 name 的数量
-        count = db.query(GeologicalLayer.name).distinct().count()
+        count = db.query(StratigraphicLayer.hole_name).distinct().count()
         return {"count": count}
     except Exception as e:
-        raise HTTPException(status_code=500, detail="查询地质层去重计数失败")
+        raise HTTPException(status_code=500, detail="查询地层分层去重计数失败")
 
 
 @router.get("/{layer_id}", response_model=GeologicalLayerResponse)

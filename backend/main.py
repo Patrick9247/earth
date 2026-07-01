@@ -13,7 +13,7 @@ import os
 from app.config import settings
 from app.database import init_db, SessionLocal
 from app.models import GeologicalLayer, DrillHole
-from app.routers import geological, drill_holes, gempy, export, resource, import_csv, grid_calculations, users, stratigraphic
+from app.routers import geological, gempy, export, resource, import_csv, grid_calculations, users, stratigraphic
 
 # 配置日志
 logging.basicConfig(

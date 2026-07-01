@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { layersApi, drillHolesApi, gempyApi, resourceApi, gridCalcApi } from '@/api/get-api.ts'
+import { layersApi, drillHolesApi, gempyApi } from '@/api/get-api.ts'
 
 export const useGeothermalStore = defineStore('geothermal', () => {
   // State
@@ -23,9 +23,6 @@ export const useGeothermalStore = defineStore('geothermal', () => {
 
   // 模型是否已创建
   const modelCreated = ref(false)
-  const resourceCount = ref(0)
-  const layerCount = ref(0)
-  const gridItemCount = ref(0)
 
   // Getters
   const totalLayers = computed(() => layers.value.length)
@@ -90,39 +87,6 @@ export const useGeothermalStore = defineStore('geothermal', () => {
     }
   }
 
-  async function fetchLayerCount() {
-    try {
-      const res = await layersApi.getDistinctCount()
-      const fallback = layers.value.length || 0
-      layerCount.value = res.data?.count ?? fallback
-    } catch (error) {
-      console.error('Failed to fetch distinct layer count:', error)
-      layerCount.value = layers.value.length || 0
-    }
-  }
-
-  async function fetchResourceCount() {
-    try {
-      const res = await resourceApi.getCount()
-      const fallback = calculationResults.value.length || 0
-      resourceCount.value = res.data?.count ?? fallback
-    } catch (error) {
-      console.error('Failed to fetch resource count:', error)
-      resourceCount.value = calculationResults.value.length || 0
-    }
-  }
-
-  async function fetchGridItemCount() {
-    try {
-      const res = await gridCalcApi.getTotalGridItems()
-      const fallback = drillHoles.value.length || 0
-      gridItemCount.value = res.data?.count ?? fallback
-    } catch (error) {
-      console.error('Failed to fetch grid item count:', error)
-      gridItemCount.value = drillHoles.value.length || 0
-    }
-  }
-
   async function quickCalculate(params: {
     reservoir_volume: number
     avg_temperature: number
@@ -141,7 +105,7 @@ export const useGeothermalStore = defineStore('geothermal', () => {
   // 初始化数据（用于首页和建模页面）
   async function initializeData() {
     // 每次都从 API 获取最新数据，确保数据同步
-    await Promise.all([fetchLayers(), fetchDrillHoles(), fetchLayerCount(), fetchResourceCount(), fetchGridItemCount()])
+    await Promise.all([fetchLayers(), fetchDrillHoles()])
   }
 
   // 更新模型配置
@@ -173,9 +137,6 @@ export const useGeothermalStore = defineStore('geothermal', () => {
     loading,
     modelConfig,
     modelCreated,
-    resourceCount,
-    layerCount,
-    gridItemCount,
     // Getters
     totalLayers,
     totalDrillHoles,
@@ -185,9 +146,6 @@ export const useGeothermalStore = defineStore('geothermal', () => {
     fetchLayers,
     fetchDrillHoles,
     fetchResults,
-    fetchLayerCount,
-    fetchResourceCount,
-    fetchGridItemCount,
     quickCalculate,
     initializeData,
     updateModelConfig,
