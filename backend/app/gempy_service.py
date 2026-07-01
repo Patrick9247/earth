@@ -15,7 +15,6 @@ class GeothermalCalculator:
     WATER_DENSITY_STANDARD = 1000  # kg/m³ 标准条件下水密度
     WATER_SPECIFIC_HEAT = 4800  # J/(kg·K)
     SECONDS_PER_YEAR = 365.25 * 24 * 3600
-    
     # 水蒸气参数
     STEAM_SPECIFIC_VOLUME = 1.673  # m³/kg (100°C, 1atm)
     WATER_SPECIFIC_VOLUME = 0.001043  # m³/kg (100°C, 1atm)
@@ -25,45 +24,29 @@ class GeothermalCalculator:
     def calculate_boiling_point(self, pressure_kpa: float) -> float:
         """
         相态判定曲线方程 - 计算沸点温度（饱和温度）
-        
         分段公式：
         - T_isat = 0.95 × P_i + 26.44（P_i ≤ 101.325 kPa）
         - T_isat = 0.04 × P_i + 132.01（P_i > 101.325 kPa）
-        
-        Args:
-            pressure_kpa: 压力 (kPa)
-            
-        Returns:
-            饱和温度 (°C)
         """
         if pressure_kpa <= 0:
             return 100.0  # 默认常压沸点
-        
         # 分段公式计算饱和温度
         if pressure_kpa <= 101.325:
             # P_i ≤ 101.325 kPa: T_isat = 0.95 × P_i + 26.44
             T_sat = 0.95 * pressure_kpa + 26.44
         else:
             # P_i > 101.325 kPa: T_isat = 0.04 × P_i + 132.01
-            T_sat = 0.04 * pressure_kpa + 132.01
-        
+            T_sat = 0.04 * pressure_kpa + 132.01   
         # 限制在合理范围内
         return max(0.0, min(T_sat, 374.0))  # 水的临界温度约374°C
     
     def calculate_saturation_properties(self, temperature: float) -> tuple:
         """
-        计算饱和状态下的蒸汽比容和水比容
-        
-        使用 IAPWS-IF97 近似公式
-        
-        Args:
-            temperature: 饱和温度 (°C)
-            
+        计算饱和状态下的蒸汽比容和水比容  
         Returns:
             (蒸汽比容 vg, 水比容 vp) 单位 m³/kg
         """
         T = temperature
-        
         # 饱和水比容 vp (m³/kg)
         # 使用 IAPWS-IF97 近似公式
         if T < 100:
@@ -72,35 +55,24 @@ class GeothermalCalculator:
             vp = 0.001043 + 0.0000005 * (T - 100)  # 随温度略微增加
         else:
             vp = 0.001093 + 0.000001 * (T - 200)   # 高温下增加更快
-        
-        # 饱和蒸汽比容 vg (m³/kg)
-        # 根据理想气体状态方程近似: vg = R*T / P
-        # 先计算饱和压力（从饱和温度公式反推）
-        # 分段公式反推：
-        # T ≤ 122.7°C 时，P = (T - 26.44) / 0.95
-        # T > 122.7°C 时，P = (T - 132.01) / 0.04
+
         T临界 = 0.95 * 101.325 + 26.44  # ≈ 122.7 °C
         if T <= T临界:
             P_sat_kpa = (T - 26.44) / 0.95
         else:
             P_sat_kpa = (T - 132.01) / 0.04
         P_sat_kpa = max(P_sat_kpa, 1.0)  # 确保压力为正值
-        
         # 饱和蒸汽比容: vg = R*T / (P*M)
-        # R = 8.314 J/(mol·K), M = 18 g/mol = 0.018 kg/mol
-        # vg = 8.314 * (T + 273.15) / (P_sat_kpa * 1000 * 0.018)
         R = 8.314  # J/(mol·K)
         M = 0.018  # kg/mol
         T_kelvin = T + 273.15
         P_sat_pa = P_sat_kpa * 1000
-        
         vg = R * T_kelvin / (P_sat_pa * M)  # m³/kg
         
         # 修正系数（考虑非理想气体行为）
         # 在高温下蒸汽更接近理想气体
         correction = 0.9 + 0.0005 * (T - 100) if T > 100 else 0.9
         vg = vg * correction
-        
         return vg, vp
     
     def determine_phase(self, temperature: float, pressure_kpa: float) -> str:
@@ -111,13 +83,6 @@ class GeothermalCalculator:
         - T < T_sat - 10: 液态水
         - T_sat - 10 <= T <= T_sat + 10: 气液共存
         - T > T_sat + 10: 气态
-        
-        Args:
-            temperature: 网格温度 (°C)
-            pressure_kpa: 网格压力 (kPa)
-            
-        Returns:
-            相态类型: 'liquid' 或 'two_phase' 或 'gas'
         """
         T_boiling = self.calculate_boiling_point(pressure_kpa)
         
@@ -139,15 +104,6 @@ class GeothermalCalculator:
         ρ_i = 137.1358 × e^(A) + 139.3560 × e^(B) + 769.9024
         A = -(P_i - 163278.7315)² / (6.613 × 10¹⁰)
         B = -(T_i - 4.1171)² / 29947.659
-        
-        注意：公式中 P_i 的单位是 Pa（帕斯卡）
-        
-        Args:
-            temperature: 温度 (°C)
-            pressure_kpa: 压力 (kPa)
-            
-        Returns:
-            水密度 (kg/m³)
         """
         Ti = temperature
         # 将 kPa 转换为 Pa（公式要求压力单位为 Pa）
@@ -166,14 +122,7 @@ class GeothermalCalculator:
     def calculate_saturation_properties(self, temperature: float) -> tuple:
         """
         计算饱和状态下的水和蒸汽性质
-        
-        使用简化的经验公式（基于IAPWS-IF97拟合）
-        
-        Args:
-            temperature: 饱和温度 (°C)
             
-        Returns:
-            (饱和水密度 kg/m³, 饱和蒸汽密度 kg/m³, 饱和水比容 m³/kg, 饱和蒸汽比容 m³/kg)
         """
         T = temperature
         
@@ -209,13 +158,6 @@ class GeothermalCalculator:
         计算过热蒸汽密度
         
         使用理想气体状态方程近似
-        
-        Args:
-            temperature: 温度 (°C)
-            pressure_kpa: 压力 (kPa)
-            
-        Returns:
-            蒸汽密度 (kg/m³)
         """
         # 将温度转换为开尔文
         T_K = temperature + 273.15
@@ -240,19 +182,6 @@ class GeothermalCalculator:
     ) -> float:
         """
         计算液态地热流体资源量
-        
-        根据专利公式:
-        Q_liquid = Σ(φi × Vi × ρi × Cp × (Ti - T0))
-        
-        Args:
-            porosity: 孔隙度
-            volume: 网格体积 (m³)
-            temperature: 温度 (°C)
-            pressure_kpa: 压力 (kPa)
-            reference_temp: 参考温度 (°C)
-            
-        Returns:
-            液态地热流体资源量 (J)
         """
         density = self.calculate_water_density(temperature, pressure_kpa)
         delta_T = temperature - reference_temp
@@ -273,20 +202,6 @@ class GeothermalCalculator:
     ) -> Dict[str, float]:
         """
         计算气液共存时的地热资源量
-        根据专利公式:
-        Q₂ = Σ(φᵢ × Vᵢ × (1 - ρᵢ × vg) / (vp - vg) × Cw × (T_boil - T₀))
-        Q₃ = Σ(φᵢ × Vᵢ × (ρᵢ - (1 - ρᵢ × vg) / (vp - vg)) × [Cw × (T_boil - T₀) + Lv + Cv × (Tᵢ - T_boil)])
-        porosity: 孔隙度
-        volume: 网格体积 (m³)
-        temperature: 温度 (°C)
-        pressure_kpa: 压力 (kPa)
-        reference_temp: 参考温度 (°C)
-        liquid_specific_heat: 液体比热容 (kJ/(kg·°C))，默认使用标准值
-        gas_specific_heat: 气体比热容 (kJ/(kg·°C))，默认使用标准值
-        latent_heat: 气化潜热 (kJ/kg)，默认使用标准值
-            
-        Returns:
-            包含Q₂、Q₃和总资源量的字典
         """
         # 使用传入参数或默认值，并转换单位 kJ -> J
         Cw = (liquid_specific_heat * 1000) if liquid_specific_heat else self.WATER_SPECIFIC_HEAT  # J/(kg·K)
@@ -300,26 +215,11 @@ class GeothermalCalculator:
         rho_liquid, rho_steam, vp, vg = self.calculate_saturation_properties(T_sat)
         
         # 在气液共存状态下，使用混合密度（介于饱和水和饱和蒸汽之间）
-        # 根据专利文档，ρᵢ 通过密度校正公式计算
         density = self.calculate_water_density(temperature, pressure_kpa)
         
         # Q₂: 气液共存液态资源量
-        # 使用专利公式：(1 - ρᵢ × vg) / (vp - vg) 表示液态水质量密度
-        # 但专利公式中的推导基于特定的物理假设
-        # 这里采用更稳健的方法：基于密度值计算液相/气相比例
-        
-        # 在气液共存状态下，混合密度 = α × ρ_liquid + (1-α) × ρ_steam
-        # 其中 α 是液相体积分数
-        # 求解 α = (ρ_mixed - ρ_steam) / (ρ_liquid - ρ_steam)
-        
-        # 使用专利公式计算气液共存资源量
-        # ρᵢ 通过密度校正公式计算
         rho_i = density
-        
-        # 专利公式:
-        # 液相质量密度 = (1 - ρᵢ × vg) / (vp - vg)
-        # 气相质量密度 = ρᵢ - (1 - ρᵢ × vg) / (vp - vg) = ρᵢ - 液相质量密度
-        
+      
         liquid_mass_density = (1 - rho_i * vg) / (vp - vg)
         steam_mass_density = rho_i - liquid_mass_density
             
@@ -367,24 +267,7 @@ class GeothermalCalculator:
         latent_heat: float = None
     ) -> Dict[str, float]:
         """
-        计算气态（过热蒸汽）地热资源量
-        
-        严格按照文档公式：Q₅ = Σ[φᵢ × Vᵢ × ρᵢ × [Cw(Tisat-T₀) + Lv + Cv(Ti-Tisat)]]
-        
-        其中 ρᵢ 为地热流体密度（通过密度校正公式计算）
-        
-        Args:
-            porosity: 孔隙度
-            volume: 网格体积 (m³)
-            temperature: 温度 (°C)
-            pressure_kpa: 压力 (kPa)
-            reference_temp: 参考温度 (°C)
-            liquid_specific_heat: 液体比热容 (kJ/(kg·°C))，默认使用标准值
-            gas_specific_heat: 气体比热容 (kJ/(kg·°C))，默认使用标准值
-            latent_heat: 气化潜热 (kJ/kg)，默认使用标准值
-            
-        Returns:
-            包含气态资源量的字典
+        计算气态地热资源量
         """
         # 使用传入参数或默认值，并转换单位 kJ -> J
         Cw = (liquid_specific_heat * 1000) if liquid_specific_heat else self.WATER_SPECIFIC_HEAT  # J/(kg·K)
@@ -392,8 +275,7 @@ class GeothermalCalculator:
         Lv = (latent_heat * 1000) if latent_heat else self.LATENT_HEAT_VAPORIZATION  # J/kg
         
         T_sat = self.calculate_boiling_point(pressure_kpa)  # 饱和温度 Tisat
-        
-        # 使用密度校正公式计算地热流体密度 ρᵢ（与文档一致）
+        # 使用密度校正公式计算地热流体密度 ρᵢ
         rho_i = self.calculate_water_density(temperature, pressure_kpa)
         
         # Q₅ = φ × V × ρᵢ × [Cw × (Tisat - T₀) + Lv + Cv × (Ti - Tisat)]
@@ -423,21 +305,6 @@ class GeothermalCalculator:
         """
         批量计算多网格资源量
         
-        每个网格单独调用 full_calculation 函数进行计算
-        每条数据为一个网格
-        
-        Args:
-            grid_data: 网格数据列表，每个元素包含:
-                - coord_x: X坐标
-                - coord_y: Y坐标
-                - coord_z: Z坐标(深度)
-                - porosity: 孔隙度
-                - volume: 体积 (m³)
-                - temperature: 温度 (°C)
-                - pressure: 压力 (kPa)
-            reference_temp: 参考温度 (°C)
-        Returns:
-            计算结果汇总，包含Q₁、Q₂、Q₃、Q₅
         """
         liquid_grids = []
         two_phase_grids = []
@@ -551,44 +418,7 @@ class GeothermalCalculator:
             'total_grid_count': liquid_grid_count + two_phase_grid_count + gas_grid_count
         }
     
-    def calculate_power_potential(
-        self,
-        total_heat: float,
-        recovery_factor: float = 0.25,
-        utilization_efficiency: float = 0.1,
-        lifetime_years: int = 30
-    ) -> Dict[str, float]:
-        """
-        计算发电潜力
-
-        total_heat: 总热含量 (J)
-        recovery_factor: 采收率
-        utilization_efficiency: 利用效率
-        lifetime_years: 开采年限
-            
-        Returns:
-            发电潜力计算结果
-        """
-        # 可采热量
-        extractable_heat = total_heat * recovery_factor
-        
-        # 总发电量 (J)
-        total_power_energy = extractable_heat * utilization_efficiency
-        
-        # 年均发电量 (J/year)
-        annual_energy = total_power_energy / lifetime_years
-        
-        # 转换为 MW
-        power_potential_mw = annual_energy / self.SECONDS_PER_YEAR / 1e6
-        
-        return {
-            'extractable_heat': extractable_heat,
-            'total_power_energy': total_power_energy,
-            'annual_energy': annual_energy,
-            'power_potential_mw': power_potential_mw,
-            'capacity_factor': 0.85
-        }
-    
+   
     def full_calculation(
         self,
         reservoir_volume: float,
@@ -605,13 +435,6 @@ class GeothermalCalculator:
         """
         完整的地热资源计算
         
-        结合专利方法和传统方法进行综合计算
-        
-        Args:
-            pressure: 压力 (kPa)
-        
-        Returns:
-            完整计算结果
         """
         # 使用密度校正公式计算实际水密度
         if water_density is None:
@@ -671,13 +494,6 @@ class GeothermalCalculator:
                 'gas_resource': result['gas_resource']
             }
         
-        # 计算发电潜力
-        power_results = self.calculate_power_potential(
-            total_heat=total_heat,
-            recovery_factor=recovery_factor,
-            utilization_efficiency=utilization_efficiency,
-            lifetime_years=lifetime_years
-        )
         
         # 合并结果
         if phase == 'liquid':
@@ -693,7 +509,6 @@ class GeothermalCalculator:
             'water_volume': water_volume,
             'water_mass': water_mass,
             'delta_temperature': delta_T,
-            **power_results,
             'phase_info': phase_info,
             'parameters': {
                 'reservoir_volume': reservoir_volume,

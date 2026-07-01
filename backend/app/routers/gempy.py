@@ -175,18 +175,9 @@ async def calculate_grid_resources(
             reference_temp=request.reference_temperature
         )
         
-        # 计算发电潜力
-        power_results = geothermal_calculator.calculate_power_potential(
-            total_heat=results['total_resource_joules'],
-            recovery_factor=request.recovery_factor,
-            utilization_efficiency=request.utilization_efficiency,
-            lifetime_years=request.lifetime_years
-        )
-        
         # 合并结果
         final_results = {
             **results,
-            **power_results,
             'parameters': {
                 'grid_count': results['total_grid_count'],
                 'reference_temperature': request.reference_temperature,
