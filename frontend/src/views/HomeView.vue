@@ -2,7 +2,7 @@
 import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGeothermalStore } from '@/stores/geothermal'
-import { layersApi, resourceApi, gridCalcApi } from '@/api/get-api.ts'
+import { layersApi, gridCalcApi,gempyApi } from '@/api/get-api.ts'
 
 const router = useRouter()
 const store = useGeothermalStore()
@@ -22,7 +22,7 @@ const loadStats = async () => {
   try {
     const [layerRes, resourceRes, gridRes] = await Promise.all([
       layersApi.getDistinctCount(),
-      resourceApi.getCount(),
+      gempyApi.getResultCount(),
       gridCalcApi.getTotalGridItems()
     ])
 

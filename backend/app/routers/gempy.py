@@ -19,101 +19,10 @@ from ..schemas import (
     GridCalculationResponse,
     MessageResponse
 )
-from ..gempy_service import gempy_service, geothermal_calculator
+from ..gempy_service import geothermal_calculator
 
 router = APIRouter(prefix="/api/gempy", tags=["GemPy建模与资源计算"])
 logger = logging.getLogger(__name__)
-
-
-@router.post("/model/create", response_model=GemPyModelResponse)
-async def create_geological_model(
-    request: GemPyModelRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    创建地质模型
-    
-    使用 GemPy 根据地质层和钻孔数据创建三维地质模型
-    """
-    try:
-        # 根据钻孔数据自动计算范围
-        drill_holes = request.drill_holes
-        x_coords = [dh.location_x for dh in drill_holes]
-        y_coords = [dh.location_y for dh in drill_holes]
-        depths = [dh.total_depth for dh in drill_holes if dh.total_depth]
-        
-        # 添加边界缓冲
-        x_range = max(x_coords) - min(x_coords) if x_coords else 1000
-        y_range = max(y_coords) - min(y_coords) if y_coords else 1000
-        
-        extent = [
-            min(x_coords) - x_range * 0.2 if x_coords else 0,
-            max(x_coords) + x_range * 0.2 if x_coords else 1000,
-            min(y_coords) - y_range * 0.2 if y_coords else 0,
-            max(y_coords) + y_range * 0.2 if y_coords else 1000,
-            -max(depths) - 100 if depths else -2000,
-            100
-        ]
-        resolution = request.grid_resolution
-        
-        # 创建 GemPy 模型
-        success = gempy_service.create_model(
-            model_name="geothermal_model",
-            extent=extent,
-            resolution=resolution
-        )
-        
-        if not success:
-            return GemPyModelResponse(
-                success=False,
-                message="模型创建失败"
-            )
-        
-        # 添加地质层表面点
-        for layer in request.layers:
-            points = []
-            # 从钻孔数据推断层界面点
-            for dh in request.drill_holes:
-                if layer.depth_top is not None and layer.depth_bottom is not None:
-                    mid_depth = (layer.depth_top + layer.depth_bottom) / 2
-                    # 使用 elevation 字段（地面高程），默认为 0
-                    elevation = dh.elevation if dh.elevation else 0
-                    points.append({
-                        'x': dh.location_x,
-                        'y': dh.location_y,
-                        'z': elevation - mid_depth
-                    })
-            
-            if points:
-                gempy_service.add_surface_points(layer.name, points)
-        
-        # 计算模型
-        success = gempy_service.compute_model()
-        
-        if not success:
-            return GemPyModelResponse(
-                success=False,
-                message="模型计算失败"
-            )
-        
-        # 获取网格数据
-        mesh_data = gempy_service.get_surface_mesh()
-        statistics = gempy_service.get_model_statistics()
-        
-        return GemPyModelResponse(
-            success=True,
-            message="地质模型创建成功",
-            mesh_data=mesh_data,
-            statistics=statistics
-        )
-        
-    except Exception as e:
-        logger.error(f"Failed to create model: {str(e)}")
-        return GemPyModelResponse(
-            success=False,
-            message=f"模型创建出错: {str(e)}"
-        )
-
 
 @router.post("/calculate", response_model=GeothermalCalculationResponse)
 async def calculate_geothermal_resource(
@@ -122,8 +31,6 @@ async def calculate_geothermal_resource(
 ):
     """
     计算地热资源
-    
-    根据储层参数计算地热流体资源量和发电潜力
     """
     try:
         # 执行计算
@@ -176,6 +83,17 @@ async def get_calculation_results(db: Session = Depends(get_db)):
     """获取所有计算结果（简化列表，不含大数据字段）"""
     results = db.query(GeothermalResource).order_by(GeothermalResource.created_at.desc()).all()
     return results
+
+
+@router.get("/results/count")
+async def get_calculation_results_count(db: Session = Depends(get_db)):
+    """获取计算结果总数"""
+    try:
+        count = db.query(GeothermalResource).count()
+        return {"count": count}
+    except Exception as e:
+        logger.error(f"Failed to query calculation result count: {e}")
+        raise HTTPException(status_code=500, detail="查询计算结果总数失败")
 
 
 @router.get("/results/{result_id}", response_model=GeothermalResourceResponse)
@@ -336,9 +254,6 @@ async def determine_phase(
 ):
     """
     相态判定接口
-    
-    根据专利方法，判断给定温度和压力下的相态
-    - 返回沸点温度、相态类型、水密度等信息
     """
     try:
         T_boiling = geothermal_calculator.calculate_boiling_point(pressure)

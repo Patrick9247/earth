@@ -67,9 +67,8 @@ export const drillHolesApi = {
   delete: (id: number) => api.delete(`/drill-holes/${id}`),
   createWithDetails: (data: any) => api.post('/drill-holes/with-details', data)
 }
-// GemPy 建模 API 
+// 网格计算api
 export const gempyApi = {
-  createModel: (data: any) => api.post('/gempy/model/create', data),
   calculate: (data: any) => api.post('/gempy/calculate', data),
   calculateGrid: (data: any) => api.post('/gempy/calculate-grid', data),
   getResults: () => api.get('/gempy/results'),
@@ -77,15 +76,8 @@ export const gempyApi = {
   deleteResult: (id: number) => api.delete(`/gempy/results/${id}`),
   quickCalc: (params: any) => api.get('/gempy/quick-calc', { params }),
   phaseDetermination: (temperature: number, pressure: number) =>
-    api.get('/gempy/phase-determination', { params: { temperature, pressure } })
-}
-//  资源计算 API 
-export const resourceApi = {
-  calculate: (data: any) => api.post('/resource/calculate', data),
-  getBoilingPoint: (pressure: number) => api.get(`/resource/boiling-point/${pressure}`),
-  getDensity: (temperature: number, pressure: number, phase?: string) =>
-    api.get('/resource/density', { params: { temperature, pressure, phase } }),
-  getCount: () => api.get('/resource/count')
+    api.get('/gempy/phase-determination', { params: { temperature, pressure } }),
+  getResultCount: () => api.get('/gempy/results/count')
 }
 //  网格计算表单 API 
 export const gridCalcApi = {

@@ -15,13 +15,11 @@ from ..schemas import (
 
 router = APIRouter(prefix="/api/layers", tags=["地质层管理"])
 
-
 @router.get("/", response_model=List[GeologicalLayerResponse])
 async def get_layers(db: Session = Depends(get_db)):
     """获取所有地质层"""
     layers = db.query(GeologicalLayer).all()
     return layers
-
 
 @router.get("/distinct-count")
 async def get_distinct_layer_count(db: Session = Depends(get_db)):
@@ -35,7 +33,6 @@ async def get_distinct_layer_count(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail="查询地层分层去重计数失败")
 
-
 @router.get("/{layer_id}", response_model=GeologicalLayerResponse)
 async def get_layer(layer_id: int, db: Session = Depends(get_db)):
     """获取单个地质层"""
@@ -43,9 +40,6 @@ async def get_layer(layer_id: int, db: Session = Depends(get_db)):
     if not layer:
         raise HTTPException(status_code=404, detail="地质层未找到")
     return layer
-
-
-
 
 @router.post("/", response_model=GeologicalLayerResponse)
 async def create_layer(layer: GeologicalLayerCreate, db: Session = Depends(get_db)):
@@ -55,7 +49,6 @@ async def create_layer(layer: GeologicalLayerCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(db_layer)
     return db_layer
-
 
 @router.put("/{layer_id}", response_model=GeologicalLayerResponse)
 async def update_layer(
@@ -74,7 +67,6 @@ async def update_layer(
     db.commit()
     db.refresh(db_layer)
     return db_layer
-
 
 @router.delete("/{layer_id}", response_model=MessageResponse)
 async def delete_layer(layer_id: int, db: Session = Depends(get_db)):
