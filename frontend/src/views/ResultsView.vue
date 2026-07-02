@@ -8,13 +8,12 @@ import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import type { ElTable } from 'element-plus'
 // 注册 ECharts 组件
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
 const results = ref<any[]>([])
 const loading = ref(false)
 const selectedResult = ref<any>(null)
-const tableRef = ref<InstanceType<typeof ElTable>>()
+const tableRef = ref<any>()
 const dialogVisible = computed({
   get: () => selectedResult.value !== null,
   set: () => { selectedResult.value = null }
