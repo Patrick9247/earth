@@ -201,7 +201,6 @@ async def calculate_grid_resources(
                 temperature_avg=sum(g.temperature for g in request.grids) / len(request.grids),
                 temperature_max=max(g.temperature for g in request.grids),
                 heat_content=results['total_resource_joules'],
-                power_potential=power_results['power_potential_mw'],
                 lifetime_years=request.lifetime_years,
                 parameters=save_params,
                 result_data=final_results
