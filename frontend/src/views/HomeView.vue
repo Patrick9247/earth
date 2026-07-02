@@ -26,7 +26,7 @@ const loadStats = async () => {
       gridCalcApi.getTotalGridItems()
     ])
 
-    layerCount.value = layerRes.data?.count ?? 0
+    layerCount.value = layerRes.data?.distinct_hole_count ?? 0
     resourceCount.value = resourceRes.data?.count ?? 0
     gridItemCount.value = gridRes.data?.count ?? 0
   } catch (error) {

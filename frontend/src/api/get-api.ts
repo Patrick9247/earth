@@ -55,29 +55,20 @@ export const layersApi = {
   delete: (id: number) => api.delete(`/layers/${id}`)
   ,
   // 获取不同名称的地质层数量
-  getDistinctCount: () => api.get('/layers/distinct-count')
+  getDistinctCount: () => api.get('/stratigraphic/count')
 }
-//  钻孔数据 API 
-export const drillHolesApi = {
-  getAll: () => api.get('/drill-holes/'),
-  getOne: (id: number) => api.get(`/drill-holes/${id}`),
-  create: (data: any) => api.post('/drill-holes/', data),
-  batchCreate: (data: any[]) => api.post('/drill-holes/batch', data),
-  update: (id: number, data: any) => api.put(`/drill-holes/${id}`, data),
-  delete: (id: number) => api.delete(`/drill-holes/${id}`),
-  createWithDetails: (data: any) => api.post('/drill-holes/with-details', data)
-}
+
 // 网格计算api
 export const gempyApi = {
-  calculate: (data: any) => api.post('/gempy/calculate', data),
-  calculateGrid: (data: any) => api.post('/gempy/calculate-grid', data),
-  getResults: () => api.get('/gempy/results'),
-  getResult: (id: number) => api.get(`/gempy/results/${id}`),
-  deleteResult: (id: number) => api.delete(`/gempy/results/${id}`),
-  quickCalc: (params: any) => api.get('/gempy/quick-calc', { params }),
+  calculate: (data: any) => api.post('/geothermal/calculate', data),
+  calculateGrid: (data: any) => api.post('/geothermal/calculate-grid', data),
+  getResults: () => api.get('/geothermal/results'),
+  getResult: (id: number) => api.get(`/geothermal/results/${id}`),
+  deleteResult: (id: number) => api.delete(`/geothermal/results/${id}`),
+  quickCalc: (params: any) => api.get('/geothermal/quick-calc', { params }),
   phaseDetermination: (temperature: number, pressure: number) =>
-    api.get('/gempy/phase-determination', { params: { temperature, pressure } }),
-  getResultCount: () => api.get('/gempy/results/count')
+    api.get('/geothermal/phase-determination', { params: { temperature, pressure } }),
+  getResultCount: () => api.get('/geothermal/results/count')
 }
 //  网格计算表单 API 
 export const gridCalcApi = {

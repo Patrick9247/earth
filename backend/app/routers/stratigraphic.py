@@ -40,6 +40,22 @@ def get_all_hole_names(db: Session = Depends(get_db)):
     result = db.query(StratigraphicLayer.hole_name).distinct().all()
     return [r[0] for r in result]
 
+@router.get("/count")
+def get_layer_count(hole_name: Optional[str] = None, db: Session = Depends(get_db)):
+    """按钻孔名称统计地层分层数据数量；若未传入钻孔名，则返回总数和去重后的钻孔数"""
+    query = db.query(StratigraphicLayer)
+    if hole_name:
+        query = query.filter(StratigraphicLayer.hole_name == hole_name)
+
+    count = query.count()
+    distinct_hole_count = db.query(StratigraphicLayer.hole_name).distinct().count()
+
+    return {
+        "hole_name": hole_name,
+        "count": count,
+        "distinct_hole_count": distinct_hole_count,
+    }
+
 @router.delete("/clear-all", response_model=MessageResponse)
 def clear_all(db: Session = Depends(get_db)):
     """清空所有地层分层数据"""

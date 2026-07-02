@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { layersApi, drillHolesApi, gempyApi } from '@/api/get-api.ts'
+import { layersApi, stratigraphicApi, gempyApi } from '@/api/get-api.ts'
 
 export const useGeothermalStore = defineStore('geothermal', () => {
   // State
@@ -70,7 +70,7 @@ export const useGeothermalStore = defineStore('geothermal', () => {
 
   async function fetchDrillHoles() {
     try {
-      const res = await drillHolesApi.getAll()
+      const res = await stratigraphicApi.getAll()
       drillHoles.value = res.data && res.data.length > 0 ? res.data : defaultDrillHoles
     } catch (error) {
       console.error('Failed to fetch drill holes:', error)
